@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+package labs.V1;
+
+option go_package = "internal/rpc/V1/labs";
+
+
+service LabService {
+  rpc NewLab(NewLabRequest) returns (NewLabResponse) {}
+  rpc EditLab(EditLabRequest) returns (EditLabResponse) {}
+  rpc DeleteLab(DeleteLabRequest) returns (DeleteLabResponse) {}
+  rpc Echo(EchoRequest) returns (EchoResponse) {}
+}
+
+// todo figure out request/response
+message NewLabRequest {
+}
+
+message NewLabResponse {
+}
+
+message EditLabRequest {
+}
+
+message EditLabResponse {
+}
+
+message DeleteLabRequest {
+}
+
+message DeleteLabResponse {
+}
+
+message EchoRequest{
+  string message = 1;
+}
+
+message EchoResponse{
+  string messageResponse = 1;
+}

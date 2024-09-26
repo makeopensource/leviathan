@@ -63,8 +63,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           push: true
-          tags: ${{ github.repository }}/leviathan:${{ steps.tagName.outputs.tag }}
-
+          tags: ${{ github.repository }}:${{ steps.tagName.outputs.tag }}
 
       #      if the binary needs to built directly
       #      - name: Set up Go

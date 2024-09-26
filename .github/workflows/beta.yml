@@ -30,11 +30,17 @@ jobs:
       - name: Login to GHCR registry
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-      - name: Build and push
-        uses: docker/build-push-action@v6
-        with:
-          push: true
-          tags: ${{ github.repository }}:beta
+      - name: build image
+        run: docker build . -t ghcr.io/${{ github.repository }}:beta
+
+      - name: push
+        run: docker push ghcr.io/${{ github.repository }}:beta
+
+#      - name: Build and push
+#        uses: docker/build-push-action@v6
+#        with:
+#          push: true
+#          tags: ${{ github.repository }}:beta
 
       #      if the binary needs to built directly
       #      - name: Set up Go

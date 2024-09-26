@@ -5,7 +5,6 @@ on:
   push:
     branches:
       - master
-      - ci/cd
 
 jobs:
   build-docker:
@@ -20,11 +19,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: 'Get tag'
-        id: tagName
-        uses: "WyriHaximus/github-action-get-previous-tag@v1"
-
-      ## docker image build
+      # docker image build
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -36,12 +31,6 @@ jobs:
 
       - name: push
         run: docker push ghcr.io/${{ github.repository }}:beta
-
-#      - name: Build and push
-#        uses: docker/build-push-action@v6
-#        with:
-#          push: true
-#          tags: ${{ github.repository }}:beta
 
       #      if the binary needs to built directly
       #      - name: Set up Go

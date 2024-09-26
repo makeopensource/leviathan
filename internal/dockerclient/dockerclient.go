@@ -49,6 +49,12 @@ func NewSSHClient(connectionString string) (*client.Client, error) {
 	return newClient, nil
 }
 
+// Build image
+func BuildImageFromDockerfile(client *client.Client) error {
+
+	return nil
+}
+
 // ListContainer lists all the containers running on host machine
 //func ListContainer(c *client.Client) error {
 //	containers, err := c.ContainerList(context.Background(), types.ContainerListOptions{All: true})

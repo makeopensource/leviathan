@@ -4,7 +4,7 @@
 /* tslint:disable */
 /* eslint-disable */
 
-import * as grpc from "grpc";
+import * as grpc from "@grpc/grpc-js";
 import * as stats_pb from "./stats_pb";
 
 interface IStatsServiceService extends grpc.ServiceDefinition<grpc.UntypedServiceImplementation> {

@@ -4,7 +4,7 @@
 /* tslint:disable */
 /* eslint-disable */
 
-import * as grpc from "grpc";
+import * as grpc from "@grpc/grpc-js";
 import * as jobs_pb from "./jobs_pb";
 
 interface IJobServiceService extends grpc.ServiceDefinition<grpc.UntypedServiceImplementation> {

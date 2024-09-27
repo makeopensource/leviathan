@@ -27,3 +27,9 @@ npm install -D grpc-tools grpc_tools_node_protoc_ts
 protoc --plugin=protoc-gen-ts_proto=node_modules\.bin\protoc-gen-ts.cmd --ts_proto_out=src/generated --ts_proto_opt=import_style=commonjs,outputServices=grpc-js,env=node,useOptionals=messages,exportCommonSymbols=false,esModuleInterop=true -I ../proto ../proto/*.proto
 ```
 
+## Things to test against
+
+* fork bombs
+* /dev/*** accesses
+* zip bombs
+* unauth accesses outside the working dir

@@ -2,4 +2,3 @@ FROM python:3.12-alpine
 
 WORKDIR /app
 
-ENTRYPOINT ["py /app/input.py"]

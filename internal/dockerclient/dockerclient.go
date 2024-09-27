@@ -7,9 +7,13 @@ import (
 	"github.com/docker/cli/cli/connhelper"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/image"
+	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/client"
+	"github.com/docker/docker/pkg/archive"
 	"github.com/docker/docker/pkg/stdcopy"
+	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/rs/zerolog/log"
 	"io"
 	"net/http"
@@ -36,31 +40,40 @@ func NewSSHClient(connectionString string) (*client.Client, error) {
 		client.WithHTTPClient(httpClient),
 		client.WithHost(helper.Host),
 		client.WithDialContext(helper.Dialer),
+		client.WithAPIVersionNegotiation(),
 	)
-
-	version := os.Getenv("DOCKER_API_VERSION")
-
-	if version != "" {
-		clientOpts = append(clientOpts, client.WithVersion(version))
-	} else {
-		clientOpts = append(clientOpts, client.WithAPIVersionNegotiation())
-	}
 
 	newClient, err := client.NewClientWithOpts(clientOpts...)
 	if err != nil {
 		log.Error().Err(err).Msgf("failed create docker client connectionString %s", connectionString)
-		return nil, fmt.Errorf("unable to create docker client")
+		return nil, fmt.Errorf("unable to connect to docker client")
 	}
 
 	return newClient, nil
+}
+
+// NewLocalClient create a new client based locally
+func NewLocalClient() (*client.Client, error) {
+	cli, err := client.NewClientWithOpts(client.FromEnv)
+	if err != nil {
+		log.Error().Err(err).Msgf("failed create local docker client")
+		return nil, fmt.Errorf("unable to create docker client")
+	}
+
+	return cli, nil
 }
 
 // Docker image controls
 
 // BuildImageFromDockerfile Build image
 func BuildImageFromDockerfile(client *client.Client, dockerfilePath string, tagName string) error {
-	dockerfileTar, dockerfile := ConvertToTar(dockerfilePath)
+	_, err := os.Stat(dockerfilePath)
+	if err != nil {
+		log.Error().Err(err).Msgf("failed to stat path %s", dockerfilePath)
+		return err
+	}
 
+	dockerfileTar, dockerfile := ConvertToTar(dockerfilePath)
 	// Build the Docker image
 	resp, err := client.ImageBuild(
 		context.Background(),
@@ -138,7 +151,6 @@ func ListContainers(client *client.Client) ([]ContainerInfo, error) {
 			State:   item.State,
 			Status:  item.Status,
 		}
-
 		containerInfoList = append(containerInfoList, info)
 	}
 
@@ -146,38 +158,36 @@ func ListContainers(client *client.Client) ([]ContainerInfo, error) {
 }
 
 // CreateNewContainer creates a new container from given image
-//func CreateNewContainer(c *client.Client, image string) (string, error) {
-//	config := &container.Config{
-//		Image: image,
-//		Cmd:   []string{"sh", "-c", "su autolab -c \"autodriver -u 100 -f 104857600 -t 900 -o 104857600 autolab\""},
-//	}
-//	hostConfig := &container.HostConfig{
-//		Resources: container.Resources{
-//			Memory:   512 * 1000000,
-//			NanoCPUs: 2 * 1000000000,
-//		},
-//	}
-//	networkingConfig := &network.NetworkingConfig{}
-//	var platform *imagespecs.Platform = nil
-//
-//	cont, err := c.ContainerCreate(context.Background(), config, hostConfig, networkingConfig, platform, "")
-//	if err != nil {
-//		if client.IsErrNotFound(err) {
-//			log.WithFields(log.Fields{"error": err, "image": image}).Warn("image not found, attempting to pull from registry")
-//			if err := PullImage(c, image); err != nil {
-//				return "", err
-//			}
-//			cont, err = c.ContainerCreate(context.Background(), config, hostConfig, networkingConfig, platform, "")
-//			if err == nil {
-//				return cont.ID, err
-//			}
-//		}
-//		log.WithFields(log.Fields{"error": err, "image": image}).Error("failed to create container")
-//		return "", err
-//	}
-//
-//	return cont.ID, nil
-//}
+func CreateNewContainer(client *client.Client, jobUuid string, image string, entryPointCmd []string, machineLimits container.Resources) (string, error) {
+	config := &container.Config{
+		Image: image,
+		Cmd:   entryPointCmd,
+	}
+	hostConfig := &container.HostConfig{
+		Resources:  machineLimits,
+		AutoRemove: true,
+	}
+	networkingConfig := &network.NetworkingConfig{}
+
+	var platform *v1.Platform = nil
+
+	cont, err := client.ContainerCreate(
+		context.Background(),
+		config,
+		hostConfig,
+		networkingConfig,
+		platform,
+		jobUuid,
+	)
+
+	if err != nil {
+		// maybe pull image if it errors
+		log.Error().Err(err).Str("image", image).Msgf("failed to create Docker container")
+		return "", err
+	}
+
+	return cont.ID, nil
+}
 
 // Container controls
 
@@ -217,6 +227,48 @@ func RemoveContainer(c *client.Client, containerID string, force bool, removeVol
 	return nil
 }
 
+// I/O within containers
+
+// CopyToContainer copies a specific file directly into the container
+func CopyToContainer(client *client.Client, containerID string, filePath string) error {
+	const containerDirectory = "/home/autolab/"
+
+	log.Debug().Msgf("Copying file %s to container %s", filePath, containerDirectory)
+
+	_, err := os.Stat(filePath)
+	if err != nil {
+		log.Error().Err(err).Msgf("failed to stat path %s", filePath)
+		return err
+	}
+
+	archiveData, err := archive.Tar(filePath, archive.Gzip)
+	if err != nil {
+		log.Error().Err(err).Msgf("failed to copy to Docker container")
+		return err
+	}
+	defer func(archive io.ReadCloser) {
+		err := archive.Close()
+		if err != nil {
+			log.Error().Err(err).Msgf("failed to close archive")
+		}
+	}(archiveData)
+
+	config := container.CopyToContainerOptions{AllowOverwriteDirWithFile: true}
+	err = client.CopyToContainer(
+		context.Background(),
+		containerID,
+		containerDirectory,
+		archiveData,
+		config,
+	)
+
+	if err != nil {
+		log.Error().Err(err).Msgf("failed to copy to Docker container")
+		return err
+	}
+	return nil
+}
+
 // TailContainerLogs get logs TODO
 func TailContainerLogs(ctx context.Context, client *client.Client, containerID string) error {
 	reader, err := client.ContainerLogs(ctx, containerID, container.LogsOptions{ShowStdout: true, ShowStderr: true, Follow: true})
@@ -234,58 +286,16 @@ func TailContainerLogs(ctx context.Context, client *client.Client, containerID s
 	return nil
 }
 
-// CopyToContainer copies a specific file directly into the container
-//func CopyToContainer(c *client.Client, containerID string, filePath string) error {
-//	// TODO FIXME - doesnt validate filePath exists
-//	archive, err := archive.Tar(filePath, archive.Gzip)
-//	if err != nil {
-//		log.WithFields(log.Fields{"error": err, "container_id": containerID, "filePath": filePath}).Error("failed to build archive")
-//		return err
-//	}
-//	defer archive.Close()
-//
-//	config := types.CopyToContainerOptions{
-//		AllowOverwriteDirWithFile: true,
-//	}
-//	err = c.CopyToContainer(context.Background(), containerID, "/home/autolab/", archive, config)
-//	if err != nil {
-//		log.WithFields(log.Fields{"error": err, "container_id": containerID, "filePath": filePath}).Error("failed to copy files into container")
-//		return err
-//	}
-//	return nil
-//}
-
 // general administrative controls
 
 // PruneContainers clears all containers that are not running
-//func PruneContainers(c *client.Client) error {
-//	report, err := c.ContainersPrune(context.Background(), filters.Args{})
-//	if err != nil {
-//		log.WithFields(log.Fields{"error": err}).Error("failed to show container logs")
-//		return err
-//	}
-//	log.WithFields(log.Fields{"container_ids": report.ContainersDeleted}).Infof("containers pruned")
-//	return nil
-//}
+func PruneContainers(c *client.Client) error {
+	report, err := c.ContainersPrune(context.Background(), filters.Args{})
+	if err != nil {
+		log.Error().Err(err).Msgf("failed to prune Docker container")
+		return err
+	}
 
-//// PullImage clears all containers that are not running
-//func PullImage(c *client.Client, image string) error {
-//	log.WithFields(log.Fields{"image": image}).Debug("pulling image")
-//	out, err := c.ImagePull(context.Background(), image, types.ImagePullOptions{})
-//	if err != nil {
-//		log.WithFields(log.Fields{"error": err, "image": image}).Error("failed to pull image")
-//		return err
-//	}
-//	defer out.Close()
-//
-//	response, err := ioutil.ReadAll(out)
-//	if err != nil {
-//		return err
-//	}
-//
-//	if log.GetLevel() == log.TraceLevel {
-//		util.MultiLineResponseTrace(string(response), "ImagePull Response")
-//	}
-//
-//	return nil
-//}
+	log.Debug().Msgf("Docker containers pruned: %d", len(report.ContainersDeleted))
+	return nil
+}

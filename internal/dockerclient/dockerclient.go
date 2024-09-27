@@ -9,13 +9,11 @@ import (
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/client"
-	"github.com/docker/docker/pkg/archive"
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/rs/zerolog/log"
 	"io"
 	"net/http"
 	"os"
-	"path/filepath"
 )
 
 // NewSSHClient creates a new SSH based client
@@ -60,34 +58,22 @@ func NewSSHClient(connectionString string) (*client.Client, error) {
 // Docker image controls
 
 // BuildImageFromDockerfile Build image
-func BuildImageFromDockerfile(client *client.Client, dockerfilePath string, imageName string) error {
-	dockerFileName := filepath.Base(dockerfilePath)
-
-	// Create a tar archive of the build context
-	buildContextTar, err := archive.TarWithOptions(dockerfilePath, &archive.TarOptions{})
-	if err != nil {
-		return fmt.Errorf("failed to create build context tar: %v", err)
-	}
-
-	defer func(buildContextTar io.ReadCloser) {
-		err := buildContextTar.Close()
-		if err != nil {
-			log.Error().Err(err).Msgf("failed to close build context tar")
-		}
-	}(buildContextTar)
+func BuildImageFromDockerfile(client *client.Client, dockerfilePath string, tagName string) error {
+	dockerfileTar, dockerfile := ConvertToTar(dockerfilePath)
 
 	// Build the Docker image
 	resp, err := client.ImageBuild(
 		context.Background(),
-		buildContextTar,
+		dockerfileTar,
 		types.ImageBuildOptions{
-			Context:    buildContextTar,
-			Dockerfile: dockerFileName,
+			Context:    dockerfileTar,
+			Dockerfile: dockerfile,
+			Tags:       []string{tagName},
 		})
-
 	if err != nil {
 		return fmt.Errorf("failed to build Docker image: %v", err)
 	}
+	// dispose response
 	defer func(Body io.ReadCloser) {
 		err := Body.Close()
 		if err != nil {
@@ -101,7 +87,7 @@ func BuildImageFromDockerfile(client *client.Client, dockerfilePath string, imag
 		return fmt.Errorf("failed to read build output: %v", err)
 	}
 
-	log.Info().Msgf("Docker image '%s' built successfully", imageName)
+	log.Info().Msgf("Docker image '%s' built successfully", tagName)
 	return nil
 }
 
@@ -117,7 +103,7 @@ func ListImages(client *client.Client) ([]ImageInfo, error) {
 	var imageInfoList []ImageInfo
 	for _, item := range imageInfos {
 		info := ImageInfo{
-			repoTags:  item.RepoTags,
+			RepoTags:  item.RepoTags,
 			CreatedAt: item.Created,
 			Id:        item.ID,
 			Size:      item.Size,
@@ -193,28 +179,6 @@ func ListContainers(client *client.Client) ([]ContainerInfo, error) {
 //	return cont.ID, nil
 //}
 
-//// PullImage clears all containers that are not running
-//func PullImage(c *client.Client, image string) error {
-//	log.WithFields(log.Fields{"image": image}).Debug("pulling image")
-//	out, err := c.ImagePull(context.Background(), image, types.ImagePullOptions{})
-//	if err != nil {
-//		log.WithFields(log.Fields{"error": err, "image": image}).Error("failed to pull image")
-//		return err
-//	}
-//	defer out.Close()
-//
-//	response, err := ioutil.ReadAll(out)
-//	if err != nil {
-//		return err
-//	}
-//
-//	if log.GetLevel() == log.TraceLevel {
-//		util.MultiLineResponseTrace(string(response), "ImagePull Response")
-//	}
-//
-//	return nil
-//}
-
 // Container controls
 
 // StartContainer starts the container of a given ID
@@ -253,7 +217,7 @@ func RemoveContainer(c *client.Client, containerID string, force bool, removeVol
 	return nil
 }
 
-// TailContainerLogs get logs
+// TailContainerLogs get logs TODO
 func TailContainerLogs(ctx context.Context, client *client.Client, containerID string) error {
 	reader, err := client.ContainerLogs(ctx, containerID, container.LogsOptions{ShowStdout: true, ShowStderr: true, Follow: true})
 	if err != nil {
@@ -301,5 +265,27 @@ func TailContainerLogs(ctx context.Context, client *client.Client, containerID s
 //		return err
 //	}
 //	log.WithFields(log.Fields{"container_ids": report.ContainersDeleted}).Infof("containers pruned")
+//	return nil
+//}
+
+//// PullImage clears all containers that are not running
+//func PullImage(c *client.Client, image string) error {
+//	log.WithFields(log.Fields{"image": image}).Debug("pulling image")
+//	out, err := c.ImagePull(context.Background(), image, types.ImagePullOptions{})
+//	if err != nil {
+//		log.WithFields(log.Fields{"error": err, "image": image}).Error("failed to pull image")
+//		return err
+//	}
+//	defer out.Close()
+//
+//	response, err := ioutil.ReadAll(out)
+//	if err != nil {
+//		return err
+//	}
+//
+//	if log.GetLevel() == log.TraceLevel {
+//		util.MultiLineResponseTrace(string(response), "ImagePull Response")
+//	}
+//
 //	return nil
 //}

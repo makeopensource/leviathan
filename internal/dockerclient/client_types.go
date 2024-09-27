@@ -18,7 +18,7 @@ type ContainerInfo struct {
 // ImageInfo struct to contain info returned by listImages
 type ImageInfo struct {
 	Id        string
-	repoTags  []string
+	RepoTags  []string
 	Size      int64
 	CreatedAt int64
 }

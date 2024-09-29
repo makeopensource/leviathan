@@ -1,4 +1,4 @@
-package messagestore
+package message_store
 
 import (
 	"github.com/ThreeDotsLabs/watermill/message"

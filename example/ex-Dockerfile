@@ -1,4 +1,5 @@
-FROM python:3.12-alpine
+FROM python:3.12-bookworm
 
-WORKDIR /app
+WORKDIR /home/autolab/
 
+CMD ["/bin/sh -c"]

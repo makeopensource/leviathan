@@ -1,12 +1,24 @@
 # OpenApi Spec
 
-This is the directory where the spec is defined and the code is generated.
+This is where the spec is defined and the code is generated.
 
 # What is this
 
 We implement the api using the [spec](./leviathan.yaml), this contains the all paths and types defined in
 the [open API spec](https://swagger.io/specification/v3/) format.
 This allows us to autogenerate the client and server code, in a typesafe manner.
+
+
+## Generated code usage
+
+The server files are automatically moved to [internal/generated-server](../internal/generated-server), can be directly used.
+
+To use the client TS code install it via:
+```
+npm install 'https://gitpkg.vercel.app/makeopensource/leviathan/.spec/client?master'
+```
+
+This install the generated code on the ```master``` branch.
 
 ## Directory walkthrough
 

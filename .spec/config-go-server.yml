@@ -1,0 +1,5 @@
+# openapi .spec config options
+
+apiPath: generated-server
+interfaceOnly: true
+packageName: serverstub

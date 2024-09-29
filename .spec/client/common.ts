@@ -2,7 +2,7 @@
 /* eslint-disable */
 /**
  * Leviathan api
- * OpenAPI spec for leviathan
+ * OpenAPI .spec for leviathan
  *
  * The version of the OpenAPI document: 1.0.0
  * 

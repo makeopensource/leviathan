@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Leviathan api
-  description: OpenAPI spec for leviathan
+  description: OpenAPI .spec for leviathan
   version: 1.0.0
 
 servers:

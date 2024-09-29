@@ -36,7 +36,7 @@ const totalJobs = 5
 //
 //	log.Info().Msg("Connected to remote client")
 //
-//	err = dockerclient.BuildImageFromDockerfile(client, "example/ex-Dockerfile", "testimage:latest")
+//	err = dockerclient.BuildImageFromDockerfile(client, ".example/ex-Dockerfile", "testimage:latest")
 //	if err != nil {
 //		log.Error().Err(err).Msg("Failed to build image")
 //		return
@@ -67,7 +67,7 @@ const totalJobs = 5
 //		return
 //	}
 //
-//	err = dockerclient.CopyToContainer(client, newContainerId, "example/student/test.py")
+//	err = dockerclient.CopyToContainer(client, newContainerId, ".example/student/test.py")
 //	if err != nil {
 //		log.Error().Err(err).Msg("Failed to copy to container")
 //	}

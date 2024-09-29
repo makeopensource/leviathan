@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "leviathan-client": "file:client"
+  }
+}

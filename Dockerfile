@@ -18,6 +18,9 @@ WORKDIR /root/
 
 COPY --from=builder /app/app .
 
+# start go-gin in release mode
+ENV GIN_MODE=release
+
 EXPOSE 9221
 
 CMD ["./app"]

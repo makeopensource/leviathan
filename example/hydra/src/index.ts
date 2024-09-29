@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
-import { Command } from 'commander';
-import {client} from './client';
+import {Command} from 'commander';
+import {CoursesApi, DockerApi} from 'leviathan-client'
 
 const program = new Command();
 
@@ -17,5 +17,8 @@ program
 
 program.parse(process.argv);
 
-console.log('starting grpc client connection')
-client()
+const courses = new DockerApi(undefined ,"http://localhost:9221");
+
+courses.dockerContainerIdDelete(94882).then(value => {
+    console.log(value)
+})

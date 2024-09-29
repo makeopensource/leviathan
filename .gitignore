@@ -16,3 +16,5 @@ cmd/leviathan-agent/leviathan-agent
 # Dependency directories (remove the comment below to include it)
 # vendor/
 bin
+
+spec/server/*

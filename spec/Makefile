@@ -6,4 +6,4 @@ genclient:
 	openapi-generator-cli generate -i ./leviathan.yaml -g typescript-axios -o ./client -c ./config-ts-client.yml --git-repo-id makeopensource --git-user-id leviathan
 
 mvapi:
-	cp -r server/generated-server ../internal/generated-server
+	cp -rf server/generated-server ../internal/

@@ -161,7 +161,8 @@ func ListContainers(client *client.Client) ([]ContainerInfo, error) {
 func CreateNewContainer(client *client.Client, jobUuid string, image string, entryPointCmd []string, machineLimits container.Resources) (string, error) {
 	config := &container.Config{
 		Image: image,
-		Cmd:   entryPointCmd,
+
+		Cmd: entryPointCmd,
 	}
 	hostConfig := &container.HostConfig{
 		Resources:  machineLimits,
@@ -243,7 +244,7 @@ func CopyToContainer(client *client.Client, containerID string, filePath string)
 
 	archiveData, err := archive.Tar(filePath, archive.Gzip)
 	if err != nil {
-		log.Error().Err(err).Msgf("failed to copy to Docker container")
+		log.Error().Err(err).Msgf("failed to archive %s", filePath)
 		return err
 	}
 	defer func(archive io.ReadCloser) {

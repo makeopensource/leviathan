@@ -161,7 +161,9 @@ func ListContainers(client *client.Client) ([]ContainerInfo, error) {
 func CreateNewContainer(client *client.Client, jobUuid string, image string, entryPointCmd []string, machineLimits container.Resources) (string, error) {
 	config := &container.Config{
 		Image: image,
-
+		Labels: map[string]string{
+			"con": jobUuid,
+		},
 		Cmd: entryPointCmd,
 	}
 	hostConfig := &container.HostConfig{

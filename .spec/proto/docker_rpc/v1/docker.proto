@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+package docker_rpc.v1;
+
+option go_package = "internal/rpc/v1/docker_rpc";
+
+service DockerService {
+  rpc CreateContainer(CreateContainerRequest) returns (CreateContainerResponse) {}
+  rpc DeleteContainer(DeleteContainerRequest) returns (DeleteContainerResponse) {}
+  rpc ListContainers(ListContainersRequest) returns (ListContainersResponse) {}
+  rpc Echo(EchoRequest) returns (EchoResponse) {}
+}
+
+// todo figure out request/response
+message CreateContainerRequest {
+}
+
+message CreateContainerResponse {
+}
+
+message DeleteContainerRequest {
+}
+
+message DeleteContainerResponse {
+}
+
+message ListContainersRequest {
+}
+
+message ListContainersResponse {
+}
+
+message Container {
+}
+
+message EchoRequest{
+  string message = 1;
+}
+
+message EchoResponse{
+  string message_response = 1;
+}

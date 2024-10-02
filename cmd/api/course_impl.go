@@ -1,28 +1,14 @@
 package api
 
-import "github.com/gin-gonic/gin"
+import (
+	"connectrpc.com/connect"
+	"context"
+	"github.com/makeopensource/leviathan/internal/generated/docker_rpc/v1"
+)
 
-// implement job paths
+type DockerServer struct{}
 
-type CourseAPI struct {
-}
-
-// CourseCourseIdDelete Delete /course/:courseId
-func (courses CourseAPI) CourseCourseIdDelete(c *gin.Context) {
-
-}
-
-// CourseCourseIdGet Get /course/:courseId
-func (courses CourseAPI) CourseCourseIdGet(c *gin.Context) {
-
-}
-
-// CourseCourseIdPatch Patch /course/:courseId
-func (courses CourseAPI) CourseCourseIdPatch(c *gin.Context) {
-
-}
-
-// CoursePost Post /course
-func (courses CourseAPI) CoursePost(c *gin.Context) {
-
-}
+func CreateContainer(context.Context, *connect.Request[docker_rpc.CreateContainerRequest]) (*connect.Response[docker_rpc.CreateContainerResponse], error)
+func DeleteContainer(context.Context, *connect.Request[docker_rpc.DeleteContainerRequest]) (*connect.Response[docker_rpc.DeleteContainerResponse], error)
+func ListContainers(context.Context, *connect.Request[docker_rpc.ListContainersRequest]) (*connect.Response[docker_rpc.ListContainersResponse], error)
+func Echo(context.Context, *connect.Request[docker_rpc.EchoRequest]) (*connect.Response[docker_rpc.EchoResponse], error)

@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package stats.v1;
+
+option go_package = "internal/rpc/v1/stats";
+
+//import "types.proto";
+
+// todo
+service StatsService {
+  rpc Echo(EchoRequest) returns (EchoResponse) {}
+}
+
+
+message EchoRequest{
+  string message = 1;
+}
+
+message EchoResponse{
+  string message_response = 1;
+}

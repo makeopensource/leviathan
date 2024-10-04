@@ -10,10 +10,11 @@ program
     .version('1.0.0')
     .description('A CLI to interact with the Leviathan API');
 
-const baseUrl = "http://localhost:9221"
+let baseUrl = "http://localhost:9221"
 
 // const coursesApi = new CoursesApi(undefined, "http://localhost:9221");
-const dockerApi = new DockerApi(undefined, baseUrl);
+let dockerApi = new DockerApi(undefined, baseUrl);
+
 const dockerEndpoints = {
     "Get Container info": async () => {
         const {containerId} = await inquirer.prompt([
@@ -82,6 +83,18 @@ async function main() {
     }
 }
 
-program.action(main);
+program
+    .option('-u, --url <url>', 'specify a custom base URL for the API')
+    .action((options) => {
+        if (options.url) {
+            dockerApi = new DockerApi(undefined, options.url);
+            console.log(`Using custom base URL: ${baseUrl}`);
+        }
+    });
+
+program
+    .command('start')
+    .description('Start the calling the API')
+    .action(main)
 
 program.parse(process.argv);

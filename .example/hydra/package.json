@@ -5,7 +5,9 @@
   "main": "index.js",
   "scripts": {
     "cli": "ts-node src/index.ts",
-    "index": "npm src/index.ts"
+    "index": "npm src/index.ts",
+    "dk:bd": "docker build ../../ -f ./Dockerfile -t hydra",
+    "dk:rn": "docker run -it --network host hydra start"
   },
   "type": "commonjs",
   "keywords": [],

@@ -34,7 +34,7 @@ jobs:
 
       - name: build hydra image
         working-directory: .example/hydra
-        run: docker build . -t ghcr.io/makeopensource/hydra:beta
+        run: docker build ../../ -f ./Dockerfile -t ghcr.io/makeopensource/hydra:beta
 
       - name: push hydra
         run: docker push ghcr.io/makeopensource/hydra:beta

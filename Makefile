@@ -9,4 +9,4 @@ buildrun:
 	make dkrun
 
 pullrun:
-	docker run --rm --name leviathan -p 9221:9221 ghcr.io/makeopensource/leviathan
+	docker run --rm --name leviathan -p 9221:9221 ghcr.io/makeopensource/leviathan:beta

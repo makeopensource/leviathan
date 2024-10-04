@@ -8,10 +8,13 @@ import (
 	"github.com/ThreeDotsLabs/watermill/pubsub/gochannel"
 	"github.com/google/uuid"
 	api "github.com/makeopensource/leviathan/cmd/api"
+	"github.com/makeopensource/leviathan/internal/config"
 	"github.com/makeopensource/leviathan/internal/dockerclient"
 	store "github.com/makeopensource/leviathan/internal/message-store"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"golang.org/x/net/http2"
+	"golang.org/x/net/http2/h2c"
 	"net/http"
 	"os"
 	"time"
@@ -22,6 +25,8 @@ const totalJobs = 5
 
 func main() {
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
+
+	config.InitConfig()
 
 	_, err := dockerclient.NewSSHClient("r334@192.168.50.123")
 	if err != nil {
@@ -47,8 +52,15 @@ func main() {
 
 	port := "9221"
 	srvAddr := fmt.Sprintf(":%s", port)
-	srv := api.SetupPaths()
-	err = srv.Run(srvAddr)
+	mux := api.SetupPaths()
+
+	log.Info().Msgf("Started server on %s", srvAddr)
+	err = http.ListenAndServe(
+		srvAddr,
+		// Use h2c so we can serve HTTP/2 without TLS.
+		h2c.NewHandler(mux, &http2.Server{}),
+	)
+
 	if err != nil {
 		log.Fatal().Err(err).Msgf("Failed to start address on %s", srvAddr)
 		return

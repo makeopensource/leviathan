@@ -16,5 +16,5 @@ cmd/leviathan-agent/leviathan-agent
 # Dependency directories (remove the comment below to include it)
 # vendor/
 bin
-
+config.toml
 .spec/server/*

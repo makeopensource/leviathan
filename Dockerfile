@@ -14,12 +14,14 @@ RUN go build -ldflags "-s -w" -o app cmd/leviathan-agent/main.go
 
 FROM alpine:latest
 
-WORKDIR /root/
+WORKDIR /app/
 
 COPY --from=builder /app/app .
 
 # start go-gin in release mode
 ENV GIN_MODE=release
+
+ENV IS_DOCKER=true
 
 EXPOSE 9221
 

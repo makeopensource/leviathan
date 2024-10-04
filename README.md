@@ -17,3 +17,9 @@ Container Orchestrator/Job Runner replacement for Autolab Tango
 ## Development setup
 
 To modify the api, please read the spec file first - [spec folder](./.spec)
+
+##### Linting
+
+```
+choco install golangci-lint
+```

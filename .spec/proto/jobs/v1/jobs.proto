@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package jobs.v1;
 
-option go_package = "internal/rpc/v1/jobs";
+option go_package = "github.com/makeopensource/leviathan/internal/generated/jobs/v1";
 
 //import 'types.proto';
 

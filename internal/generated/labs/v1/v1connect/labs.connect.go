@@ -2,13 +2,13 @@
 //
 // Source: labs/v1/labs.proto
 
-package labsconnect
+package v1connect
 
 import (
 	connect "connectrpc.com/connect"
 	context "context"
 	errors "errors"
-	labs "internal/rpc/v1/labs"
+	v1 "github.com/makeopensource/leviathan/internal/generated/labs/v1"
 	http "net/http"
 	strings "strings"
 )
@@ -45,7 +45,7 @@ const (
 
 // These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
 var (
-	labServiceServiceDescriptor         = labs.File_labs_v1_labs_proto.Services().ByName("LabService")
+	labServiceServiceDescriptor         = v1.File_labs_v1_labs_proto.Services().ByName("LabService")
 	labServiceNewLabMethodDescriptor    = labServiceServiceDescriptor.Methods().ByName("NewLab")
 	labServiceEditLabMethodDescriptor   = labServiceServiceDescriptor.Methods().ByName("EditLab")
 	labServiceDeleteLabMethodDescriptor = labServiceServiceDescriptor.Methods().ByName("DeleteLab")
@@ -54,10 +54,10 @@ var (
 
 // LabServiceClient is a client for the labs.v1.LabService service.
 type LabServiceClient interface {
-	NewLab(context.Context, *connect.Request[labs.NewLabRequest]) (*connect.Response[labs.NewLabResponse], error)
-	EditLab(context.Context, *connect.Request[labs.EditLabRequest]) (*connect.Response[labs.EditLabResponse], error)
-	DeleteLab(context.Context, *connect.Request[labs.DeleteLabRequest]) (*connect.Response[labs.DeleteLabResponse], error)
-	Echo(context.Context, *connect.Request[labs.EchoRequest]) (*connect.Response[labs.EchoResponse], error)
+	NewLab(context.Context, *connect.Request[v1.NewLabRequest]) (*connect.Response[v1.NewLabResponse], error)
+	EditLab(context.Context, *connect.Request[v1.EditLabRequest]) (*connect.Response[v1.EditLabResponse], error)
+	DeleteLab(context.Context, *connect.Request[v1.DeleteLabRequest]) (*connect.Response[v1.DeleteLabResponse], error)
+	Echo(context.Context, *connect.Request[v1.EchoRequest]) (*connect.Response[v1.EchoResponse], error)
 }
 
 // NewLabServiceClient constructs a client for the labs.v1.LabService service. By default, it uses
@@ -70,25 +70,25 @@ type LabServiceClient interface {
 func NewLabServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) LabServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
 	return &labServiceClient{
-		newLab: connect.NewClient[labs.NewLabRequest, labs.NewLabResponse](
+		newLab: connect.NewClient[v1.NewLabRequest, v1.NewLabResponse](
 			httpClient,
 			baseURL+LabServiceNewLabProcedure,
 			connect.WithSchema(labServiceNewLabMethodDescriptor),
 			connect.WithClientOptions(opts...),
 		),
-		editLab: connect.NewClient[labs.EditLabRequest, labs.EditLabResponse](
+		editLab: connect.NewClient[v1.EditLabRequest, v1.EditLabResponse](
 			httpClient,
 			baseURL+LabServiceEditLabProcedure,
 			connect.WithSchema(labServiceEditLabMethodDescriptor),
 			connect.WithClientOptions(opts...),
 		),
-		deleteLab: connect.NewClient[labs.DeleteLabRequest, labs.DeleteLabResponse](
+		deleteLab: connect.NewClient[v1.DeleteLabRequest, v1.DeleteLabResponse](
 			httpClient,
 			baseURL+LabServiceDeleteLabProcedure,
 			connect.WithSchema(labServiceDeleteLabMethodDescriptor),
 			connect.WithClientOptions(opts...),
 		),
-		echo: connect.NewClient[labs.EchoRequest, labs.EchoResponse](
+		echo: connect.NewClient[v1.EchoRequest, v1.EchoResponse](
 			httpClient,
 			baseURL+LabServiceEchoProcedure,
 			connect.WithSchema(labServiceEchoMethodDescriptor),
@@ -99,38 +99,38 @@ func NewLabServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...
 
 // labServiceClient implements LabServiceClient.
 type labServiceClient struct {
-	newLab    *connect.Client[labs.NewLabRequest, labs.NewLabResponse]
-	editLab   *connect.Client[labs.EditLabRequest, labs.EditLabResponse]
-	deleteLab *connect.Client[labs.DeleteLabRequest, labs.DeleteLabResponse]
-	echo      *connect.Client[labs.EchoRequest, labs.EchoResponse]
+	newLab    *connect.Client[v1.NewLabRequest, v1.NewLabResponse]
+	editLab   *connect.Client[v1.EditLabRequest, v1.EditLabResponse]
+	deleteLab *connect.Client[v1.DeleteLabRequest, v1.DeleteLabResponse]
+	echo      *connect.Client[v1.EchoRequest, v1.EchoResponse]
 }
 
 // NewLab calls labs.v1.LabService.NewLab.
-func (c *labServiceClient) NewLab(ctx context.Context, req *connect.Request[labs.NewLabRequest]) (*connect.Response[labs.NewLabResponse], error) {
+func (c *labServiceClient) NewLab(ctx context.Context, req *connect.Request[v1.NewLabRequest]) (*connect.Response[v1.NewLabResponse], error) {
 	return c.newLab.CallUnary(ctx, req)
 }
 
 // EditLab calls labs.v1.LabService.EditLab.
-func (c *labServiceClient) EditLab(ctx context.Context, req *connect.Request[labs.EditLabRequest]) (*connect.Response[labs.EditLabResponse], error) {
+func (c *labServiceClient) EditLab(ctx context.Context, req *connect.Request[v1.EditLabRequest]) (*connect.Response[v1.EditLabResponse], error) {
 	return c.editLab.CallUnary(ctx, req)
 }
 
 // DeleteLab calls labs.v1.LabService.DeleteLab.
-func (c *labServiceClient) DeleteLab(ctx context.Context, req *connect.Request[labs.DeleteLabRequest]) (*connect.Response[labs.DeleteLabResponse], error) {
+func (c *labServiceClient) DeleteLab(ctx context.Context, req *connect.Request[v1.DeleteLabRequest]) (*connect.Response[v1.DeleteLabResponse], error) {
 	return c.deleteLab.CallUnary(ctx, req)
 }
 
 // Echo calls labs.v1.LabService.Echo.
-func (c *labServiceClient) Echo(ctx context.Context, req *connect.Request[labs.EchoRequest]) (*connect.Response[labs.EchoResponse], error) {
+func (c *labServiceClient) Echo(ctx context.Context, req *connect.Request[v1.EchoRequest]) (*connect.Response[v1.EchoResponse], error) {
 	return c.echo.CallUnary(ctx, req)
 }
 
 // LabServiceHandler is an implementation of the labs.v1.LabService service.
 type LabServiceHandler interface {
-	NewLab(context.Context, *connect.Request[labs.NewLabRequest]) (*connect.Response[labs.NewLabResponse], error)
-	EditLab(context.Context, *connect.Request[labs.EditLabRequest]) (*connect.Response[labs.EditLabResponse], error)
-	DeleteLab(context.Context, *connect.Request[labs.DeleteLabRequest]) (*connect.Response[labs.DeleteLabResponse], error)
-	Echo(context.Context, *connect.Request[labs.EchoRequest]) (*connect.Response[labs.EchoResponse], error)
+	NewLab(context.Context, *connect.Request[v1.NewLabRequest]) (*connect.Response[v1.NewLabResponse], error)
+	EditLab(context.Context, *connect.Request[v1.EditLabRequest]) (*connect.Response[v1.EditLabResponse], error)
+	DeleteLab(context.Context, *connect.Request[v1.DeleteLabRequest]) (*connect.Response[v1.DeleteLabResponse], error)
+	Echo(context.Context, *connect.Request[v1.EchoRequest]) (*connect.Response[v1.EchoResponse], error)
 }
 
 // NewLabServiceHandler builds an HTTP handler from the service implementation. It returns the path
@@ -182,18 +182,18 @@ func NewLabServiceHandler(svc LabServiceHandler, opts ...connect.HandlerOption) 
 // UnimplementedLabServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedLabServiceHandler struct{}
 
-func (UnimplementedLabServiceHandler) NewLab(context.Context, *connect.Request[labs.NewLabRequest]) (*connect.Response[labs.NewLabResponse], error) {
+func (UnimplementedLabServiceHandler) NewLab(context.Context, *connect.Request[v1.NewLabRequest]) (*connect.Response[v1.NewLabResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("labs.v1.LabService.NewLab is not implemented"))
 }
 
-func (UnimplementedLabServiceHandler) EditLab(context.Context, *connect.Request[labs.EditLabRequest]) (*connect.Response[labs.EditLabResponse], error) {
+func (UnimplementedLabServiceHandler) EditLab(context.Context, *connect.Request[v1.EditLabRequest]) (*connect.Response[v1.EditLabResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("labs.v1.LabService.EditLab is not implemented"))
 }
 
-func (UnimplementedLabServiceHandler) DeleteLab(context.Context, *connect.Request[labs.DeleteLabRequest]) (*connect.Response[labs.DeleteLabResponse], error) {
+func (UnimplementedLabServiceHandler) DeleteLab(context.Context, *connect.Request[v1.DeleteLabRequest]) (*connect.Response[v1.DeleteLabResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("labs.v1.LabService.DeleteLab is not implemented"))
 }
 
-func (UnimplementedLabServiceHandler) Echo(context.Context, *connect.Request[labs.EchoRequest]) (*connect.Response[labs.EchoResponse], error) {
+func (UnimplementedLabServiceHandler) Echo(context.Context, *connect.Request[v1.EchoRequest]) (*connect.Response[v1.EchoResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("labs.v1.LabService.Echo is not implemented"))
 }

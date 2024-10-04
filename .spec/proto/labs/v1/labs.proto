@@ -2,8 +2,7 @@ syntax = "proto3";
 
 package labs.v1;
 
-option go_package = "internal/rpc/v1/labs";
-
+option go_package = "github.com/makeopensource/leviathan/internal/generated/labs/v1";
 
 service LabService {
   rpc NewLab(NewLabRequest) returns (NewLabResponse) {}

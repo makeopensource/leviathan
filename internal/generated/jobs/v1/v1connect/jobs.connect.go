@@ -2,13 +2,13 @@
 //
 // Source: jobs/v1/jobs.proto
 
-package jobsconnect
+package v1connect
 
 import (
 	connect "connectrpc.com/connect"
 	context "context"
 	errors "errors"
-	jobs "internal/rpc/v1/jobs"
+	v1 "github.com/makeopensource/leviathan/internal/generated/jobs/v1"
 	http "net/http"
 	strings "strings"
 )
@@ -45,7 +45,7 @@ const (
 
 // These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
 var (
-	jobServiceServiceDescriptor         = jobs.File_jobs_v1_jobs_proto.Services().ByName("JobService")
+	jobServiceServiceDescriptor         = v1.File_jobs_v1_jobs_proto.Services().ByName("JobService")
 	jobServiceNewJobMethodDescriptor    = jobServiceServiceDescriptor.Methods().ByName("NewJob")
 	jobServiceJobStatusMethodDescriptor = jobServiceServiceDescriptor.Methods().ByName("JobStatus")
 	jobServiceCancelJobMethodDescriptor = jobServiceServiceDescriptor.Methods().ByName("CancelJob")
@@ -54,10 +54,10 @@ var (
 
 // JobServiceClient is a client for the jobs.v1.JobService service.
 type JobServiceClient interface {
-	NewJob(context.Context, *connect.Request[jobs.NewJobRequest]) (*connect.Response[jobs.NewJobResponse], error)
-	JobStatus(context.Context, *connect.Request[jobs.JobStatusRequest]) (*connect.Response[jobs.JobStatusResponse], error)
-	CancelJob(context.Context, *connect.Request[jobs.CancelJobRequest]) (*connect.Response[jobs.CancelJobResponse], error)
-	Echo(context.Context, *connect.Request[jobs.EchoRequest]) (*connect.Response[jobs.EchoResponse], error)
+	NewJob(context.Context, *connect.Request[v1.NewJobRequest]) (*connect.Response[v1.NewJobResponse], error)
+	JobStatus(context.Context, *connect.Request[v1.JobStatusRequest]) (*connect.Response[v1.JobStatusResponse], error)
+	CancelJob(context.Context, *connect.Request[v1.CancelJobRequest]) (*connect.Response[v1.CancelJobResponse], error)
+	Echo(context.Context, *connect.Request[v1.EchoRequest]) (*connect.Response[v1.EchoResponse], error)
 }
 
 // NewJobServiceClient constructs a client for the jobs.v1.JobService service. By default, it uses
@@ -70,25 +70,25 @@ type JobServiceClient interface {
 func NewJobServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) JobServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
 	return &jobServiceClient{
-		newJob: connect.NewClient[jobs.NewJobRequest, jobs.NewJobResponse](
+		newJob: connect.NewClient[v1.NewJobRequest, v1.NewJobResponse](
 			httpClient,
 			baseURL+JobServiceNewJobProcedure,
 			connect.WithSchema(jobServiceNewJobMethodDescriptor),
 			connect.WithClientOptions(opts...),
 		),
-		jobStatus: connect.NewClient[jobs.JobStatusRequest, jobs.JobStatusResponse](
+		jobStatus: connect.NewClient[v1.JobStatusRequest, v1.JobStatusResponse](
 			httpClient,
 			baseURL+JobServiceJobStatusProcedure,
 			connect.WithSchema(jobServiceJobStatusMethodDescriptor),
 			connect.WithClientOptions(opts...),
 		),
-		cancelJob: connect.NewClient[jobs.CancelJobRequest, jobs.CancelJobResponse](
+		cancelJob: connect.NewClient[v1.CancelJobRequest, v1.CancelJobResponse](
 			httpClient,
 			baseURL+JobServiceCancelJobProcedure,
 			connect.WithSchema(jobServiceCancelJobMethodDescriptor),
 			connect.WithClientOptions(opts...),
 		),
-		echo: connect.NewClient[jobs.EchoRequest, jobs.EchoResponse](
+		echo: connect.NewClient[v1.EchoRequest, v1.EchoResponse](
 			httpClient,
 			baseURL+JobServiceEchoProcedure,
 			connect.WithSchema(jobServiceEchoMethodDescriptor),
@@ -99,38 +99,38 @@ func NewJobServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...
 
 // jobServiceClient implements JobServiceClient.
 type jobServiceClient struct {
-	newJob    *connect.Client[jobs.NewJobRequest, jobs.NewJobResponse]
-	jobStatus *connect.Client[jobs.JobStatusRequest, jobs.JobStatusResponse]
-	cancelJob *connect.Client[jobs.CancelJobRequest, jobs.CancelJobResponse]
-	echo      *connect.Client[jobs.EchoRequest, jobs.EchoResponse]
+	newJob    *connect.Client[v1.NewJobRequest, v1.NewJobResponse]
+	jobStatus *connect.Client[v1.JobStatusRequest, v1.JobStatusResponse]
+	cancelJob *connect.Client[v1.CancelJobRequest, v1.CancelJobResponse]
+	echo      *connect.Client[v1.EchoRequest, v1.EchoResponse]
 }
 
 // NewJob calls jobs.v1.JobService.NewJob.
-func (c *jobServiceClient) NewJob(ctx context.Context, req *connect.Request[jobs.NewJobRequest]) (*connect.Response[jobs.NewJobResponse], error) {
+func (c *jobServiceClient) NewJob(ctx context.Context, req *connect.Request[v1.NewJobRequest]) (*connect.Response[v1.NewJobResponse], error) {
 	return c.newJob.CallUnary(ctx, req)
 }
 
 // JobStatus calls jobs.v1.JobService.JobStatus.
-func (c *jobServiceClient) JobStatus(ctx context.Context, req *connect.Request[jobs.JobStatusRequest]) (*connect.Response[jobs.JobStatusResponse], error) {
+func (c *jobServiceClient) JobStatus(ctx context.Context, req *connect.Request[v1.JobStatusRequest]) (*connect.Response[v1.JobStatusResponse], error) {
 	return c.jobStatus.CallUnary(ctx, req)
 }
 
 // CancelJob calls jobs.v1.JobService.CancelJob.
-func (c *jobServiceClient) CancelJob(ctx context.Context, req *connect.Request[jobs.CancelJobRequest]) (*connect.Response[jobs.CancelJobResponse], error) {
+func (c *jobServiceClient) CancelJob(ctx context.Context, req *connect.Request[v1.CancelJobRequest]) (*connect.Response[v1.CancelJobResponse], error) {
 	return c.cancelJob.CallUnary(ctx, req)
 }
 
 // Echo calls jobs.v1.JobService.Echo.
-func (c *jobServiceClient) Echo(ctx context.Context, req *connect.Request[jobs.EchoRequest]) (*connect.Response[jobs.EchoResponse], error) {
+func (c *jobServiceClient) Echo(ctx context.Context, req *connect.Request[v1.EchoRequest]) (*connect.Response[v1.EchoResponse], error) {
 	return c.echo.CallUnary(ctx, req)
 }
 
 // JobServiceHandler is an implementation of the jobs.v1.JobService service.
 type JobServiceHandler interface {
-	NewJob(context.Context, *connect.Request[jobs.NewJobRequest]) (*connect.Response[jobs.NewJobResponse], error)
-	JobStatus(context.Context, *connect.Request[jobs.JobStatusRequest]) (*connect.Response[jobs.JobStatusResponse], error)
-	CancelJob(context.Context, *connect.Request[jobs.CancelJobRequest]) (*connect.Response[jobs.CancelJobResponse], error)
-	Echo(context.Context, *connect.Request[jobs.EchoRequest]) (*connect.Response[jobs.EchoResponse], error)
+	NewJob(context.Context, *connect.Request[v1.NewJobRequest]) (*connect.Response[v1.NewJobResponse], error)
+	JobStatus(context.Context, *connect.Request[v1.JobStatusRequest]) (*connect.Response[v1.JobStatusResponse], error)
+	CancelJob(context.Context, *connect.Request[v1.CancelJobRequest]) (*connect.Response[v1.CancelJobResponse], error)
+	Echo(context.Context, *connect.Request[v1.EchoRequest]) (*connect.Response[v1.EchoResponse], error)
 }
 
 // NewJobServiceHandler builds an HTTP handler from the service implementation. It returns the path
@@ -182,18 +182,18 @@ func NewJobServiceHandler(svc JobServiceHandler, opts ...connect.HandlerOption) 
 // UnimplementedJobServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedJobServiceHandler struct{}
 
-func (UnimplementedJobServiceHandler) NewJob(context.Context, *connect.Request[jobs.NewJobRequest]) (*connect.Response[jobs.NewJobResponse], error) {
+func (UnimplementedJobServiceHandler) NewJob(context.Context, *connect.Request[v1.NewJobRequest]) (*connect.Response[v1.NewJobResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("jobs.v1.JobService.NewJob is not implemented"))
 }
 
-func (UnimplementedJobServiceHandler) JobStatus(context.Context, *connect.Request[jobs.JobStatusRequest]) (*connect.Response[jobs.JobStatusResponse], error) {
+func (UnimplementedJobServiceHandler) JobStatus(context.Context, *connect.Request[v1.JobStatusRequest]) (*connect.Response[v1.JobStatusResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("jobs.v1.JobService.JobStatus is not implemented"))
 }
 
-func (UnimplementedJobServiceHandler) CancelJob(context.Context, *connect.Request[jobs.CancelJobRequest]) (*connect.Response[jobs.CancelJobResponse], error) {
+func (UnimplementedJobServiceHandler) CancelJob(context.Context, *connect.Request[v1.CancelJobRequest]) (*connect.Response[v1.CancelJobResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("jobs.v1.JobService.CancelJob is not implemented"))
 }
 
-func (UnimplementedJobServiceHandler) Echo(context.Context, *connect.Request[jobs.EchoRequest]) (*connect.Response[jobs.EchoResponse], error) {
+func (UnimplementedJobServiceHandler) Echo(context.Context, *connect.Request[v1.EchoRequest]) (*connect.Response[v1.EchoResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("jobs.v1.JobService.Echo is not implemented"))
 }

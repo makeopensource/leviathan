@@ -2,13 +2,13 @@
 //
 // Source: docker_rpc/v1/docker.proto
 
-package docker_rpcconnect
+package v1connect
 
 import (
 	connect "connectrpc.com/connect"
 	context "context"
 	errors "errors"
-	docker_rpc "internal/rpc/v1/docker_rpc"
+	v1 "github.com/makeopensource/leviathan/internal/generated/docker_rpc/v1"
 	http "net/http"
 	strings "strings"
 )
@@ -48,7 +48,7 @@ const (
 
 // These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
 var (
-	dockerServiceServiceDescriptor               = docker_rpc.File_docker_rpc_v1_docker_proto.Services().ByName("DockerService")
+	dockerServiceServiceDescriptor               = v1.File_docker_rpc_v1_docker_proto.Services().ByName("DockerService")
 	dockerServiceCreateContainerMethodDescriptor = dockerServiceServiceDescriptor.Methods().ByName("CreateContainer")
 	dockerServiceDeleteContainerMethodDescriptor = dockerServiceServiceDescriptor.Methods().ByName("DeleteContainer")
 	dockerServiceListContainersMethodDescriptor  = dockerServiceServiceDescriptor.Methods().ByName("ListContainers")
@@ -57,10 +57,10 @@ var (
 
 // DockerServiceClient is a client for the docker_rpc.v1.DockerService service.
 type DockerServiceClient interface {
-	CreateContainer(context.Context, *connect.Request[docker_rpc.CreateContainerRequest]) (*connect.Response[docker_rpc.CreateContainerResponse], error)
-	DeleteContainer(context.Context, *connect.Request[docker_rpc.DeleteContainerRequest]) (*connect.Response[docker_rpc.DeleteContainerResponse], error)
-	ListContainers(context.Context, *connect.Request[docker_rpc.ListContainersRequest]) (*connect.Response[docker_rpc.ListContainersResponse], error)
-	Echo(context.Context, *connect.Request[docker_rpc.EchoRequest]) (*connect.Response[docker_rpc.EchoResponse], error)
+	CreateContainer(context.Context, *connect.Request[v1.CreateContainerRequest]) (*connect.Response[v1.CreateContainerResponse], error)
+	DeleteContainer(context.Context, *connect.Request[v1.DeleteContainerRequest]) (*connect.Response[v1.DeleteContainerResponse], error)
+	ListContainers(context.Context, *connect.Request[v1.ListContainersRequest]) (*connect.Response[v1.ListContainersResponse], error)
+	Echo(context.Context, *connect.Request[v1.EchoRequest]) (*connect.Response[v1.EchoResponse], error)
 }
 
 // NewDockerServiceClient constructs a client for the docker_rpc.v1.DockerService service. By
@@ -73,25 +73,25 @@ type DockerServiceClient interface {
 func NewDockerServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) DockerServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
 	return &dockerServiceClient{
-		createContainer: connect.NewClient[docker_rpc.CreateContainerRequest, docker_rpc.CreateContainerResponse](
+		createContainer: connect.NewClient[v1.CreateContainerRequest, v1.CreateContainerResponse](
 			httpClient,
 			baseURL+DockerServiceCreateContainerProcedure,
 			connect.WithSchema(dockerServiceCreateContainerMethodDescriptor),
 			connect.WithClientOptions(opts...),
 		),
-		deleteContainer: connect.NewClient[docker_rpc.DeleteContainerRequest, docker_rpc.DeleteContainerResponse](
+		deleteContainer: connect.NewClient[v1.DeleteContainerRequest, v1.DeleteContainerResponse](
 			httpClient,
 			baseURL+DockerServiceDeleteContainerProcedure,
 			connect.WithSchema(dockerServiceDeleteContainerMethodDescriptor),
 			connect.WithClientOptions(opts...),
 		),
-		listContainers: connect.NewClient[docker_rpc.ListContainersRequest, docker_rpc.ListContainersResponse](
+		listContainers: connect.NewClient[v1.ListContainersRequest, v1.ListContainersResponse](
 			httpClient,
 			baseURL+DockerServiceListContainersProcedure,
 			connect.WithSchema(dockerServiceListContainersMethodDescriptor),
 			connect.WithClientOptions(opts...),
 		),
-		echo: connect.NewClient[docker_rpc.EchoRequest, docker_rpc.EchoResponse](
+		echo: connect.NewClient[v1.EchoRequest, v1.EchoResponse](
 			httpClient,
 			baseURL+DockerServiceEchoProcedure,
 			connect.WithSchema(dockerServiceEchoMethodDescriptor),
@@ -102,38 +102,38 @@ func NewDockerServiceClient(httpClient connect.HTTPClient, baseURL string, opts 
 
 // dockerServiceClient implements DockerServiceClient.
 type dockerServiceClient struct {
-	createContainer *connect.Client[docker_rpc.CreateContainerRequest, docker_rpc.CreateContainerResponse]
-	deleteContainer *connect.Client[docker_rpc.DeleteContainerRequest, docker_rpc.DeleteContainerResponse]
-	listContainers  *connect.Client[docker_rpc.ListContainersRequest, docker_rpc.ListContainersResponse]
-	echo            *connect.Client[docker_rpc.EchoRequest, docker_rpc.EchoResponse]
+	createContainer *connect.Client[v1.CreateContainerRequest, v1.CreateContainerResponse]
+	deleteContainer *connect.Client[v1.DeleteContainerRequest, v1.DeleteContainerResponse]
+	listContainers  *connect.Client[v1.ListContainersRequest, v1.ListContainersResponse]
+	echo            *connect.Client[v1.EchoRequest, v1.EchoResponse]
 }
 
 // CreateContainer calls docker_rpc.v1.DockerService.CreateContainer.
-func (c *dockerServiceClient) CreateContainer(ctx context.Context, req *connect.Request[docker_rpc.CreateContainerRequest]) (*connect.Response[docker_rpc.CreateContainerResponse], error) {
+func (c *dockerServiceClient) CreateContainer(ctx context.Context, req *connect.Request[v1.CreateContainerRequest]) (*connect.Response[v1.CreateContainerResponse], error) {
 	return c.createContainer.CallUnary(ctx, req)
 }
 
 // DeleteContainer calls docker_rpc.v1.DockerService.DeleteContainer.
-func (c *dockerServiceClient) DeleteContainer(ctx context.Context, req *connect.Request[docker_rpc.DeleteContainerRequest]) (*connect.Response[docker_rpc.DeleteContainerResponse], error) {
+func (c *dockerServiceClient) DeleteContainer(ctx context.Context, req *connect.Request[v1.DeleteContainerRequest]) (*connect.Response[v1.DeleteContainerResponse], error) {
 	return c.deleteContainer.CallUnary(ctx, req)
 }
 
 // ListContainers calls docker_rpc.v1.DockerService.ListContainers.
-func (c *dockerServiceClient) ListContainers(ctx context.Context, req *connect.Request[docker_rpc.ListContainersRequest]) (*connect.Response[docker_rpc.ListContainersResponse], error) {
+func (c *dockerServiceClient) ListContainers(ctx context.Context, req *connect.Request[v1.ListContainersRequest]) (*connect.Response[v1.ListContainersResponse], error) {
 	return c.listContainers.CallUnary(ctx, req)
 }
 
 // Echo calls docker_rpc.v1.DockerService.Echo.
-func (c *dockerServiceClient) Echo(ctx context.Context, req *connect.Request[docker_rpc.EchoRequest]) (*connect.Response[docker_rpc.EchoResponse], error) {
+func (c *dockerServiceClient) Echo(ctx context.Context, req *connect.Request[v1.EchoRequest]) (*connect.Response[v1.EchoResponse], error) {
 	return c.echo.CallUnary(ctx, req)
 }
 
 // DockerServiceHandler is an implementation of the docker_rpc.v1.DockerService service.
 type DockerServiceHandler interface {
-	CreateContainer(context.Context, *connect.Request[docker_rpc.CreateContainerRequest]) (*connect.Response[docker_rpc.CreateContainerResponse], error)
-	DeleteContainer(context.Context, *connect.Request[docker_rpc.DeleteContainerRequest]) (*connect.Response[docker_rpc.DeleteContainerResponse], error)
-	ListContainers(context.Context, *connect.Request[docker_rpc.ListContainersRequest]) (*connect.Response[docker_rpc.ListContainersResponse], error)
-	Echo(context.Context, *connect.Request[docker_rpc.EchoRequest]) (*connect.Response[docker_rpc.EchoResponse], error)
+	CreateContainer(context.Context, *connect.Request[v1.CreateContainerRequest]) (*connect.Response[v1.CreateContainerResponse], error)
+	DeleteContainer(context.Context, *connect.Request[v1.DeleteContainerRequest]) (*connect.Response[v1.DeleteContainerResponse], error)
+	ListContainers(context.Context, *connect.Request[v1.ListContainersRequest]) (*connect.Response[v1.ListContainersResponse], error)
+	Echo(context.Context, *connect.Request[v1.EchoRequest]) (*connect.Response[v1.EchoResponse], error)
 }
 
 // NewDockerServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -185,18 +185,18 @@ func NewDockerServiceHandler(svc DockerServiceHandler, opts ...connect.HandlerOp
 // UnimplementedDockerServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedDockerServiceHandler struct{}
 
-func (UnimplementedDockerServiceHandler) CreateContainer(context.Context, *connect.Request[docker_rpc.CreateContainerRequest]) (*connect.Response[docker_rpc.CreateContainerResponse], error) {
+func (UnimplementedDockerServiceHandler) CreateContainer(context.Context, *connect.Request[v1.CreateContainerRequest]) (*connect.Response[v1.CreateContainerResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("docker_rpc.v1.DockerService.CreateContainer is not implemented"))
 }
 
-func (UnimplementedDockerServiceHandler) DeleteContainer(context.Context, *connect.Request[docker_rpc.DeleteContainerRequest]) (*connect.Response[docker_rpc.DeleteContainerResponse], error) {
+func (UnimplementedDockerServiceHandler) DeleteContainer(context.Context, *connect.Request[v1.DeleteContainerRequest]) (*connect.Response[v1.DeleteContainerResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("docker_rpc.v1.DockerService.DeleteContainer is not implemented"))
 }
 
-func (UnimplementedDockerServiceHandler) ListContainers(context.Context, *connect.Request[docker_rpc.ListContainersRequest]) (*connect.Response[docker_rpc.ListContainersResponse], error) {
+func (UnimplementedDockerServiceHandler) ListContainers(context.Context, *connect.Request[v1.ListContainersRequest]) (*connect.Response[v1.ListContainersResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("docker_rpc.v1.DockerService.ListContainers is not implemented"))
 }
 
-func (UnimplementedDockerServiceHandler) Echo(context.Context, *connect.Request[docker_rpc.EchoRequest]) (*connect.Response[docker_rpc.EchoResponse], error) {
+func (UnimplementedDockerServiceHandler) Echo(context.Context, *connect.Request[v1.EchoRequest]) (*connect.Response[v1.EchoResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("docker_rpc.v1.DockerService.Echo is not implemented"))
 }

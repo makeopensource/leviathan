@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package stats.v1;
 
-option go_package = "internal/rpc/v1/stats";
+option go_package = "github.com/makeopensource/leviathan/internal/generated/stats/v1";
 
 //import "types.proto";
 

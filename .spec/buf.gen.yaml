@@ -1,8 +1,14 @@
 version: v2
+clean: true
+
+managed:
+  enabled: true
+
 plugins:
   - local: protoc-gen-go
     out: ../internal/generated
     opt: paths=source_relative
+
   - local: protoc-gen-connect-go
     out: ../internal/generated
     opt: paths=source_relative

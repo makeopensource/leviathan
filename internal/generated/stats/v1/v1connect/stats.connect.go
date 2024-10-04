@@ -2,13 +2,13 @@
 //
 // Source: stats/v1/stats.proto
 
-package statsconnect
+package v1connect
 
 import (
 	connect "connectrpc.com/connect"
 	context "context"
 	errors "errors"
-	stats "internal/rpc/v1/stats"
+	v1 "github.com/makeopensource/leviathan/internal/generated/stats/v1"
 	http "net/http"
 	strings "strings"
 )
@@ -39,13 +39,13 @@ const (
 
 // These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
 var (
-	statsServiceServiceDescriptor    = stats.File_stats_v1_stats_proto.Services().ByName("StatsService")
+	statsServiceServiceDescriptor    = v1.File_stats_v1_stats_proto.Services().ByName("StatsService")
 	statsServiceEchoMethodDescriptor = statsServiceServiceDescriptor.Methods().ByName("Echo")
 )
 
 // StatsServiceClient is a client for the stats.v1.StatsService service.
 type StatsServiceClient interface {
-	Echo(context.Context, *connect.Request[stats.EchoRequest]) (*connect.Response[stats.EchoResponse], error)
+	Echo(context.Context, *connect.Request[v1.EchoRequest]) (*connect.Response[v1.EchoResponse], error)
 }
 
 // NewStatsServiceClient constructs a client for the stats.v1.StatsService service. By default, it
@@ -58,7 +58,7 @@ type StatsServiceClient interface {
 func NewStatsServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) StatsServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
 	return &statsServiceClient{
-		echo: connect.NewClient[stats.EchoRequest, stats.EchoResponse](
+		echo: connect.NewClient[v1.EchoRequest, v1.EchoResponse](
 			httpClient,
 			baseURL+StatsServiceEchoProcedure,
 			connect.WithSchema(statsServiceEchoMethodDescriptor),
@@ -69,17 +69,17 @@ func NewStatsServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 
 // statsServiceClient implements StatsServiceClient.
 type statsServiceClient struct {
-	echo *connect.Client[stats.EchoRequest, stats.EchoResponse]
+	echo *connect.Client[v1.EchoRequest, v1.EchoResponse]
 }
 
 // Echo calls stats.v1.StatsService.Echo.
-func (c *statsServiceClient) Echo(ctx context.Context, req *connect.Request[stats.EchoRequest]) (*connect.Response[stats.EchoResponse], error) {
+func (c *statsServiceClient) Echo(ctx context.Context, req *connect.Request[v1.EchoRequest]) (*connect.Response[v1.EchoResponse], error) {
 	return c.echo.CallUnary(ctx, req)
 }
 
 // StatsServiceHandler is an implementation of the stats.v1.StatsService service.
 type StatsServiceHandler interface {
-	Echo(context.Context, *connect.Request[stats.EchoRequest]) (*connect.Response[stats.EchoResponse], error)
+	Echo(context.Context, *connect.Request[v1.EchoRequest]) (*connect.Response[v1.EchoResponse], error)
 }
 
 // NewStatsServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -107,6 +107,6 @@ func NewStatsServiceHandler(svc StatsServiceHandler, opts ...connect.HandlerOpti
 // UnimplementedStatsServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedStatsServiceHandler struct{}
 
-func (UnimplementedStatsServiceHandler) Echo(context.Context, *connect.Request[stats.EchoRequest]) (*connect.Response[stats.EchoResponse], error) {
+func (UnimplementedStatsServiceHandler) Echo(context.Context, *connect.Request[v1.EchoRequest]) (*connect.Response[v1.EchoResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("stats.v1.StatsService.Echo is not implemented"))
 }

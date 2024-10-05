@@ -4,8 +4,6 @@ package stats.v1;
 
 option go_package = "github.com/makeopensource/leviathan/internal/generated/stats/v1";
 
-//import "types.proto";
-
 // todo
 service StatsService {
   rpc Echo(EchoRequest) returns (EchoResponse) {}

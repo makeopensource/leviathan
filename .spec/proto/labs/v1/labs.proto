@@ -8,7 +8,6 @@ service LabService {
   rpc NewLab(NewLabRequest) returns (NewLabResponse) {}
   rpc EditLab(EditLabRequest) returns (EditLabResponse) {}
   rpc DeleteLab(DeleteLabRequest) returns (DeleteLabResponse) {}
-  rpc Echo(EchoRequest) returns (EchoResponse) {}
 }
 
 // todo figure out request/response
@@ -28,12 +27,4 @@ message DeleteLabRequest {
 }
 
 message DeleteLabResponse {
-}
-
-message EchoRequest{
-  string message = 1;
-}
-
-message EchoResponse{
-  string message_response = 1;
 }

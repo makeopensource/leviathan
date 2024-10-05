@@ -35,9 +35,8 @@ The folder contains the following folders and files
 
 ##### Generation directories
 
-YOU SHOULD NEVER MODIFY THE FILES OR CODE IN THIS DIRECTORY.
+YOU SHOULD NEVER MODIFY THE CODE IN THIS DIRECTORY.
 
-* [server](./server) - This is where the generated server-side code is outputted.
 * [client](./client) - This is where the generated client-side code is outputted.
 
 ## Development setup

@@ -4,14 +4,11 @@ package jobs.v1;
 
 option go_package = "github.com/makeopensource/leviathan/internal/generated/jobs/v1";
 
-//import 'types.proto';
 
 service JobService {
   rpc NewJob(NewJobRequest) returns (NewJobResponse) {}
   rpc JobStatus(JobStatusRequest) returns (JobStatusResponse) {}
   rpc CancelJob(CancelJobRequest) returns (CancelJobResponse) {}
-  rpc Echo(EchoRequest) returns (EchoResponse) {}
-
 }
 
 // todo figure out request/response
@@ -32,12 +29,4 @@ message CancelJobRequest {
 }
 
 message CancelJobResponse {
-}
-
-message EchoRequest{
-  string message = 1;
-}
-
-message EchoResponse{
-  string message_response = 1;
 }

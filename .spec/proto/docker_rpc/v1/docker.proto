@@ -8,7 +8,6 @@ service DockerService {
   rpc CreateContainer(CreateContainerRequest) returns (CreateContainerResponse) {}
   rpc DeleteContainer(DeleteContainerRequest) returns (DeleteContainerResponse) {}
   rpc ListContainers(ListContainersRequest) returns (ListContainersResponse) {}
-  rpc Echo(EchoRequest) returns (EchoResponse) {}
 }
 
 // todo figure out request/response
@@ -31,12 +30,4 @@ message ListContainersResponse {
 }
 
 message Container {
-}
-
-message EchoRequest{
-  string message = 1;
-}
-
-message EchoResponse{
-  string message_response = 1;
 }

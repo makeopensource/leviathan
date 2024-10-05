@@ -12,9 +12,10 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@connectrpc/connect-node": "^1.5.0",
     "commander": "^12.1.0",
     "inquirer": "^11.1.0",
-    "leviathan-client": "file:../../.spec/client"
+    "leviathan-generated-sdk": "file:../../.spec/client"
   },
   "devDependencies": {
     "@types/node": "^22.7.2",

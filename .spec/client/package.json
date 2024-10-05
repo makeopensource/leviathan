@@ -1,0 +1,22 @@
+{
+  "name": "leviathan-generated-sdk",
+  "version": "1.0.0",
+  "scripts": {
+    "run": "ts-node src/index.ts",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@bufbuild/protobuf": "^1.0.0",
+    "@connectrpc/connect": "^1.0.0",
+    "@connectrpc/connect-node": "^1.5.0"
+  },
+  "devDependencies": {
+    "@bufbuild/protoc-gen-es": "^1.0.0",
+    "@connectrpc/protoc-gen-connect-es": "^1.0.0",
+    "ts-node": "^10.9.2"
+  }
+}

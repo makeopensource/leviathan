@@ -42,12 +42,17 @@ YOU SHOULD NEVER MODIFY THE FILES OR CODE IN THIS DIRECTORY.
 
 ## Development setup
 
-1. Install the [generator-cli](https://openapi-generator.tech/docs/installation)
-2. make sure you have a modern version of java installed we use ```openjdk 21.0.4 2024-07-16 LTS```
-3. We use the npm package, installed via,
-   ```
-   npm install @openapitools/openapi-generator-cli -g
-   ```
+1. 
+
+##### Node setup
+
+```
+npm i @connectrpc/protoc-gen-connect-es -g
+```
+
+```
+npm i @bufbuild/protoc-gen-es -g
+```
 
 nce you have set this up, you should be good to go.
 

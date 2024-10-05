@@ -1,8 +1,10 @@
 #!/usr/bin/env node
 
 import {Command} from 'commander';
-import {DockerApi} from 'leviathan-client';
+import {DockerService} from "leviathan-generated-sdk/src/generated/docker_rpc/v1/docker_connect";
 import inquirer from 'inquirer';
+import {createConnectTransport} from "@connectrpc/connect-node";
+import {createPromiseClient} from "@connectrpc/connect";
 
 const program = new Command();
 
@@ -12,38 +14,41 @@ program
 
 const baseUrl = "http://localhost:9221"
 
-// const coursesApi = new CoursesApi(undefined, "http://localhost:9221");
-const dockerApi = new DockerApi(undefined, baseUrl);
+const transport = createConnectTransport({
+    baseUrl: baseUrl,
+    httpVersion: "2"
+});
+
+const dkClient = createPromiseClient(DockerService, transport)
+
 const dockerEndpoints = {
     "Get Container info": async () => {
         const {containerId} = await inquirer.prompt([
             {type: 'input', name: 'containerId', message: 'Enter the container ID:'}
         ]);
 
-        const result = await dockerApi.dockerContainerIdGet(containerId as string);
-        console.log(`Status: ${result.status}, message: ${result.statusText}`);
+        const result = await dkClient.createContainer({})
     },
     'Delete Container': async () => {
         const {containerId} = await inquirer.prompt([
             {type: 'input', name: 'containerId', message: 'Enter the container ID:'}
         ]);
 
-        const result = await dockerApi.dockerContainerIdDelete(parseInt(containerId));
-        console.log(`Status: ${result.status}, message: ${result.statusText}`);
+        const result = await dkClient.createContainer({})
     },
     'Start Docker Container': async () => {
         const {containerId} = await inquirer.prompt([
             {type: 'input', name: 'containerId', message: 'Enter the container ID:'}
         ]);
-        const result = await dockerApi.dockerContainerIdStartGet(parseInt(containerId));
-        console.log(`Status: ${result.status}, message: ${result.statusText}`);
+
+        const result = await dkClient.listContainers({})
     },
     'Stop Docker Container': async () => {
         const {containerId} = await inquirer.prompt([
             {type: 'input', name: 'containerId', message: 'Enter the container ID:'}
         ]);
-        const result = await dockerApi.dockerContainerIdStopGet(parseInt(containerId));
-        console.log(`Status: ${result.status}, message: ${result.statusText}`);
+
+        const result = await dkClient.echo({})
     },
     // todo
     // 'Create Docker image': async () => {

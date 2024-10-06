@@ -66,11 +66,25 @@ to [internal/generated-server](../internal/generated-server)
 Before you run the commands make sure you are in the [spec](.) directory to access the makefile.
 
 ```
-make gensrv
+make generate
 ```
 
-To generate the client side TS code
+There is also a small issue with code generation where it gets the import type wrong
+
+i.e 
 
 ```
-make genclient
+import {...} from "./docker_pb.js"; <--- this should not have a js extension
+```
+
+Correct version:
+
+```
+import {...} from "./docker_pb.js"; <--- this should not have a js extension
+```
+
+We use a sed command to strip out ```.js```
+
+```
+find client/src/generated/ -type f -exec sed -i 's/_pb\.js/_pb/g' {} +
 ```

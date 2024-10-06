@@ -46,21 +46,31 @@ message ListContainersRequest {
 message ListContainersResponse {
 }
 
+message NewImageResponse {
+}
+
 message NewImageRequest {
   string imageTag = 1;
   FileUpload file = 2;
 }
 
-message NewImageResponse {
-}
-
 message ListImageResponse{
+  repeated DockerImage images = 1;
 }
 
 message ListImageRequest{
 }
 
-message Container {
+message DockerImage {
+  string id = 1;
+  repeated ImageMetaData metadata = 2;
+}
+
+message ImageMetaData {
+  string Id = 1;
+  repeated string  RepoTags = 2;
+  int64  Size = 3;
+  int64 CreatedAt = 4;
 }
 
 message FileUpload {

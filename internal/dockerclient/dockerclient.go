@@ -13,6 +13,7 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/archive"
 	"github.com/docker/docker/pkg/stdcopy"
+	dktypes "github.com/makeopensource/leviathan/internal/generated/docker_rpc/v1"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/rs/zerolog/log"
 	"io"
@@ -45,7 +46,7 @@ func NewSSHClient(connectionString string) (*client.Client, error) {
 
 	newClient, err := client.NewClientWithOpts(clientOpts...)
 	if err != nil {
-		log.Error().Err(err).Msgf("failed create docker client connectionString %s", connectionString)
+		log.Error().Err(err).Msgf("failed create remote docker client with connectionString %s", connectionString)
 		return nil, fmt.Errorf("unable to connect to docker client")
 	}
 
@@ -105,7 +106,7 @@ func BuildImageFromDockerfile(client *client.Client, dockerfilePath string, tagN
 }
 
 // ListImages lists all images on the docker client
-func ListImages(client *client.Client) ([]ImageInfo, error) {
+func ListImages(client *client.Client) ([]*dktypes.ImageMetaData, error) {
 	imageInfos, err := client.ImageList(context.Background(), image.ListOptions{All: true})
 	if err != nil {
 		log.Error().Err(err).Msgf("failed to list Docker images")
@@ -113,17 +114,16 @@ func ListImages(client *client.Client) ([]ImageInfo, error) {
 	}
 	log.Debug().Msgf("Docker images listed: %d", len(imageInfos))
 
-	var imageInfoList []ImageInfo
+	var imageInfoList []*dktypes.ImageMetaData
 	for _, item := range imageInfos {
-		info := ImageInfo{
+		info := dktypes.ImageMetaData{
 			RepoTags:  item.RepoTags,
 			CreatedAt: item.Created,
 			Id:        item.ID,
 			Size:      item.Size,
 		}
-		imageInfoList = append(imageInfoList, info)
+		imageInfoList = append(imageInfoList, &info)
 	}
-
 	return imageInfoList, nil
 }
 

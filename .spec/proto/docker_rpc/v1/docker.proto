@@ -1,0 +1,79 @@
+syntax = "proto3";
+
+package docker_rpc.v1;
+
+option go_package = "github.com/makeopensource/leviathan/internal/generated/docker_rpc/v1";
+
+service DockerService {
+  rpc CreateContainer(CreateContainerRequest) returns (CreateContainerResponse) {}
+  rpc DeleteContainer(DeleteContainerRequest) returns (DeleteContainerResponse) {}
+  rpc ListContainers(ListContainersRequest) returns (ListContainersResponse) {}
+  rpc StartContainer(StartContainerRequest) returns (StartContainerResponse) {};
+  rpc StopContainer(StopContainerRequest) returns (StopContainerResponse) {};
+  rpc CreateNewImage(NewImageRequest) returns (NewImageResponse) {};
+  rpc ListImages(ListImageRequest) returns (ListImageResponse) {};
+}
+
+message StartContainerRequest{
+  string containerId = 1;
+}
+message StartContainerResponse{}
+
+
+message StopContainerRequest{
+  string containerId = 1;
+}
+message StopContainerResponse{}
+
+
+// todo figure out request/response
+message CreateContainerRequest {
+}
+
+message CreateContainerResponse {
+}
+
+message DeleteContainerRequest {
+  string containerId = 1;
+}
+
+message DeleteContainerResponse {
+}
+
+message ListContainersRequest {
+}
+
+message ListContainersResponse {
+}
+
+message NewImageResponse {
+}
+
+message NewImageRequest {
+  string imageTag = 1;
+  FileUpload file = 2;
+}
+
+message ListImageResponse{
+  repeated DockerImage images = 1;
+}
+
+message ListImageRequest{
+}
+
+message DockerImage {
+  string id = 1;
+  repeated ImageMetaData metadata = 2;
+}
+
+message ImageMetaData {
+  string Id = 1;
+  repeated string  RepoTags = 2;
+  int64  Size = 3;
+  int64 CreatedAt = 4;
+}
+
+message FileUpload {
+  string filename = 1;
+  bytes content = 2;
+}

@@ -1,1 +1,4 @@
 hydra
+bin
+uploads
+config.toml

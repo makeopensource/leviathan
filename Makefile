@@ -1,9 +1,9 @@
-dkbuild:
-	docker build . -t github.com/makeopensource/leviathan
+dkrn:
+	docker run --rm -p 9221:9221 leviathan:dev
 
-dkrun:
-	docker run -p 9221:9221 github.com/makeopensource/leviathan
-
+bdrn:
+	make dk
+	make dkrn
 buildrun:
 	make dkbuild
 	make dkrun

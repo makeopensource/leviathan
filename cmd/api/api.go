@@ -1,21 +1,16 @@
 package api
 
 import (
-	"github.com/gin-gonic/gin"
-	spec "github.com/makeopensource/leviathan/internal/generated-server"
+	"github.com/docker/docker/client"
+	dkclient "github.com/makeopensource/leviathan/internal/generated/docker_rpc/v1/v1connect"
+	"net/http"
 )
 
-func SetupPaths() *gin.Engine {
-	courseApi := CourseAPI{}
-	dkApi := DockerAPI{}
-	statApi := StatsAPI{}
+func SetupPaths(clientList []*client.Client) *http.ServeMux {
+	greeter := &DockerServer{clientList}
+	mux := http.NewServeMux()
+	path, handler := dkclient.NewDockerServiceHandler(greeter)
+	mux.Handle(path, handler)
 
-	registerHandlers := spec.ApiHandleFunctions{
-		CoursesAPI: courseApi,
-		DockerAPI:  dkApi,
-		StatsAPI:   statApi,
-	}
-
-	router := spec.NewRouter(registerHandlers)
-	return router
+	return mux
 }

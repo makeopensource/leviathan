@@ -35,19 +35,23 @@ The folder contains the following folders and files
 
 ##### Generation directories
 
-YOU SHOULD NEVER MODIFY THE FILES OR CODE IN THIS DIRECTORY.
+YOU SHOULD NEVER MODIFY THE CODE IN THIS DIRECTORY.
 
-* [server](./server) - This is where the generated server-side code is outputted.
 * [client](./client) - This is where the generated client-side code is outputted.
 
 ## Development setup
 
-1. Install the [generator-cli](https://openapi-generator.tech/docs/installation)
-2. make sure you have a modern version of java installed we use ```openjdk 21.0.4 2024-07-16 LTS```
-3. We use the npm package, installed via,
-   ```
-   npm install @openapitools/openapi-generator-cli -g
-   ```
+1. 
+
+##### Node setup
+
+```
+npm i @connectrpc/protoc-gen-connect-es -g
+```
+
+```
+npm i @bufbuild/protoc-gen-es -g
+```
 
 nce you have set this up, you should be good to go.
 
@@ -62,11 +66,25 @@ to [internal/generated-server](../internal/generated-server)
 Before you run the commands make sure you are in the [spec](.) directory to access the makefile.
 
 ```
-make gensrv
+make generate
 ```
 
-To generate the client side TS code
+There is also a small issue with code generation where it gets the import type wrong
+
+i.e 
 
 ```
-make genclient
+import {...} from "./docker_pb.js"; <--- this should not have a js extension
+```
+
+Correct version:
+
+```
+import {...} from "./docker_pb.js"; <--- this should not have a js extension
+```
+
+We use a sed command to strip out ```.js```
+
+```
+find client/src/generated/ -type f -exec sed -i 's/_pb\.js/_pb/g' {} +
 ```

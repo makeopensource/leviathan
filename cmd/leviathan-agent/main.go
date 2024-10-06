@@ -6,12 +6,16 @@ import (
 	"github.com/ThreeDotsLabs/watermill"
 	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/ThreeDotsLabs/watermill/pubsub/gochannel"
+	"github.com/docker/docker/client"
 	"github.com/google/uuid"
 	api "github.com/makeopensource/leviathan/cmd/api"
+	"github.com/makeopensource/leviathan/internal/config"
 	"github.com/makeopensource/leviathan/internal/dockerclient"
 	store "github.com/makeopensource/leviathan/internal/message-store"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"golang.org/x/net/http2"
+	"golang.org/x/net/http2/h2c"
 	"net/http"
 	"os"
 	"time"
@@ -23,10 +27,15 @@ const totalJobs = 5
 func main() {
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
 
-	_, err := dockerclient.NewSSHClient("r334@192.168.50.123")
+	config.InitConfig()
+
+	remoteClient, err := dockerclient.NewSSHClient("r334@192.168.50.123")
+	localClient, err := dockerclient.NewLocalClient()
 	if err != nil {
-		log.Fatal().Msg("Failed to setup docker client")
+		log.Fatal().Err(err).Msg("Failed to setup docker client")
 	}
+
+	clientList := []*client.Client{localClient, remoteClient}
 
 	// setup job store
 	_ = store.NewMessageStore()
@@ -47,8 +56,15 @@ func main() {
 
 	port := "9221"
 	srvAddr := fmt.Sprintf(":%s", port)
-	srv := api.SetupPaths()
-	err = srv.Run(srvAddr)
+	mux := api.SetupPaths(clientList)
+
+	log.Info().Msgf("Started server on %s", srvAddr)
+	err = http.ListenAndServe(
+		srvAddr,
+		// Use h2c so we can serve HTTP/2 without TLS.
+		h2c.NewHandler(mux, &http2.Server{}),
+	)
+
 	if err != nil {
 		log.Fatal().Err(err).Msgf("Failed to start address on %s", srvAddr)
 		return

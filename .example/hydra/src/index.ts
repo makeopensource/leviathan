@@ -1,8 +1,12 @@
 #!/usr/bin/env node
 
 import {Command} from 'commander';
-import {DockerApi} from 'leviathan-client';
+import {DockerService} from "leviathan-generated-sdk/src/generated/docker_rpc/v1/docker_connect";
 import inquirer from 'inquirer';
+import {createConnectTransport} from "@connectrpc/connect-node";
+import {createPromiseClient} from "@connectrpc/connect";
+import * as fs from "node:fs";
+import {FileUpload} from "leviathan-generated-sdk/src/generated/docker_rpc/v1/docker_pb";
 
 const program = new Command();
 
@@ -10,49 +14,84 @@ program
     .version('1.0.0')
     .description('A CLI to interact with the Leviathan API');
 
-let baseUrl = "http://localhost:9221"
+const baseUrl = "http://localhost:9221"
 
-// const coursesApi = new CoursesApi(undefined, "http://localhost:9221");
-let dockerApi = new DockerApi(undefined, baseUrl);
+const transport = createConnectTransport({
+    baseUrl: baseUrl,
+    httpVersion: "2"
+});
+
+const dkClient = createPromiseClient(DockerService, transport)
 
 const dockerEndpoints = {
+    "List images": async () => {
+        const result = await dkClient.listImages({})
+        for (const image of result.images) {
+            console.log("Machine", image.id)
+            for (const metadata of image.metadata) {
+                console.log(metadata)
+            }
+        }
+    },
     "Get Container info": async () => {
         const {containerId} = await inquirer.prompt([
             {type: 'input', name: 'containerId', message: 'Enter the container ID:'}
         ]);
 
-        const result = await dockerApi.dockerContainerIdGet(containerId as string);
-        console.log(`Status: ${result.status}, message: ${result.statusText}`);
+        const result = await dkClient.createContainer({})
     },
     'Delete Container': async () => {
         const {containerId} = await inquirer.prompt([
             {type: 'input', name: 'containerId', message: 'Enter the container ID:'}
         ]);
 
-        const result = await dockerApi.dockerContainerIdDelete(parseInt(containerId));
-        console.log(`Status: ${result.status}, message: ${result.statusText}`);
+        const result = await dkClient.createContainer({})
     },
     'Start Docker Container': async () => {
         const {containerId} = await inquirer.prompt([
             {type: 'input', name: 'containerId', message: 'Enter the container ID:'}
         ]);
-        const result = await dockerApi.dockerContainerIdStartGet(parseInt(containerId));
-        console.log(`Status: ${result.status}, message: ${result.statusText}`);
+
+        const result = await dkClient.listContainers({})
     },
     'Stop Docker Container': async () => {
         const {containerId} = await inquirer.prompt([
             {type: 'input', name: 'containerId', message: 'Enter the container ID:'}
         ]);
-        const result = await dockerApi.dockerContainerIdStopGet(parseInt(containerId));
-        console.log(`Status: ${result.status}, message: ${result.statusText}`);
+
+        const result = await dkClient.stopContainer({containerId})
     },
-    // todo
-    // 'Create Docker image': async () => {
-    //     const file = fs.readFileSync('../ex-Dockerfile', 'utf8');
-    //     // const result = await dockerApi.dockerImagesCreatePost(file ,"test:latest");
-    //     // console.log(JSON.stringify(result, null, 2));
-    // },
+    'Create Docker image': async () => {
+        const {filepath} = await inquirer.prompt([
+            {type: 'input', name: 'filepath', message: 'Enter dockerfile name:'}
+        ]);
+
+        const {imageTag} = await inquirer.prompt([
+            {type: 'input', name: 'imageTag', message: 'Enter tagname name:'}
+        ]);
+
+        try {
+            const contents = await readFileAsBytes(filepath);
+            const payload = new FileUpload({filename: "newDockerfile", content: contents})
+            const result = await dkClient.createNewImage({imageTag: imageTag, file: payload});
+            console.log("Sent create docker image", result)
+        } catch (error) {
+            console.error(error)
+            return
+        }
+    },
 };
+
+async function readFileAsBytes(filePath: string): Promise<Uint8Array> {
+    try {
+        const buffer = fs.readFileSync(filePath);
+        return new Uint8Array(buffer);
+    } catch (error) {
+        console.error('Error reading file:', error);
+        throw error;
+    }
+}
+
 
 async function main() {
     while (true) {
@@ -82,15 +121,6 @@ async function main() {
         console.log('\n');
     }
 }
-
-program
-    .option('-u, --url <url>', 'specify a custom base URL for the API')
-    .action((options) => {
-        if (options.url) {
-            dockerApi = new DockerApi(undefined, options.url);
-            console.log(`Using custom base URL: ${baseUrl}`);
-        }
-    });
 
 program
     .command('start')

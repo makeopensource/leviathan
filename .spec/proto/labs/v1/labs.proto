@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package labs.v1;
+
+option go_package = "github.com/makeopensource/leviathan/internal/generated/labs/v1";
+
+service LabService {
+  rpc NewLab(NewLabRequest) returns (NewLabResponse) {}
+  rpc EditLab(EditLabRequest) returns (EditLabResponse) {}
+  rpc DeleteLab(DeleteLabRequest) returns (DeleteLabResponse) {}
+}
+
+// todo figure out request/response
+message NewLabRequest {
+}
+
+message NewLabResponse {
+}
+
+message EditLabRequest {
+}
+
+message EditLabResponse {
+}
+
+message DeleteLabRequest {
+}
+
+message DeleteLabResponse {
+}

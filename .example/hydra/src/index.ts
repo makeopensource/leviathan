@@ -33,33 +33,42 @@ const dockerEndpoints = {
             }
         }
     },
+    "List containers": async () => {
+        const result = await dkClient.listContainers({})
+        for (const image of result.containers) {
+            console.log("Machine", image.id)
+            for (const metadata of image.metadata) {
+                console.log(metadata)
+            }
+        }
+    },
     "Get Container info": async () => {
         const {containerId} = await inquirer.prompt([
             {type: 'input', name: 'containerId', message: 'Enter the container ID:'}
         ]);
 
-        const result = await dkClient.createContainer({})
+        // const result = await dkClient.createContainer({})
     },
     'Delete Container': async () => {
         const {containerId} = await inquirer.prompt([
             {type: 'input', name: 'containerId', message: 'Enter the container ID:'}
         ]);
 
-        const result = await dkClient.createContainer({})
+        // const result = await dkClient.createContainer({})
     },
     'Start Docker Container': async () => {
         const {containerId} = await inquirer.prompt([
             {type: 'input', name: 'containerId', message: 'Enter the container ID:'}
         ]);
 
-        const result = await dkClient.listContainers({})
+        const result = await dkClient.startContainer({combinedId: containerId})
     },
     'Stop Docker Container': async () => {
         const {containerId} = await inquirer.prompt([
             {type: 'input', name: 'containerId', message: 'Enter the container ID:'}
         ]);
 
-        const result = await dkClient.stopContainer({containerId})
+        const result = await dkClient.stopContainer({combinedId: containerId})
     },
     'Create Docker image': async () => {
         const {filepath} = await inquirer.prompt([

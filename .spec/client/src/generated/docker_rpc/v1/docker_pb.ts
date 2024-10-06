@@ -11,9 +11,9 @@ import { Message, proto3, protoInt64 } from "@bufbuild/protobuf";
  */
 export class StartContainerRequest extends Message<StartContainerRequest> {
   /**
-   * @generated from field: string containerId = 1;
+   * @generated from field: string combinedId = 1;
    */
-  containerId = "";
+  combinedId = "";
 
   constructor(data?: PartialMessage<StartContainerRequest>) {
     super();
@@ -23,7 +23,7 @@ export class StartContainerRequest extends Message<StartContainerRequest> {
   static readonly runtime = proto3;
   static readonly typeName = "docker_rpc.v1.StartContainerRequest";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
-    { no: 1, name: "containerId", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 1, name: "combinedId", kind: "scalar", T: 9 /* ScalarType.STRING */ },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): StartContainerRequest {
@@ -79,9 +79,9 @@ export class StartContainerResponse extends Message<StartContainerResponse> {
  */
 export class StopContainerRequest extends Message<StopContainerRequest> {
   /**
-   * @generated from field: string containerId = 1;
+   * @generated from field: string combinedId = 1;
    */
-  containerId = "";
+  combinedId = "";
 
   constructor(data?: PartialMessage<StopContainerRequest>) {
     super();
@@ -91,7 +91,7 @@ export class StopContainerRequest extends Message<StopContainerRequest> {
   static readonly runtime = proto3;
   static readonly typeName = "docker_rpc.v1.StopContainerRequest";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
-    { no: 1, name: "containerId", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 1, name: "combinedId", kind: "scalar", T: 9 /* ScalarType.STRING */ },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): StopContainerRequest {
@@ -309,6 +309,11 @@ export class ListContainersRequest extends Message<ListContainersRequest> {
  * @generated from message docker_rpc.v1.ListContainersResponse
  */
 export class ListContainersResponse extends Message<ListContainersResponse> {
+  /**
+   * @generated from field: repeated docker_rpc.v1.DockerContainer containers = 1;
+   */
+  containers: DockerContainer[] = [];
+
   constructor(data?: PartialMessage<ListContainersResponse>) {
     super();
     proto3.util.initPartial(data, this);
@@ -317,6 +322,7 @@ export class ListContainersResponse extends Message<ListContainersResponse> {
   static readonly runtime = proto3;
   static readonly typeName = "docker_rpc.v1.ListContainersResponse";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "containers", kind: "message", T: DockerContainer, repeated: true },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): ListContainersResponse {
@@ -411,6 +417,49 @@ export class NewImageRequest extends Message<NewImageRequest> {
 }
 
 /**
+ * @generated from message docker_rpc.v1.FileUpload
+ */
+export class FileUpload extends Message<FileUpload> {
+  /**
+   * @generated from field: string filename = 1;
+   */
+  filename = "";
+
+  /**
+   * @generated from field: bytes content = 2;
+   */
+  content = new Uint8Array(0);
+
+  constructor(data?: PartialMessage<FileUpload>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime = proto3;
+  static readonly typeName = "docker_rpc.v1.FileUpload";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "filename", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "content", kind: "scalar", T: 12 /* ScalarType.BYTES */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): FileUpload {
+    return new FileUpload().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): FileUpload {
+    return new FileUpload().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): FileUpload {
+    return new FileUpload().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: FileUpload | PlainMessage<FileUpload> | undefined, b: FileUpload | PlainMessage<FileUpload> | undefined): boolean {
+    return proto3.util.equals(FileUpload, a, b);
+  }
+}
+
+/**
  * @generated from message docker_rpc.v1.ListImageResponse
  */
 export class ListImageResponse extends Message<ListImageResponse> {
@@ -479,6 +528,114 @@ export class ListImageRequest extends Message<ListImageRequest> {
 }
 
 /**
+ * Contains a machine id and its associated containers
+ *
+ * @generated from message docker_rpc.v1.DockerContainer
+ */
+export class DockerContainer extends Message<DockerContainer> {
+  /**
+   * @generated from field: string id = 1;
+   */
+  id = "";
+
+  /**
+   * @generated from field: repeated docker_rpc.v1.ContainerMetaData metadata = 2;
+   */
+  metadata: ContainerMetaData[] = [];
+
+  constructor(data?: PartialMessage<DockerContainer>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime = proto3;
+  static readonly typeName = "docker_rpc.v1.DockerContainer";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "metadata", kind: "message", T: ContainerMetaData, repeated: true },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): DockerContainer {
+    return new DockerContainer().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): DockerContainer {
+    return new DockerContainer().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): DockerContainer {
+    return new DockerContainer().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: DockerContainer | PlainMessage<DockerContainer> | undefined, b: DockerContainer | PlainMessage<DockerContainer> | undefined): boolean {
+    return proto3.util.equals(DockerContainer, a, b);
+  }
+}
+
+/**
+ * @generated from message docker_rpc.v1.ContainerMetaData
+ */
+export class ContainerMetaData extends Message<ContainerMetaData> {
+  /**
+   * @generated from field: string Id = 1;
+   */
+  Id = "";
+
+  /**
+   * @generated from field: repeated string ContainerNames = 2;
+   */
+  ContainerNames: string[] = [];
+
+  /**
+   * @generated from field: string Image = 4;
+   */
+  Image = "";
+
+  /**
+   * @generated from field: string Status = 3;
+   */
+  Status = "";
+
+  /**
+   * @generated from field: string State = 6;
+   */
+  State = "";
+
+  constructor(data?: PartialMessage<ContainerMetaData>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime = proto3;
+  static readonly typeName = "docker_rpc.v1.ContainerMetaData";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "Id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "ContainerNames", kind: "scalar", T: 9 /* ScalarType.STRING */, repeated: true },
+    { no: 4, name: "Image", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 3, name: "Status", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 6, name: "State", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): ContainerMetaData {
+    return new ContainerMetaData().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): ContainerMetaData {
+    return new ContainerMetaData().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): ContainerMetaData {
+    return new ContainerMetaData().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: ContainerMetaData | PlainMessage<ContainerMetaData> | undefined, b: ContainerMetaData | PlainMessage<ContainerMetaData> | undefined): boolean {
+    return proto3.util.equals(ContainerMetaData, a, b);
+  }
+}
+
+/**
+ * Contains a machine id and its associated images
+ *
  * @generated from message docker_rpc.v1.DockerImage
  */
 export class DockerImage extends Message<DockerImage> {
@@ -573,49 +730,6 @@ export class ImageMetaData extends Message<ImageMetaData> {
 
   static equals(a: ImageMetaData | PlainMessage<ImageMetaData> | undefined, b: ImageMetaData | PlainMessage<ImageMetaData> | undefined): boolean {
     return proto3.util.equals(ImageMetaData, a, b);
-  }
-}
-
-/**
- * @generated from message docker_rpc.v1.FileUpload
- */
-export class FileUpload extends Message<FileUpload> {
-  /**
-   * @generated from field: string filename = 1;
-   */
-  filename = "";
-
-  /**
-   * @generated from field: bytes content = 2;
-   */
-  content = new Uint8Array(0);
-
-  constructor(data?: PartialMessage<FileUpload>) {
-    super();
-    proto3.util.initPartial(data, this);
-  }
-
-  static readonly runtime = proto3;
-  static readonly typeName = "docker_rpc.v1.FileUpload";
-  static readonly fields: FieldList = proto3.util.newFieldList(() => [
-    { no: 1, name: "filename", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 2, name: "content", kind: "scalar", T: 12 /* ScalarType.BYTES */ },
-  ]);
-
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): FileUpload {
-    return new FileUpload().fromBinary(bytes, options);
-  }
-
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): FileUpload {
-    return new FileUpload().fromJson(jsonValue, options);
-  }
-
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): FileUpload {
-    return new FileUpload().fromJsonString(jsonString, options);
-  }
-
-  static equals(a: FileUpload | PlainMessage<FileUpload> | undefined, b: FileUpload | PlainMessage<FileUpload> | undefined): boolean {
-    return proto3.util.equals(FileUpload, a, b);
   }
 }
 

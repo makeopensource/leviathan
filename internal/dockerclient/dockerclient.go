@@ -14,6 +14,7 @@ import (
 	"github.com/docker/docker/pkg/archive"
 	"github.com/docker/docker/pkg/stdcopy"
 	dktypes "github.com/makeopensource/leviathan/internal/generated/docker_rpc/v1"
+	"github.com/makeopensource/leviathan/internal/util"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/rs/zerolog/log"
 	"io"
@@ -128,7 +129,7 @@ func ListImages(client *client.Client) ([]*dktypes.ImageMetaData, error) {
 }
 
 // ListContainers lists containers
-func ListContainers(client *client.Client) ([]ContainerInfo, error) {
+func ListContainers(client *client.Client, machineId string) ([]*dktypes.ContainerMetaData, error) {
 	containerInfos, err := client.ContainerList(context.Background(), container.ListOptions{All: true})
 	if err != nil {
 		log.Error().Err(err).Msgf("failed to list Docker images")
@@ -136,22 +137,17 @@ func ListContainers(client *client.Client) ([]ContainerInfo, error) {
 	}
 	log.Debug().Msgf("Docker images listed: %d", len(containerInfos))
 
-	var containerInfoList []ContainerInfo
+	var containerInfoList []*dktypes.ContainerMetaData
 	for _, item := range containerInfos {
-		info := ContainerInfo{
-			ID:      item.ID,
-			Names:   item.Names,
-			Image:   item.Image,
-			ImageID: item.ImageID,
-			Command: item.Command,
-			Created: item.Created,
-			Ports:   nil,
-			IP:      "",
-			Labels:  item.Labels,
-			State:   item.State,
-			Status:  item.Status,
+		info := dktypes.ContainerMetaData{
+			Id:             util.EncodeID(machineId, item.ID),
+			ContainerNames: item.Names,
+			Image:          item.Image,
+			Status:         item.Status,
+			State:          item.State,
 		}
-		containerInfoList = append(containerInfoList, info)
+
+		containerInfoList = append(containerInfoList, &info)
 	}
 
 	return containerInfoList, nil

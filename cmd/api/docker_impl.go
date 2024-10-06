@@ -14,16 +14,13 @@ type DockerServer struct {
 	clientList []*client.Client
 }
 
-func (dk *DockerServer) CreateContainer(ctx context.Context, req *connect.Request[dkrpc.CreateContainerRequest]) (*connect.Response[dkrpc.CreateContainerResponse], error) {
+func (dk *DockerServer) CreateContainer(_ context.Context, req *connect.Request[dkrpc.CreateContainerRequest]) (*connect.Response[dkrpc.CreateContainerResponse], error) {
 	res := connect.NewResponse(&dkrpc.CreateContainerResponse{})
 	return res, nil
 }
 
-func (dk *DockerServer) StartContainer(ctx context.Context, req *connect.Request[dkrpc.StartContainerRequest]) (*connect.Response[dkrpc.StartContainerResponse], error) {
-	containerId := req.Msg.GetContainerId()
-	machineId := 0
-
-	err := dockerclient.HandleStartContainerReq(dk.clientList, containerId, machineId)
+func (dk *DockerServer) StartContainer(_ context.Context, req *connect.Request[dkrpc.StartContainerRequest]) (*connect.Response[dkrpc.StartContainerResponse], error) {
+	err := dockerclient.HandleStartContainerReq(dk.clientList, req.Msg.GetCombinedId())
 	if err != nil {
 		return nil, err
 	}
@@ -31,7 +28,7 @@ func (dk *DockerServer) StartContainer(ctx context.Context, req *connect.Request
 	return res, nil
 }
 
-func (dk *DockerServer) DeleteContainer(ctx context.Context, req *connect.Request[dkrpc.DeleteContainerRequest]) (*connect.Response[dkrpc.DeleteContainerResponse], error) {
+func (dk *DockerServer) DeleteContainer(_ context.Context, req *connect.Request[dkrpc.DeleteContainerRequest]) (*connect.Response[dkrpc.DeleteContainerResponse], error) {
 	containerId := req.Msg.GetContainerId()
 	log.Debug().Str("Container ID", req.Msg.GetContainerId()).Msgf("Recivied delete container request")
 
@@ -43,18 +40,16 @@ func (dk *DockerServer) DeleteContainer(ctx context.Context, req *connect.Reques
 	return res, nil
 }
 
-func (dk *DockerServer) StopContainer(ctx context.Context, req *connect.Request[dkrpc.StopContainerRequest]) (*connect.Response[dkrpc.StopContainerResponse], error) {
-	containerId := req.Msg.GetContainerId()
-	machineId := 0
-
-	err := dockerclient.HandleStopContainerReq(dk.clientList, containerId, machineId)
+func (dk *DockerServer) StopContainer(_ context.Context, req *connect.Request[dkrpc.StopContainerRequest]) (*connect.Response[dkrpc.StopContainerResponse], error) {
+	combinedId := req.Msg.GetCombinedId()
+	err := dockerclient.HandleStopContainerReq(dk.clientList, combinedId)
 	if err != nil {
 		return nil, err
 	}
 	res := connect.NewResponse(&dkrpc.StopContainerResponse{})
 	return res, nil
 }
-func (dk *DockerServer) CreateNewImage(ctx context.Context, req *connect.Request[dkrpc.NewImageRequest]) (*connect.Response[dkrpc.NewImageResponse], error) {
+func (dk *DockerServer) CreateNewImage(_ context.Context, req *connect.Request[dkrpc.NewImageRequest]) (*connect.Response[dkrpc.NewImageResponse], error) {
 	filename := req.Msg.File.GetFilename()
 	contents := req.Msg.File.GetContent()
 	imageTag := req.Msg.GetImageTag()
@@ -67,13 +62,14 @@ func (dk *DockerServer) CreateNewImage(ctx context.Context, req *connect.Request
 	res := connect.NewResponse(&dkrpc.NewImageResponse{})
 	return res, nil
 }
-func (dk *DockerServer) ListImages(ctx context.Context, req *connect.Request[dkrpc.ListImageRequest]) (*connect.Response[dkrpc.ListImageResponse], error) {
+func (dk *DockerServer) ListImages(_ context.Context, _ *connect.Request[dkrpc.ListImageRequest]) (*connect.Response[dkrpc.ListImageResponse], error) {
 	images := dockerclient.HandleListImagesReq(dk.clientList)
 	res := connect.NewResponse(&dkrpc.ListImageResponse{Images: images})
 	return res, nil
 }
 
-func (dk *DockerServer) ListContainers(ctx context.Context, req *connect.Request[dkrpc.ListContainersRequest]) (*connect.Response[dkrpc.ListContainersResponse], error) {
-	res := connect.NewResponse(&dkrpc.ListContainersResponse{})
+func (dk *DockerServer) ListContainers(_ context.Context, _ *connect.Request[dkrpc.ListContainersRequest]) (*connect.Response[dkrpc.ListContainersResponse], error) {
+	containerList := dockerclient.HandleListContainerReq(dk.clientList)
+	res := connect.NewResponse(&dkrpc.ListContainersResponse{Containers: containerList})
 	return res, nil
 }

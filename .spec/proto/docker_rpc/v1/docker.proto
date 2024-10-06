@@ -15,52 +15,67 @@ service DockerService {
 }
 
 message StartContainerRequest{
-  string containerId = 1;
+  string combinedId = 1;
 }
 message StartContainerResponse{}
 
 
 message StopContainerRequest{
-  string containerId = 1;
+  string combinedId = 1;
 }
 message StopContainerResponse{}
 
 
 // todo figure out request/response
-message CreateContainerRequest {
-}
+message CreateContainerRequest {}
 
-message CreateContainerResponse {
-}
+message CreateContainerResponse {}
 
 message DeleteContainerRequest {
   string containerId = 1;
 }
 
-message DeleteContainerResponse {
-}
+message DeleteContainerResponse {}
 
-message ListContainersRequest {
-}
+message ListContainersRequest {}
 
 message ListContainersResponse {
+  repeated DockerContainer containers = 1;
 }
 
-message NewImageResponse {
-}
+message NewImageResponse {}
 
 message NewImageRequest {
   string imageTag = 1;
   FileUpload file = 2;
 }
 
+message FileUpload {
+  string filename = 1;
+  bytes content = 2;
+}
+
 message ListImageResponse{
   repeated DockerImage images = 1;
 }
 
-message ListImageRequest{
+message ListImageRequest{}
+
+// Contains a machine id and its associated containers
+message DockerContainer{
+  string id = 1;
+  repeated ContainerMetaData metadata = 2;
 }
 
+message ContainerMetaData {
+  string Id = 1;
+  repeated string ContainerNames = 2;
+  string Image = 4;
+  string Status = 3;
+  string State = 6;
+}
+
+// Contains a machine id and its associated images
 message DockerImage {
   string id = 1;
   repeated ImageMetaData metadata = 2;
@@ -71,9 +86,4 @@ message ImageMetaData {
   repeated string  RepoTags = 2;
   int64  Size = 3;
   int64 CreatedAt = 4;
-}
-
-message FileUpload {
-  string filename = 1;
-  bytes content = 2;
 }

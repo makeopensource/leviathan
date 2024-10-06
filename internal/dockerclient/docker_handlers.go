@@ -7,17 +7,16 @@ import (
 	dktypes "github.com/makeopensource/leviathan/internal/generated/docker_rpc/v1"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
-	"os"
-	"path/filepath"
 	"strconv"
 )
 
-func HandleCreateContainerReq(clientList []*client.Client, imageTag string, studentCode string) {
+func HandleStartContainerReq(clientList []*client.Client, combinedId string) error {
+	containerId, machineId, err := parseCombinedID(combinedId)
+	if err != nil {
+		return err
+	}
 
-}
-
-func HandleStartContainerReq(clientList []*client.Client, containerId string, machineId int) error {
-	err := StartContainer(clientList[machineId], containerId)
+	err = StartContainer(clientList[machineId], containerId)
 	if err != nil {
 		log.Error().Err(err).Msgf("Failed to stop container at machine: %s with id", containerId)
 		return errors.New("Failed to start container")
@@ -25,8 +24,13 @@ func HandleStartContainerReq(clientList []*client.Client, containerId string, ma
 	return nil
 }
 
-func HandleStopContainerReq(clientList []*client.Client, containerId string, machineId int) error {
-	err := StopContainer(clientList[machineId], containerId)
+func HandleStopContainerReq(clientList []*client.Client, combinedId string) error {
+	containerId, machineId, err := parseCombinedID(combinedId)
+	if err != nil {
+		return err
+	}
+
+	err = StopContainer(clientList[machineId], containerId)
 	if err != nil {
 		log.Error().Err(err).Msgf("Failed to stop container at machine: %s with id", containerId)
 		return errors.New("Failed to stop container")
@@ -90,39 +94,28 @@ func HandleNewImageReq(filename string, contents []byte, imageTag string, client
 	return nil
 }
 
-func saveDockerfile(fullPath string, contents []byte) error {
+func HandleListContainerReq(clientList []*client.Client) []*dktypes.DockerContainer {
+	var result []*dktypes.DockerContainer
+	for ind, cli := range clientList {
+		containers, err := ListContainers(cli, strconv.Itoa(ind))
+		if err != nil {
+			info, err := cli.Info(context.Background())
+			if err != nil {
+				log.Error().Err(err).Msg("failed to get docker server info")
+				continue
+			}
+			log.Error().Err(err).Msgf("Error listing containers for %s", info.Name)
+			continue
+		}
 
-	log.Debug().Str("filename", fullPath).Msgf("Recivied new container request")
+		result = append(result, &dktypes.DockerContainer{
+			Id:       strconv.Itoa(ind),
+			Metadata: containers,
+		})
 
-	if err := os.MkdirAll(filepath.Dir(fullPath), 0755); err != nil {
-		log.Error().Err(err).Msgf("Failed to create file and folder at %s", fullPath)
-		return err
 	}
-
-	err := os.WriteFile(fullPath, contents, 0644)
-	if err != nil {
-		log.Error().Err(err).Msgf("Failed to write contents to file")
-		return err
-	}
-
-	return nil
+	return result
 }
 
-//func HandleListContainerReq(clientList []*client.Client) [][]ContainerInfo {
-//	var result [][]ContainerInfo
-//	for _, cli := range clientList {
-//		containers, err := ListContainers(cli)
-//		if err != nil {
-//			info, err := cli.Info(context.Background())
-//			if err != nil {
-//				log.Error().Err(err).Msg("failed to get docker server info")
-//				continue
-//			}
-//			log.Error().Err(err).Msgf("Error listing containers for %s", info.Name)
-//			continue
-//		}
-//
-//		result = append(result, containers)
-//	}
-//	return result
-//}
+func HandleCreateContainerReq(clientList []*client.Client, imageTag string, studentCode string) {
+}

@@ -59,6 +59,7 @@ func (dk *DockerServer) CreateNewImage(ctx context.Context, req *connect.Request
 	return res, nil
 }
 func (dk *DockerServer) ListImages(ctx context.Context, req *connect.Request[dkrpc.ListImageRequest]) (*connect.Response[dkrpc.ListImageResponse], error) {
-	res := connect.NewResponse(&dkrpc.ListImageResponse{})
+	images := dockerclient.HandleListImagesReq(dk.clientList)
+	res := connect.NewResponse(&dkrpc.ListImageResponse{Images: images})
 	return res, nil
 }

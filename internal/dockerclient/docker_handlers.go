@@ -4,11 +4,48 @@ import (
 	"context"
 	"fmt"
 	"github.com/docker/docker/client"
+	dktypes "github.com/makeopensource/leviathan/internal/generated/docker_rpc/v1"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
 	"os"
 	"path/filepath"
+	"strconv"
 )
+
+func HandleCreateContainerReq(clientList []*client.Client, imageTag string, studentCode string) {
+
+}
+
+func HandleStartContainerReq(clientList []*client.Client, containerId string) {
+
+}
+
+func HandleStopContainerReq(clientList []*client.Client, containerId string) {
+
+}
+
+func HandleListImagesReq(clientList []*client.Client) []*dktypes.DockerImage {
+	var result []*dktypes.DockerImage
+
+	for ind, cli := range clientList {
+		images, err := ListImages(cli)
+		if err != nil {
+			info, err := cli.Info(context.Background())
+			if err != nil {
+				log.Error().Err(err).Msg("failed to get docker server info")
+				continue
+			}
+			log.Error().Err(err).Msgf("Error listing images for %s", info.Name)
+			continue
+		}
+
+		result = append(result, &dktypes.DockerImage{
+			Id:       strconv.Itoa(ind),
+			Metadata: images,
+		})
+	}
+	return result
+}
 
 func HandleNewImageReq(filename string, contents []byte, imageTag string, clientList []*client.Client) error {
 	if len(filename) == 0 {
@@ -60,3 +97,22 @@ func saveDockerfile(fullPath string, contents []byte) error {
 
 	return nil
 }
+
+//func HandleListContainerReq(clientList []*client.Client) [][]ContainerInfo {
+//	var result [][]ContainerInfo
+//	for _, cli := range clientList {
+//		containers, err := ListContainers(cli)
+//		if err != nil {
+//			info, err := cli.Info(context.Background())
+//			if err != nil {
+//				log.Error().Err(err).Msg("failed to get docker server info")
+//				continue
+//			}
+//			log.Error().Err(err).Msgf("Error listing containers for %s", info.Name)
+//			continue
+//		}
+//
+//		result = append(result, containers)
+//	}
+//	return result
+//}

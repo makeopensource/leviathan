@@ -24,6 +24,15 @@ const transport = createConnectTransport({
 const dkClient = createPromiseClient(DockerService, transport)
 
 const dockerEndpoints = {
+    "List images": async () => {
+        const result = await dkClient.listImages({})
+        for (const image of result.images) {
+            console.log("Machine", image.id)
+            for (const metadata of image.metadata) {
+                console.log(metadata)
+            }
+        }
+    },
     "Get Container info": async () => {
         const {containerId} = await inquirer.prompt([
             {type: 'input', name: 'containerId', message: 'Enter the container ID:'}
@@ -64,7 +73,7 @@ const dockerEndpoints = {
         try {
             const contents = await readFileAsBytes(filepath);
             const payload = new FileUpload({filename: "newDockerfile", content: contents})
-            const result = await dkClient.createNewImage({imageTag: imageTag,file: payload});
+            const result = await dkClient.createNewImage({imageTag: imageTag, file: payload});
             console.log("Sent create docker image", result)
         } catch (error) {
             console.error(error)

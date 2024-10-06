@@ -16,12 +16,22 @@ func HandleCreateContainerReq(clientList []*client.Client, imageTag string, stud
 
 }
 
-func HandleStartContainerReq(clientList []*client.Client, containerId string) {
-
+func HandleStartContainerReq(clientList []*client.Client, containerId string, machineId int) error {
+	err := StartContainer(clientList[machineId], containerId)
+	if err != nil {
+		log.Error().Err(err).Msgf("Failed to stop container at machine: %s with id", containerId)
+		return errors.New("Failed to start container")
+	}
+	return nil
 }
 
-func HandleStopContainerReq(clientList []*client.Client, containerId string) {
-
+func HandleStopContainerReq(clientList []*client.Client, containerId string, machineId int) error {
+	err := StopContainer(clientList[machineId], containerId)
+	if err != nil {
+		log.Error().Err(err).Msgf("Failed to stop container at machine: %s with id", containerId)
+		return errors.New("Failed to stop container")
+	}
+	return nil
 }
 
 func HandleListImagesReq(clientList []*client.Client) []*dktypes.DockerImage {

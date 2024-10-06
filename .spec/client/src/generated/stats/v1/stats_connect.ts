@@ -3,7 +3,7 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { EchoRequest, EchoResponse } from "./stats_pb.js";
+import { EchoRequest, EchoResponse } from "./stats_pb";
 import { MethodKind } from "@bufbuild/protobuf";
 
 /**

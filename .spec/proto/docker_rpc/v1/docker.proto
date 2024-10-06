@@ -8,7 +8,23 @@ service DockerService {
   rpc CreateContainer(CreateContainerRequest) returns (CreateContainerResponse) {}
   rpc DeleteContainer(DeleteContainerRequest) returns (DeleteContainerResponse) {}
   rpc ListContainers(ListContainersRequest) returns (ListContainersResponse) {}
+  rpc StartContainer(StartContainerRequest) returns (StartContainerResponse) {};
+  rpc StopContainer(StopContainerRequest) returns (StopContainerResponse) {};
+  rpc CreateNewImage(NewImageRequest) returns (NewImageResponse) {};
+  rpc ListImages(ListImageRequest) returns (ListImageResponse) {};
 }
+
+message StartContainerRequest{
+  string containerId = 1;
+}
+message StartContainerResponse{}
+
+
+message StopContainerRequest{
+  string containerId = 1;
+}
+message StopContainerResponse{}
+
 
 // todo figure out request/response
 message CreateContainerRequest {
@@ -18,6 +34,7 @@ message CreateContainerResponse {
 }
 
 message DeleteContainerRequest {
+  string containerId = 1;
 }
 
 message DeleteContainerResponse {
@@ -29,5 +46,24 @@ message ListContainersRequest {
 message ListContainersResponse {
 }
 
+message NewImageRequest {
+  string imageTag = 1;
+  FileUpload file = 2;
+}
+
+message NewImageResponse {
+}
+
+message ListImageResponse{
+}
+
+message ListImageRequest{
+}
+
 message Container {
+}
+
+message FileUpload {
+  string filename = 1;
+  bytes content = 2;
 }

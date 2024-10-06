@@ -45,7 +45,7 @@ func NewSSHClient(connectionString string) (*client.Client, error) {
 
 	newClient, err := client.NewClientWithOpts(clientOpts...)
 	if err != nil {
-		log.Error().Err(err).Msgf("failed create docker client connectionString %s", connectionString)
+		log.Error().Err(err).Msgf("failed create remote docker client with connectionString %s", connectionString)
 		return nil, fmt.Errorf("unable to connect to docker client")
 	}
 

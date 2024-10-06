@@ -39,8 +39,6 @@ const (
 	LabServiceEditLabProcedure = "/labs.v1.LabService/EditLab"
 	// LabServiceDeleteLabProcedure is the fully-qualified name of the LabService's DeleteLab RPC.
 	LabServiceDeleteLabProcedure = "/labs.v1.LabService/DeleteLab"
-	// LabServiceEchoProcedure is the fully-qualified name of the LabService's Echo RPC.
-	LabServiceEchoProcedure = "/labs.v1.LabService/Echo"
 )
 
 // These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
@@ -49,7 +47,6 @@ var (
 	labServiceNewLabMethodDescriptor    = labServiceServiceDescriptor.Methods().ByName("NewLab")
 	labServiceEditLabMethodDescriptor   = labServiceServiceDescriptor.Methods().ByName("EditLab")
 	labServiceDeleteLabMethodDescriptor = labServiceServiceDescriptor.Methods().ByName("DeleteLab")
-	labServiceEchoMethodDescriptor      = labServiceServiceDescriptor.Methods().ByName("Echo")
 )
 
 // LabServiceClient is a client for the labs.v1.LabService service.
@@ -57,7 +54,6 @@ type LabServiceClient interface {
 	NewLab(context.Context, *connect.Request[v1.NewLabRequest]) (*connect.Response[v1.NewLabResponse], error)
 	EditLab(context.Context, *connect.Request[v1.EditLabRequest]) (*connect.Response[v1.EditLabResponse], error)
 	DeleteLab(context.Context, *connect.Request[v1.DeleteLabRequest]) (*connect.Response[v1.DeleteLabResponse], error)
-	Echo(context.Context, *connect.Request[v1.EchoRequest]) (*connect.Response[v1.EchoResponse], error)
 }
 
 // NewLabServiceClient constructs a client for the labs.v1.LabService service. By default, it uses
@@ -88,12 +84,6 @@ func NewLabServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...
 			connect.WithSchema(labServiceDeleteLabMethodDescriptor),
 			connect.WithClientOptions(opts...),
 		),
-		echo: connect.NewClient[v1.EchoRequest, v1.EchoResponse](
-			httpClient,
-			baseURL+LabServiceEchoProcedure,
-			connect.WithSchema(labServiceEchoMethodDescriptor),
-			connect.WithClientOptions(opts...),
-		),
 	}
 }
 
@@ -102,7 +92,6 @@ type labServiceClient struct {
 	newLab    *connect.Client[v1.NewLabRequest, v1.NewLabResponse]
 	editLab   *connect.Client[v1.EditLabRequest, v1.EditLabResponse]
 	deleteLab *connect.Client[v1.DeleteLabRequest, v1.DeleteLabResponse]
-	echo      *connect.Client[v1.EchoRequest, v1.EchoResponse]
 }
 
 // NewLab calls labs.v1.LabService.NewLab.
@@ -120,17 +109,11 @@ func (c *labServiceClient) DeleteLab(ctx context.Context, req *connect.Request[v
 	return c.deleteLab.CallUnary(ctx, req)
 }
 
-// Echo calls labs.v1.LabService.Echo.
-func (c *labServiceClient) Echo(ctx context.Context, req *connect.Request[v1.EchoRequest]) (*connect.Response[v1.EchoResponse], error) {
-	return c.echo.CallUnary(ctx, req)
-}
-
 // LabServiceHandler is an implementation of the labs.v1.LabService service.
 type LabServiceHandler interface {
 	NewLab(context.Context, *connect.Request[v1.NewLabRequest]) (*connect.Response[v1.NewLabResponse], error)
 	EditLab(context.Context, *connect.Request[v1.EditLabRequest]) (*connect.Response[v1.EditLabResponse], error)
 	DeleteLab(context.Context, *connect.Request[v1.DeleteLabRequest]) (*connect.Response[v1.DeleteLabResponse], error)
-	Echo(context.Context, *connect.Request[v1.EchoRequest]) (*connect.Response[v1.EchoResponse], error)
 }
 
 // NewLabServiceHandler builds an HTTP handler from the service implementation. It returns the path
@@ -157,12 +140,6 @@ func NewLabServiceHandler(svc LabServiceHandler, opts ...connect.HandlerOption) 
 		connect.WithSchema(labServiceDeleteLabMethodDescriptor),
 		connect.WithHandlerOptions(opts...),
 	)
-	labServiceEchoHandler := connect.NewUnaryHandler(
-		LabServiceEchoProcedure,
-		svc.Echo,
-		connect.WithSchema(labServiceEchoMethodDescriptor),
-		connect.WithHandlerOptions(opts...),
-	)
 	return "/labs.v1.LabService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case LabServiceNewLabProcedure:
@@ -171,8 +148,6 @@ func NewLabServiceHandler(svc LabServiceHandler, opts ...connect.HandlerOption) 
 			labServiceEditLabHandler.ServeHTTP(w, r)
 		case LabServiceDeleteLabProcedure:
 			labServiceDeleteLabHandler.ServeHTTP(w, r)
-		case LabServiceEchoProcedure:
-			labServiceEchoHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -192,8 +167,4 @@ func (UnimplementedLabServiceHandler) EditLab(context.Context, *connect.Request[
 
 func (UnimplementedLabServiceHandler) DeleteLab(context.Context, *connect.Request[v1.DeleteLabRequest]) (*connect.Response[v1.DeleteLabResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("labs.v1.LabService.DeleteLab is not implemented"))
-}
-
-func (UnimplementedLabServiceHandler) Echo(context.Context, *connect.Request[v1.EchoRequest]) (*connect.Response[v1.EchoResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("labs.v1.LabService.Echo is not implemented"))
 }

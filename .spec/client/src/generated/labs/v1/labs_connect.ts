@@ -3,7 +3,7 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { DeleteLabRequest, DeleteLabResponse, EchoRequest, EchoResponse, EditLabRequest, EditLabResponse, NewLabRequest, NewLabResponse } from "./labs_pb.js";
+import { DeleteLabRequest, DeleteLabResponse, EditLabRequest, EditLabResponse, NewLabRequest, NewLabResponse } from "./labs_pb";
 import { MethodKind } from "@bufbuild/protobuf";
 
 /**
@@ -37,15 +37,6 @@ export const LabService = {
       name: "DeleteLab",
       I: DeleteLabRequest,
       O: DeleteLabResponse,
-      kind: MethodKind.Unary,
-    },
-    /**
-     * @generated from rpc labs.v1.LabService.Echo
-     */
-    echo: {
-      name: "Echo",
-      I: EchoRequest,
-      O: EchoResponse,
       kind: MethodKind.Unary,
     },
   }

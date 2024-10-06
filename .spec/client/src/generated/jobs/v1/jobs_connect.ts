@@ -3,7 +3,7 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { CancelJobRequest, CancelJobResponse, EchoRequest, EchoResponse, JobStatusRequest, JobStatusResponse, NewJobRequest, NewJobResponse } from "./jobs_pb.js";
+import { CancelJobRequest, CancelJobResponse, JobStatusRequest, JobStatusResponse, NewJobRequest, NewJobResponse } from "./jobs_pb";
 import { MethodKind } from "@bufbuild/protobuf";
 
 /**
@@ -37,15 +37,6 @@ export const JobService = {
       name: "CancelJob",
       I: CancelJobRequest,
       O: CancelJobResponse,
-      kind: MethodKind.Unary,
-    },
-    /**
-     * @generated from rpc jobs.v1.JobService.Echo
-     */
-    echo: {
-      name: "Echo",
-      I: EchoRequest,
-      O: EchoResponse,
       kind: MethodKind.Unary,
     },
   }

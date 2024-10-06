@@ -9,7 +9,6 @@
 *.test
 
 # Built Binaries
-cmd/leviathan-agent/leviathan-agent
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
 
@@ -17,4 +16,5 @@ cmd/leviathan-agent/leviathan-agent
 # vendor/
 bin
 config.toml
+uploads
 .spec/server/*

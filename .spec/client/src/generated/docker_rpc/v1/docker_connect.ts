@@ -3,7 +3,7 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { CreateContainerRequest, CreateContainerResponse, DeleteContainerRequest, DeleteContainerResponse, EchoRequest, EchoResponse, ListContainersRequest, ListContainersResponse } from "./docker_pb";
+import { CreateContainerRequest, CreateContainerResponse, DeleteContainerRequest, DeleteContainerResponse, ListContainersRequest, ListContainersResponse, ListImageRequest, ListImageResponse, NewImageRequest, NewImageResponse, StartContainerRequest, StartContainerResponse, StopContainerRequest, StopContainerResponse } from "./docker_pb";
 import { MethodKind } from "@bufbuild/protobuf";
 
 /**
@@ -40,12 +40,39 @@ export const DockerService = {
       kind: MethodKind.Unary,
     },
     /**
-     * @generated from rpc docker_rpc.v1.DockerService.Echo
+     * @generated from rpc docker_rpc.v1.DockerService.StartContainer
      */
-    echo: {
-      name: "Echo",
-      I: EchoRequest,
-      O: EchoResponse,
+    startContainer: {
+      name: "StartContainer",
+      I: StartContainerRequest,
+      O: StartContainerResponse,
+      kind: MethodKind.Unary,
+    },
+    /**
+     * @generated from rpc docker_rpc.v1.DockerService.StopContainer
+     */
+    stopContainer: {
+      name: "StopContainer",
+      I: StopContainerRequest,
+      O: StopContainerResponse,
+      kind: MethodKind.Unary,
+    },
+    /**
+     * @generated from rpc docker_rpc.v1.DockerService.CreateNewImage
+     */
+    createNewImage: {
+      name: "CreateNewImage",
+      I: NewImageRequest,
+      O: NewImageResponse,
+      kind: MethodKind.Unary,
+    },
+    /**
+     * @generated from rpc docker_rpc.v1.DockerService.ListImages
+     */
+    listImages: {
+      name: "ListImages",
+      I: ListImageRequest,
+      O: ListImageResponse,
       kind: MethodKind.Unary,
     },
   }

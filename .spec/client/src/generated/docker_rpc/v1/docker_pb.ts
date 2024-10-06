@@ -7,6 +7,142 @@ import type { BinaryReadOptions, FieldList, JsonReadOptions, JsonValue, PartialM
 import { Message, proto3 } from "@bufbuild/protobuf";
 
 /**
+ * @generated from message docker_rpc.v1.StartContainerRequest
+ */
+export class StartContainerRequest extends Message<StartContainerRequest> {
+  /**
+   * @generated from field: string containerId = 1;
+   */
+  containerId = "";
+
+  constructor(data?: PartialMessage<StartContainerRequest>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime = proto3;
+  static readonly typeName = "docker_rpc.v1.StartContainerRequest";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "containerId", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): StartContainerRequest {
+    return new StartContainerRequest().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): StartContainerRequest {
+    return new StartContainerRequest().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): StartContainerRequest {
+    return new StartContainerRequest().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: StartContainerRequest | PlainMessage<StartContainerRequest> | undefined, b: StartContainerRequest | PlainMessage<StartContainerRequest> | undefined): boolean {
+    return proto3.util.equals(StartContainerRequest, a, b);
+  }
+}
+
+/**
+ * @generated from message docker_rpc.v1.StartContainerResponse
+ */
+export class StartContainerResponse extends Message<StartContainerResponse> {
+  constructor(data?: PartialMessage<StartContainerResponse>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime = proto3;
+  static readonly typeName = "docker_rpc.v1.StartContainerResponse";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): StartContainerResponse {
+    return new StartContainerResponse().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): StartContainerResponse {
+    return new StartContainerResponse().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): StartContainerResponse {
+    return new StartContainerResponse().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: StartContainerResponse | PlainMessage<StartContainerResponse> | undefined, b: StartContainerResponse | PlainMessage<StartContainerResponse> | undefined): boolean {
+    return proto3.util.equals(StartContainerResponse, a, b);
+  }
+}
+
+/**
+ * @generated from message docker_rpc.v1.StopContainerRequest
+ */
+export class StopContainerRequest extends Message<StopContainerRequest> {
+  /**
+   * @generated from field: string containerId = 1;
+   */
+  containerId = "";
+
+  constructor(data?: PartialMessage<StopContainerRequest>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime = proto3;
+  static readonly typeName = "docker_rpc.v1.StopContainerRequest";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "containerId", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): StopContainerRequest {
+    return new StopContainerRequest().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): StopContainerRequest {
+    return new StopContainerRequest().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): StopContainerRequest {
+    return new StopContainerRequest().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: StopContainerRequest | PlainMessage<StopContainerRequest> | undefined, b: StopContainerRequest | PlainMessage<StopContainerRequest> | undefined): boolean {
+    return proto3.util.equals(StopContainerRequest, a, b);
+  }
+}
+
+/**
+ * @generated from message docker_rpc.v1.StopContainerResponse
+ */
+export class StopContainerResponse extends Message<StopContainerResponse> {
+  constructor(data?: PartialMessage<StopContainerResponse>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime = proto3;
+  static readonly typeName = "docker_rpc.v1.StopContainerResponse";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): StopContainerResponse {
+    return new StopContainerResponse().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): StopContainerResponse {
+    return new StopContainerResponse().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): StopContainerResponse {
+    return new StopContainerResponse().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: StopContainerResponse | PlainMessage<StopContainerResponse> | undefined, b: StopContainerResponse | PlainMessage<StopContainerResponse> | undefined): boolean {
+    return proto3.util.equals(StopContainerResponse, a, b);
+  }
+}
+
+/**
  * todo figure out request/response
  *
  * @generated from message docker_rpc.v1.CreateContainerRequest
@@ -74,6 +210,11 @@ export class CreateContainerResponse extends Message<CreateContainerResponse> {
  * @generated from message docker_rpc.v1.DeleteContainerRequest
  */
 export class DeleteContainerRequest extends Message<DeleteContainerRequest> {
+  /**
+   * @generated from field: string containerId = 1;
+   */
+  containerId = "";
+
   constructor(data?: PartialMessage<DeleteContainerRequest>) {
     super();
     proto3.util.initPartial(data, this);
@@ -82,6 +223,7 @@ export class DeleteContainerRequest extends Message<DeleteContainerRequest> {
   static readonly runtime = proto3;
   static readonly typeName = "docker_rpc.v1.DeleteContainerRequest";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "containerId", kind: "scalar", T: 9 /* ScalarType.STRING */ },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): DeleteContainerRequest {
@@ -195,6 +337,142 @@ export class ListContainersResponse extends Message<ListContainersResponse> {
 }
 
 /**
+ * @generated from message docker_rpc.v1.NewImageRequest
+ */
+export class NewImageRequest extends Message<NewImageRequest> {
+  /**
+   * @generated from field: string imageTag = 1;
+   */
+  imageTag = "";
+
+  /**
+   * @generated from field: docker_rpc.v1.FileUpload file = 2;
+   */
+  file?: FileUpload;
+
+  constructor(data?: PartialMessage<NewImageRequest>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime = proto3;
+  static readonly typeName = "docker_rpc.v1.NewImageRequest";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "imageTag", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "file", kind: "message", T: FileUpload },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): NewImageRequest {
+    return new NewImageRequest().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): NewImageRequest {
+    return new NewImageRequest().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): NewImageRequest {
+    return new NewImageRequest().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: NewImageRequest | PlainMessage<NewImageRequest> | undefined, b: NewImageRequest | PlainMessage<NewImageRequest> | undefined): boolean {
+    return proto3.util.equals(NewImageRequest, a, b);
+  }
+}
+
+/**
+ * @generated from message docker_rpc.v1.NewImageResponse
+ */
+export class NewImageResponse extends Message<NewImageResponse> {
+  constructor(data?: PartialMessage<NewImageResponse>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime = proto3;
+  static readonly typeName = "docker_rpc.v1.NewImageResponse";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): NewImageResponse {
+    return new NewImageResponse().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): NewImageResponse {
+    return new NewImageResponse().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): NewImageResponse {
+    return new NewImageResponse().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: NewImageResponse | PlainMessage<NewImageResponse> | undefined, b: NewImageResponse | PlainMessage<NewImageResponse> | undefined): boolean {
+    return proto3.util.equals(NewImageResponse, a, b);
+  }
+}
+
+/**
+ * @generated from message docker_rpc.v1.ListImageResponse
+ */
+export class ListImageResponse extends Message<ListImageResponse> {
+  constructor(data?: PartialMessage<ListImageResponse>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime = proto3;
+  static readonly typeName = "docker_rpc.v1.ListImageResponse";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): ListImageResponse {
+    return new ListImageResponse().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): ListImageResponse {
+    return new ListImageResponse().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): ListImageResponse {
+    return new ListImageResponse().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: ListImageResponse | PlainMessage<ListImageResponse> | undefined, b: ListImageResponse | PlainMessage<ListImageResponse> | undefined): boolean {
+    return proto3.util.equals(ListImageResponse, a, b);
+  }
+}
+
+/**
+ * @generated from message docker_rpc.v1.ListImageRequest
+ */
+export class ListImageRequest extends Message<ListImageRequest> {
+  constructor(data?: PartialMessage<ListImageRequest>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime = proto3;
+  static readonly typeName = "docker_rpc.v1.ListImageRequest";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): ListImageRequest {
+    return new ListImageRequest().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): ListImageRequest {
+    return new ListImageRequest().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): ListImageRequest {
+    return new ListImageRequest().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: ListImageRequest | PlainMessage<ListImageRequest> | undefined, b: ListImageRequest | PlainMessage<ListImageRequest> | undefined): boolean {
+    return proto3.util.equals(ListImageRequest, a, b);
+  }
+}
+
+/**
  * @generated from message docker_rpc.v1.Container
  */
 export class Container extends Message<Container> {
@@ -226,76 +504,45 @@ export class Container extends Message<Container> {
 }
 
 /**
- * @generated from message docker_rpc.v1.EchoRequest
+ * @generated from message docker_rpc.v1.FileUpload
  */
-export class EchoRequest extends Message<EchoRequest> {
+export class FileUpload extends Message<FileUpload> {
   /**
-   * @generated from field: string message = 1;
+   * @generated from field: string filename = 1;
    */
-  message = "";
+  filename = "";
 
-  constructor(data?: PartialMessage<EchoRequest>) {
+  /**
+   * @generated from field: bytes content = 2;
+   */
+  content = new Uint8Array(0);
+
+  constructor(data?: PartialMessage<FileUpload>) {
     super();
     proto3.util.initPartial(data, this);
   }
 
   static readonly runtime = proto3;
-  static readonly typeName = "docker_rpc.v1.EchoRequest";
+  static readonly typeName = "docker_rpc.v1.FileUpload";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
-    { no: 1, name: "message", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 1, name: "filename", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "content", kind: "scalar", T: 12 /* ScalarType.BYTES */ },
   ]);
 
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): EchoRequest {
-    return new EchoRequest().fromBinary(bytes, options);
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): FileUpload {
+    return new FileUpload().fromBinary(bytes, options);
   }
 
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): EchoRequest {
-    return new EchoRequest().fromJson(jsonValue, options);
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): FileUpload {
+    return new FileUpload().fromJson(jsonValue, options);
   }
 
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): EchoRequest {
-    return new EchoRequest().fromJsonString(jsonString, options);
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): FileUpload {
+    return new FileUpload().fromJsonString(jsonString, options);
   }
 
-  static equals(a: EchoRequest | PlainMessage<EchoRequest> | undefined, b: EchoRequest | PlainMessage<EchoRequest> | undefined): boolean {
-    return proto3.util.equals(EchoRequest, a, b);
-  }
-}
-
-/**
- * @generated from message docker_rpc.v1.EchoResponse
- */
-export class EchoResponse extends Message<EchoResponse> {
-  /**
-   * @generated from field: string message_response = 1;
-   */
-  messageResponse = "";
-
-  constructor(data?: PartialMessage<EchoResponse>) {
-    super();
-    proto3.util.initPartial(data, this);
-  }
-
-  static readonly runtime = proto3;
-  static readonly typeName = "docker_rpc.v1.EchoResponse";
-  static readonly fields: FieldList = proto3.util.newFieldList(() => [
-    { no: 1, name: "message_response", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-  ]);
-
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): EchoResponse {
-    return new EchoResponse().fromBinary(bytes, options);
-  }
-
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): EchoResponse {
-    return new EchoResponse().fromJson(jsonValue, options);
-  }
-
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): EchoResponse {
-    return new EchoResponse().fromJsonString(jsonString, options);
-  }
-
-  static equals(a: EchoResponse | PlainMessage<EchoResponse> | undefined, b: EchoResponse | PlainMessage<EchoResponse> | undefined): boolean {
-    return proto3.util.equals(EchoResponse, a, b);
+  static equals(a: FileUpload | PlainMessage<FileUpload> | undefined, b: FileUpload | PlainMessage<FileUpload> | undefined): boolean {
+    return proto3.util.equals(FileUpload, a, b);
   }
 }
 

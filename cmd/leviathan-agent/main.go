@@ -6,6 +6,7 @@ import (
 	"github.com/ThreeDotsLabs/watermill"
 	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/ThreeDotsLabs/watermill/pubsub/gochannel"
+	"github.com/docker/docker/client"
 	"github.com/google/uuid"
 	api "github.com/makeopensource/leviathan/cmd/api"
 	"github.com/makeopensource/leviathan/internal/config"
@@ -28,10 +29,13 @@ func main() {
 
 	config.InitConfig()
 
-	_, err := dockerclient.NewSSHClient("r334@192.168.50.123")
+	remoteClient, err := dockerclient.NewSSHClient("r334@192.168.50.123")
+	localClient, err := dockerclient.NewLocalClient()
 	if err != nil {
-		log.Fatal().Msg("Failed to setup docker client")
+		log.Fatal().Err(err).Msg("Failed to setup docker client")
 	}
+
+	clientList := []*client.Client{localClient, remoteClient}
 
 	// setup job store
 	_ = store.NewMessageStore()
@@ -52,7 +56,7 @@ func main() {
 
 	port := "9221"
 	srvAddr := fmt.Sprintf(":%s", port)
-	mux := api.SetupPaths()
+	mux := api.SetupPaths(clientList)
 
 	log.Info().Msgf("Started server on %s", srvAddr)
 	err = http.ListenAndServe(

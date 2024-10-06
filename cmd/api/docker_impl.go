@@ -49,6 +49,15 @@ func (dk *DockerServer) StopContainer(_ context.Context, req *connect.Request[dk
 	res := connect.NewResponse(&dkrpc.StopContainerResponse{})
 	return res, nil
 }
+
+func (dk *DockerServer) GetContainerLogs(_ context.Context, req *connect.Request[dkrpc.GetContainerLogRequest], responseStream *connect.ServerStream[dkrpc.GetContainerLogResponse]) error {
+	err := dockerclient.HandleGetContainerLogsReq(dk.clientList, req.Msg.GetCombinedId(), responseStream)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (dk *DockerServer) CreateNewImage(_ context.Context, req *connect.Request[dkrpc.NewImageRequest]) (*connect.Response[dkrpc.NewImageResponse], error) {
 	filename := req.Msg.File.GetFilename()
 	contents := req.Msg.File.GetContent()

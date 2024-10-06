@@ -2,7 +2,6 @@ package dockerclient
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"github.com/docker/cli/cli/connhelper"
 	"github.com/docker/docker/api/types"
@@ -12,7 +11,6 @@ import (
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/archive"
-	"github.com/docker/docker/pkg/stdcopy"
 	dktypes "github.com/makeopensource/leviathan/internal/generated/docker_rpc/v1"
 	"github.com/makeopensource/leviathan/internal/util"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
@@ -269,20 +267,13 @@ func CopyToContainer(client *client.Client, containerID string, filePath string)
 }
 
 // TailContainerLogs get logs TODO
-func TailContainerLogs(ctx context.Context, client *client.Client, containerID string) error {
+func TailContainerLogs(ctx context.Context, client *client.Client, containerID string) (io.ReadCloser, error) {
 	reader, err := client.ContainerLogs(ctx, containerID, container.LogsOptions{ShowStdout: true, ShowStderr: true, Follow: true})
 	if err != nil {
 		log.Error().Err(err).Msgf("failed to tail Docker container")
-		return err
+		return nil, err
 	}
-
-	_, err = stdcopy.StdCopy(os.Stdout, os.Stdout, reader)
-	if err != nil && err != io.EOF && !errors.Is(err, context.Canceled) {
-		log.Error().Err(err).Msgf("failed to tail Docker container")
-		return err
-	}
-
-	return nil
+	return reader, nil
 }
 
 // general administrative controls

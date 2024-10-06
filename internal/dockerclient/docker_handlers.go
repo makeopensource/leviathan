@@ -1,12 +1,15 @@
 package dockerclient
 
 import (
+	"connectrpc.com/connect"
 	"context"
 	"fmt"
 	"github.com/docker/docker/client"
+	"github.com/docker/docker/pkg/stdcopy"
 	dktypes "github.com/makeopensource/leviathan/internal/generated/docker_rpc/v1"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
+	"io"
 	"strconv"
 )
 
@@ -117,5 +120,37 @@ func HandleListContainerReq(clientList []*client.Client) []*dktypes.DockerContai
 	return result
 }
 
-func HandleCreateContainerReq(clientList []*client.Client, imageTag string, studentCode string) {
+// streamWriter implements io.Writer interface
+type logStreamWriter struct {
+	stream *connect.ServerStream[dktypes.GetContainerLogResponse]
 }
+
+func (w *logStreamWriter) Write(p []byte) (n int, err error) {
+	err = w.stream.Send(&dktypes.GetContainerLogResponse{Logs: string(p)})
+	if err != nil {
+		return 0, err
+	}
+	return len(p), nil
+}
+
+func HandleGetContainerLogsReq(clientList []*client.Client, combinedId string, responseStream *connect.ServerStream[dktypes.GetContainerLogResponse]) error {
+	containerId, machineId, err := parseCombinedID(combinedId)
+	if err != nil {
+		return err
+	}
+	reader, err := TailContainerLogs(context.Background(), clientList[machineId], containerId)
+	if err != nil {
+		return err
+	}
+
+	writer := &logStreamWriter{stream: responseStream}
+	_, err = stdcopy.StdCopy(writer, writer, reader)
+	if err != nil && err != io.EOF && !errors.Is(err, context.Canceled) {
+		log.Error().Err(err).Msgf("failed to tail Docker container")
+		return errors.New("failed to tail Docker container")
+	}
+
+	return nil
+}
+
+func HandleCreateContainerReq(clientList []*client.Client, imageTag string, studentCode string) {}

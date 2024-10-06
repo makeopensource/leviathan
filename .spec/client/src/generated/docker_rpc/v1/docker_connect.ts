@@ -3,7 +3,7 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { CreateContainerRequest, CreateContainerResponse, DeleteContainerRequest, DeleteContainerResponse, ListContainersRequest, ListContainersResponse, ListImageRequest, ListImageResponse, NewImageRequest, NewImageResponse, StartContainerRequest, StartContainerResponse, StopContainerRequest, StopContainerResponse } from "./docker_pb";
+import { CreateContainerRequest, CreateContainerResponse, DeleteContainerRequest, DeleteContainerResponse, GetContainerLogRequest, GetContainerLogResponse, ListContainersRequest, ListContainersResponse, ListImageRequest, ListImageResponse, NewImageRequest, NewImageResponse, StartContainerRequest, StartContainerResponse, StopContainerRequest, StopContainerResponse } from "./docker_pb";
 import { MethodKind } from "@bufbuild/protobuf";
 
 /**
@@ -56,6 +56,15 @@ export const DockerService = {
       I: StopContainerRequest,
       O: StopContainerResponse,
       kind: MethodKind.Unary,
+    },
+    /**
+     * @generated from rpc docker_rpc.v1.DockerService.GetContainerLogs
+     */
+    getContainerLogs: {
+      name: "GetContainerLogs",
+      I: GetContainerLogRequest,
+      O: GetContainerLogResponse,
+      kind: MethodKind.ServerStreaming,
     },
     /**
      * @generated from rpc docker_rpc.v1.DockerService.CreateNewImage

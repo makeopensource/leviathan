@@ -48,6 +48,9 @@ const (
 	// DockerServiceStopContainerProcedure is the fully-qualified name of the DockerService's
 	// StopContainer RPC.
 	DockerServiceStopContainerProcedure = "/docker_rpc.v1.DockerService/StopContainer"
+	// DockerServiceGetContainerLogsProcedure is the fully-qualified name of the DockerService's
+	// GetContainerLogs RPC.
+	DockerServiceGetContainerLogsProcedure = "/docker_rpc.v1.DockerService/GetContainerLogs"
 	// DockerServiceCreateNewImageProcedure is the fully-qualified name of the DockerService's
 	// CreateNewImage RPC.
 	DockerServiceCreateNewImageProcedure = "/docker_rpc.v1.DockerService/CreateNewImage"
@@ -58,14 +61,15 @@ const (
 
 // These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
 var (
-	dockerServiceServiceDescriptor               = v1.File_docker_rpc_v1_docker_proto.Services().ByName("DockerService")
-	dockerServiceCreateContainerMethodDescriptor = dockerServiceServiceDescriptor.Methods().ByName("CreateContainer")
-	dockerServiceDeleteContainerMethodDescriptor = dockerServiceServiceDescriptor.Methods().ByName("DeleteContainer")
-	dockerServiceListContainersMethodDescriptor  = dockerServiceServiceDescriptor.Methods().ByName("ListContainers")
-	dockerServiceStartContainerMethodDescriptor  = dockerServiceServiceDescriptor.Methods().ByName("StartContainer")
-	dockerServiceStopContainerMethodDescriptor   = dockerServiceServiceDescriptor.Methods().ByName("StopContainer")
-	dockerServiceCreateNewImageMethodDescriptor  = dockerServiceServiceDescriptor.Methods().ByName("CreateNewImage")
-	dockerServiceListImagesMethodDescriptor      = dockerServiceServiceDescriptor.Methods().ByName("ListImages")
+	dockerServiceServiceDescriptor                = v1.File_docker_rpc_v1_docker_proto.Services().ByName("DockerService")
+	dockerServiceCreateContainerMethodDescriptor  = dockerServiceServiceDescriptor.Methods().ByName("CreateContainer")
+	dockerServiceDeleteContainerMethodDescriptor  = dockerServiceServiceDescriptor.Methods().ByName("DeleteContainer")
+	dockerServiceListContainersMethodDescriptor   = dockerServiceServiceDescriptor.Methods().ByName("ListContainers")
+	dockerServiceStartContainerMethodDescriptor   = dockerServiceServiceDescriptor.Methods().ByName("StartContainer")
+	dockerServiceStopContainerMethodDescriptor    = dockerServiceServiceDescriptor.Methods().ByName("StopContainer")
+	dockerServiceGetContainerLogsMethodDescriptor = dockerServiceServiceDescriptor.Methods().ByName("GetContainerLogs")
+	dockerServiceCreateNewImageMethodDescriptor   = dockerServiceServiceDescriptor.Methods().ByName("CreateNewImage")
+	dockerServiceListImagesMethodDescriptor       = dockerServiceServiceDescriptor.Methods().ByName("ListImages")
 )
 
 // DockerServiceClient is a client for the docker_rpc.v1.DockerService service.
@@ -75,6 +79,7 @@ type DockerServiceClient interface {
 	ListContainers(context.Context, *connect.Request[v1.ListContainersRequest]) (*connect.Response[v1.ListContainersResponse], error)
 	StartContainer(context.Context, *connect.Request[v1.StartContainerRequest]) (*connect.Response[v1.StartContainerResponse], error)
 	StopContainer(context.Context, *connect.Request[v1.StopContainerRequest]) (*connect.Response[v1.StopContainerResponse], error)
+	GetContainerLogs(context.Context, *connect.Request[v1.GetContainerLogRequest]) (*connect.ServerStreamForClient[v1.GetContainerLogResponse], error)
 	CreateNewImage(context.Context, *connect.Request[v1.NewImageRequest]) (*connect.Response[v1.NewImageResponse], error)
 	ListImages(context.Context, *connect.Request[v1.ListImageRequest]) (*connect.Response[v1.ListImageResponse], error)
 }
@@ -119,6 +124,12 @@ func NewDockerServiceClient(httpClient connect.HTTPClient, baseURL string, opts 
 			connect.WithSchema(dockerServiceStopContainerMethodDescriptor),
 			connect.WithClientOptions(opts...),
 		),
+		getContainerLogs: connect.NewClient[v1.GetContainerLogRequest, v1.GetContainerLogResponse](
+			httpClient,
+			baseURL+DockerServiceGetContainerLogsProcedure,
+			connect.WithSchema(dockerServiceGetContainerLogsMethodDescriptor),
+			connect.WithClientOptions(opts...),
+		),
 		createNewImage: connect.NewClient[v1.NewImageRequest, v1.NewImageResponse](
 			httpClient,
 			baseURL+DockerServiceCreateNewImageProcedure,
@@ -136,13 +147,14 @@ func NewDockerServiceClient(httpClient connect.HTTPClient, baseURL string, opts 
 
 // dockerServiceClient implements DockerServiceClient.
 type dockerServiceClient struct {
-	createContainer *connect.Client[v1.CreateContainerRequest, v1.CreateContainerResponse]
-	deleteContainer *connect.Client[v1.DeleteContainerRequest, v1.DeleteContainerResponse]
-	listContainers  *connect.Client[v1.ListContainersRequest, v1.ListContainersResponse]
-	startContainer  *connect.Client[v1.StartContainerRequest, v1.StartContainerResponse]
-	stopContainer   *connect.Client[v1.StopContainerRequest, v1.StopContainerResponse]
-	createNewImage  *connect.Client[v1.NewImageRequest, v1.NewImageResponse]
-	listImages      *connect.Client[v1.ListImageRequest, v1.ListImageResponse]
+	createContainer  *connect.Client[v1.CreateContainerRequest, v1.CreateContainerResponse]
+	deleteContainer  *connect.Client[v1.DeleteContainerRequest, v1.DeleteContainerResponse]
+	listContainers   *connect.Client[v1.ListContainersRequest, v1.ListContainersResponse]
+	startContainer   *connect.Client[v1.StartContainerRequest, v1.StartContainerResponse]
+	stopContainer    *connect.Client[v1.StopContainerRequest, v1.StopContainerResponse]
+	getContainerLogs *connect.Client[v1.GetContainerLogRequest, v1.GetContainerLogResponse]
+	createNewImage   *connect.Client[v1.NewImageRequest, v1.NewImageResponse]
+	listImages       *connect.Client[v1.ListImageRequest, v1.ListImageResponse]
 }
 
 // CreateContainer calls docker_rpc.v1.DockerService.CreateContainer.
@@ -170,6 +182,11 @@ func (c *dockerServiceClient) StopContainer(ctx context.Context, req *connect.Re
 	return c.stopContainer.CallUnary(ctx, req)
 }
 
+// GetContainerLogs calls docker_rpc.v1.DockerService.GetContainerLogs.
+func (c *dockerServiceClient) GetContainerLogs(ctx context.Context, req *connect.Request[v1.GetContainerLogRequest]) (*connect.ServerStreamForClient[v1.GetContainerLogResponse], error) {
+	return c.getContainerLogs.CallServerStream(ctx, req)
+}
+
 // CreateNewImage calls docker_rpc.v1.DockerService.CreateNewImage.
 func (c *dockerServiceClient) CreateNewImage(ctx context.Context, req *connect.Request[v1.NewImageRequest]) (*connect.Response[v1.NewImageResponse], error) {
 	return c.createNewImage.CallUnary(ctx, req)
@@ -187,6 +204,7 @@ type DockerServiceHandler interface {
 	ListContainers(context.Context, *connect.Request[v1.ListContainersRequest]) (*connect.Response[v1.ListContainersResponse], error)
 	StartContainer(context.Context, *connect.Request[v1.StartContainerRequest]) (*connect.Response[v1.StartContainerResponse], error)
 	StopContainer(context.Context, *connect.Request[v1.StopContainerRequest]) (*connect.Response[v1.StopContainerResponse], error)
+	GetContainerLogs(context.Context, *connect.Request[v1.GetContainerLogRequest], *connect.ServerStream[v1.GetContainerLogResponse]) error
 	CreateNewImage(context.Context, *connect.Request[v1.NewImageRequest]) (*connect.Response[v1.NewImageResponse], error)
 	ListImages(context.Context, *connect.Request[v1.ListImageRequest]) (*connect.Response[v1.ListImageResponse], error)
 }
@@ -227,6 +245,12 @@ func NewDockerServiceHandler(svc DockerServiceHandler, opts ...connect.HandlerOp
 		connect.WithSchema(dockerServiceStopContainerMethodDescriptor),
 		connect.WithHandlerOptions(opts...),
 	)
+	dockerServiceGetContainerLogsHandler := connect.NewServerStreamHandler(
+		DockerServiceGetContainerLogsProcedure,
+		svc.GetContainerLogs,
+		connect.WithSchema(dockerServiceGetContainerLogsMethodDescriptor),
+		connect.WithHandlerOptions(opts...),
+	)
 	dockerServiceCreateNewImageHandler := connect.NewUnaryHandler(
 		DockerServiceCreateNewImageProcedure,
 		svc.CreateNewImage,
@@ -251,6 +275,8 @@ func NewDockerServiceHandler(svc DockerServiceHandler, opts ...connect.HandlerOp
 			dockerServiceStartContainerHandler.ServeHTTP(w, r)
 		case DockerServiceStopContainerProcedure:
 			dockerServiceStopContainerHandler.ServeHTTP(w, r)
+		case DockerServiceGetContainerLogsProcedure:
+			dockerServiceGetContainerLogsHandler.ServeHTTP(w, r)
 		case DockerServiceCreateNewImageProcedure:
 			dockerServiceCreateNewImageHandler.ServeHTTP(w, r)
 		case DockerServiceListImagesProcedure:
@@ -282,6 +308,10 @@ func (UnimplementedDockerServiceHandler) StartContainer(context.Context, *connec
 
 func (UnimplementedDockerServiceHandler) StopContainer(context.Context, *connect.Request[v1.StopContainerRequest]) (*connect.Response[v1.StopContainerResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("docker_rpc.v1.DockerService.StopContainer is not implemented"))
+}
+
+func (UnimplementedDockerServiceHandler) GetContainerLogs(context.Context, *connect.Request[v1.GetContainerLogRequest], *connect.ServerStream[v1.GetContainerLogResponse]) error {
+	return connect.NewError(connect.CodeUnimplemented, errors.New("docker_rpc.v1.DockerService.GetContainerLogs is not implemented"))
 }
 
 func (UnimplementedDockerServiceHandler) CreateNewImage(context.Context, *connect.Request[v1.NewImageRequest]) (*connect.Response[v1.NewImageResponse], error) {

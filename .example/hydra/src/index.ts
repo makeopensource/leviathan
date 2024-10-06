@@ -89,6 +89,22 @@ const dockerEndpoints = {
             return
         }
     },
+    'Get Container Logs': async () => {
+        const {containerId} = await inquirer.prompt([
+            {type: 'input', name: 'containerId', message: 'Enter the container ID:'}
+        ]);
+
+        try {
+            const result = dkClient.getContainerLogs({combinedId: containerId});
+            for await (const logs of result) {
+                console.log("Logs");
+                console.log(logs.logs)
+            }
+        } catch (error) {
+            console.error(error)
+            return
+        }
+    },
 };
 
 async function readFileAsBytes(filePath: string): Promise<Uint8Array> {

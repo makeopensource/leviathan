@@ -10,6 +10,7 @@ service DockerService {
   rpc ListContainers(ListContainersRequest) returns (ListContainersResponse) {}
   rpc StartContainer(StartContainerRequest) returns (StartContainerResponse) {};
   rpc StopContainer(StopContainerRequest) returns (StopContainerResponse) {};
+  rpc GetContainerLogs(GetContainerLogRequest) returns (stream GetContainerLogResponse) {};
   rpc CreateNewImage(NewImageRequest) returns (NewImageResponse) {};
   rpc ListImages(ListImageRequest) returns (ListImageResponse) {};
 }
@@ -25,6 +26,13 @@ message StopContainerRequest{
 }
 message StopContainerResponse{}
 
+message GetContainerLogRequest{
+  string combinedId = 1;
+}
+
+message GetContainerLogResponse{
+  string logs = 1;
+}
 
 // todo figure out request/response
 message CreateContainerRequest {}

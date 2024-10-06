@@ -143,6 +143,80 @@ export class StopContainerResponse extends Message<StopContainerResponse> {
 }
 
 /**
+ * @generated from message docker_rpc.v1.GetContainerLogRequest
+ */
+export class GetContainerLogRequest extends Message<GetContainerLogRequest> {
+  /**
+   * @generated from field: string combinedId = 1;
+   */
+  combinedId = "";
+
+  constructor(data?: PartialMessage<GetContainerLogRequest>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime = proto3;
+  static readonly typeName = "docker_rpc.v1.GetContainerLogRequest";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "combinedId", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetContainerLogRequest {
+    return new GetContainerLogRequest().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GetContainerLogRequest {
+    return new GetContainerLogRequest().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GetContainerLogRequest {
+    return new GetContainerLogRequest().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: GetContainerLogRequest | PlainMessage<GetContainerLogRequest> | undefined, b: GetContainerLogRequest | PlainMessage<GetContainerLogRequest> | undefined): boolean {
+    return proto3.util.equals(GetContainerLogRequest, a, b);
+  }
+}
+
+/**
+ * @generated from message docker_rpc.v1.GetContainerLogResponse
+ */
+export class GetContainerLogResponse extends Message<GetContainerLogResponse> {
+  /**
+   * @generated from field: string logs = 1;
+   */
+  logs = "";
+
+  constructor(data?: PartialMessage<GetContainerLogResponse>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime = proto3;
+  static readonly typeName = "docker_rpc.v1.GetContainerLogResponse";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "logs", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetContainerLogResponse {
+    return new GetContainerLogResponse().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GetContainerLogResponse {
+    return new GetContainerLogResponse().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GetContainerLogResponse {
+    return new GetContainerLogResponse().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: GetContainerLogResponse | PlainMessage<GetContainerLogResponse> | undefined, b: GetContainerLogResponse | PlainMessage<GetContainerLogResponse> | undefined): boolean {
+    return proto3.util.equals(GetContainerLogResponse, a, b);
+  }
+}
+
+/**
  * todo figure out request/response
  *
  * @generated from message docker_rpc.v1.CreateContainerRequest

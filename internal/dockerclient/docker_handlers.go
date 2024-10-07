@@ -73,7 +73,7 @@ func HandleNewImageReq(filename string, contents []byte, imageTag string, client
 		return errors.New("imagetag is missing")
 	}
 
-	uploadDir := "./uploads"
+	uploadDir := "./appdata/uploads"
 	fullpath := fmt.Sprintf("%s/%s", uploadDir, filename)
 
 	err := saveDockerfile(fullpath, contents)
@@ -153,4 +153,5 @@ func HandleGetContainerLogsReq(clientList []*client.Client, combinedId string, r
 	return nil
 }
 
-func HandleCreateContainerReq(clientList []*client.Client, imageTag string, studentCode string) {}
+// TODO
+//func HandleCreateContainerReq(clientList []*client.Client, imageTag string, studentCode string) {}

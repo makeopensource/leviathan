@@ -5,7 +5,11 @@ services:
       context: .
     ports:
       - "9221:9221"
+    env_file:
+      - .env
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./appdata/:/app/appdata
+      # warning mounting ssh will not work in windows hosts https://nickjanetakis.com/blog/docker-tip-56-volume-mounting-ssh-keys-into-a-docker-container
+      - ${USERPROFILE}/.ssh:/root/.ssh:ro
     restart: "no"

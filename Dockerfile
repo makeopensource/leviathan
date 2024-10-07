@@ -16,6 +16,8 @@ FROM alpine:latest
 
 WORKDIR /app/
 
+RUN apk update && apk add openssh
+
 COPY --from=builder /app/app .
 
 # start go-gin in release mode

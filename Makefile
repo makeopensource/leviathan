@@ -2,8 +2,10 @@ dk:
 	docker build . -t leviathan:dev
 
 dkrn:
-	docker compose up --build
+	docker compose up
+
+lint:
+	golangci-lint run
 
 bdrn:
-	make dk
-	make dkrn
+	docker compose up --build

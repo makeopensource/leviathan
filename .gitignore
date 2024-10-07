@@ -19,3 +19,4 @@ config.toml
 uploads
 .spec/server/*
 appdata
+.env

@@ -18,3 +18,4 @@ bin
 config.toml
 uploads
 .spec/server/*
+appdata

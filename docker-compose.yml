@@ -1,0 +1,11 @@
+services:
+  leviathan:
+    image: leviathan:dev
+    build:
+      context: .
+    ports:
+      - "9221:9221"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./appdata/:/app/appdata
+    restart: "no"

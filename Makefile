@@ -2,7 +2,7 @@ dk:
 	docker build . -t leviathan:dev
 
 dkrn:
-	docker run --rm -p 9221:9221 leviathan:dev
+	docker compose up --build
 
 bdrn:
 	make dk

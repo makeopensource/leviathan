@@ -133,6 +133,7 @@ func ListContainers(client *client.Client, machineId string) ([]*dktypes.Contain
 		log.Error().Err(err).Msgf("failed to list Docker images")
 		return nil, err
 	}
+
 	log.Debug().Msgf("Docker images listed: %d", len(containerInfos))
 
 	var containerInfoList []*dktypes.ContainerMetaData

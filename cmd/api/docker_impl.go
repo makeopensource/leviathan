@@ -11,7 +11,7 @@ import (
 )
 
 type DockerServer struct {
-	clientList []*client.Client
+	clientList map[string]*client.Client
 }
 
 func (dk *DockerServer) CreateContainer(_ context.Context, req *connect.Request[dkrpc.CreateContainerRequest]) (*connect.Response[dkrpc.CreateContainerResponse], error) {

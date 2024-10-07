@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-func SetupPaths(clientList []*client.Client) *http.ServeMux {
+func SetupPaths(clientList map[string]*client.Client) *http.ServeMux {
 	greeter := &DockerServer{clientList}
 	mux := http.NewServeMux()
 	path, handler := dkclient.NewDockerServiceHandler(greeter)

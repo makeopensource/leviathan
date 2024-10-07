@@ -10,10 +10,9 @@ import (
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
 	"io"
-	"strconv"
 )
 
-func HandleStartContainerReq(clientList []*client.Client, combinedId string) error {
+func HandleStartContainerReq(clientList map[string]*client.Client, combinedId string) error {
 	containerId, machineId, err := parseCombinedID(combinedId)
 	if err != nil {
 		return err
@@ -27,7 +26,7 @@ func HandleStartContainerReq(clientList []*client.Client, combinedId string) err
 	return nil
 }
 
-func HandleStopContainerReq(clientList []*client.Client, combinedId string) error {
+func HandleStopContainerReq(clientList map[string]*client.Client, combinedId string) error {
 	containerId, machineId, err := parseCombinedID(combinedId)
 	if err != nil {
 		return err
@@ -41,10 +40,10 @@ func HandleStopContainerReq(clientList []*client.Client, combinedId string) erro
 	return nil
 }
 
-func HandleListImagesReq(clientList []*client.Client) []*dktypes.DockerImage {
+func HandleListImagesReq(clientList map[string]*client.Client) []*dktypes.DockerImage {
 	var result []*dktypes.DockerImage
 
-	for ind, cli := range clientList {
+	for machineID, cli := range clientList {
 		images, err := ListImages(cli)
 		if err != nil {
 			info, err := cli.Info(context.Background())
@@ -57,14 +56,14 @@ func HandleListImagesReq(clientList []*client.Client) []*dktypes.DockerImage {
 		}
 
 		result = append(result, &dktypes.DockerImage{
-			Id:       strconv.Itoa(ind),
+			Id:       machineID,
 			Metadata: images,
 		})
 	}
 	return result
 }
 
-func HandleNewImageReq(filename string, contents []byte, imageTag string, clientList []*client.Client) error {
+func HandleNewImageReq(filename string, contents []byte, imageTag string, clientList map[string]*client.Client) error {
 	if len(filename) == 0 {
 		return errors.New("filename is missing")
 	} else if len(contents) == 0 {
@@ -97,22 +96,22 @@ func HandleNewImageReq(filename string, contents []byte, imageTag string, client
 	return nil
 }
 
-func HandleListContainerReq(clientList []*client.Client) []*dktypes.DockerContainer {
+func HandleListContainerReq(clientList map[string]*client.Client) []*dktypes.DockerContainer {
 	var result []*dktypes.DockerContainer
-	for ind, cli := range clientList {
-		containers, err := ListContainers(cli, strconv.Itoa(ind))
+	for machineID, cli := range clientList {
+		info, err := cli.Info(context.Background())
 		if err != nil {
-			info, err := cli.Info(context.Background())
-			if err != nil {
-				log.Error().Err(err).Msg("failed to get docker server info")
-				continue
-			}
+			log.Error().Err(err).Msg("failed to get docker server info")
+			continue
+		}
+		containers, err := ListContainers(cli, info.ID)
+		if err != nil {
 			log.Error().Err(err).Msgf("Error listing containers for %s", info.Name)
 			continue
 		}
 
 		result = append(result, &dktypes.DockerContainer{
-			Id:       strconv.Itoa(ind),
+			Id:       machineID,
 			Metadata: containers,
 		})
 
@@ -133,7 +132,7 @@ func (w *logStreamWriter) Write(p []byte) (n int, err error) {
 	return len(p), nil
 }
 
-func HandleGetContainerLogsReq(clientList []*client.Client, combinedId string, responseStream *connect.ServerStream[dktypes.GetContainerLogResponse]) error {
+func HandleGetContainerLogsReq(clientList map[string]*client.Client, combinedId string, responseStream *connect.ServerStream[dktypes.GetContainerLogResponse]) error {
 	containerId, machineId, err := parseCombinedID(combinedId)
 	if err != nil {
 		return err

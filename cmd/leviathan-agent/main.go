@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/docker/docker/api/types/system"
 	"github.com/docker/docker/client"
 	"github.com/makeopensource/leviathan/cmd/api"
 	"github.com/makeopensource/leviathan/internal/config"
@@ -38,11 +39,11 @@ func main() {
 	}
 }
 
-func initDockerClients() []*client.Client {
+func initDockerClients() map[string]*client.Client {
 	// contains clients loaded from config
 	untestedClientList := config.GetClientList()
 	// contains final connected list
-	var clientList []*client.Client
+	clientList := make(map[string]*client.Client)
 
 	for _, machine := range untestedClientList {
 		connStr := fmt.Sprintf("%s@%s", machine.User, machine.Host)
@@ -52,12 +53,13 @@ func initDockerClients() []*client.Client {
 			continue
 		}
 
-		err = testClientConn(remoteClient)
+		info, err := testClientConn(remoteClient)
 		if err != nil {
 			log.Warn().Err(err).Msgf("Client failed to connect: %s", machine.Name)
 			continue
 		}
-		clientList = append(clientList, remoteClient)
+
+		clientList[info.ID] = remoteClient
 	}
 
 	if viper.GetBool("clients.enable_local_docker") {
@@ -66,11 +68,11 @@ func initDockerClients() []*client.Client {
 			log.Error().Err(err).Msg("Failed to setup local docker client")
 		}
 
-		err = testClientConn(localClient)
+		info, err := testClientConn(localClient)
 		if err != nil {
 			log.Warn().Err(err).Msgf("Client failed to connect: localdocker")
 		}
-		clientList = append(clientList, localClient)
+		clientList[info.ID] = localClient
 	} else {
 		log.Warn().Msgf("Local docker is disabled in config.toml")
 	}
@@ -82,12 +84,12 @@ func initDockerClients() []*client.Client {
 	return clientList
 }
 
-func testClientConn(client *client.Client) error {
+func testClientConn(client *client.Client) (system.Info, error) {
 	info, err := client.Info(context.Background())
 	if err != nil {
-		return err
+		return system.Info{}, err
 	}
 
 	log.Info().Str("ID", info.ID).Str("Kernel", info.KernelVersion).Msgf("Connected to %v", info.Name)
-	return nil
+	return info, nil
 }

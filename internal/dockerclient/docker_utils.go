@@ -8,7 +8,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"strconv"
 )
 
 // ConvertToTar make input tar file from dockerfile path
@@ -74,17 +73,11 @@ func saveDockerfile(fullPath string, contents []byte) error {
 }
 
 // parseCombinedID decode combined id which should contain the machine id and container id
-func parseCombinedID(combinedId string) (string, int, error) {
-	stringMachineId, containerId, err := util.DecodeID(combinedId)
+func parseCombinedID(combinedId string) (string, string, error) {
+	machineId, containerId, err := util.DecodeID(combinedId)
 	if err != nil {
 		log.Error().Err(err).Str("ID", combinedId).Msg("Could not decode ID")
-		return "", 0, err
-	}
-
-	machineId, err := strconv.Atoi(stringMachineId)
-	if err != nil {
-		log.Error().Err(err).Str("String MachineID", stringMachineId).Msg("Could not decode machine ID")
-		return "", 0, err
+		return "", "", err
 	}
 
 	return containerId, machineId, nil

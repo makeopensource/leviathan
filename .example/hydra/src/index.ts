@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 
 import {Command} from 'commander';
-import {DockerService} from "leviathan-generated-sdk/src/generated/docker_rpc/v1/docker_connect";
 import inquirer from 'inquirer';
 import {createConnectTransport} from "@connectrpc/connect-node";
 import {createPromiseClient} from "@connectrpc/connect";
-import * as fs from "node:fs";
+import {DockerService} from "leviathan-generated-sdk/src/generated/docker_rpc/v1/docker_connect";
+import {readFileAsBytes} from "./utils";
 import {FileUpload} from "leviathan-generated-sdk/src/generated/docker_rpc/v1/docker_pb";
 
 const program = new Command();
@@ -16,13 +16,12 @@ program
 
 const baseUrl = "http://localhost:9221"
 
-const transport = createConnectTransport({
+let transport = createConnectTransport({
     baseUrl: baseUrl,
     httpVersion: "2"
 });
 
 const dkClient = createPromiseClient(DockerService, transport)
-
 const dockerEndpoints = {
     "List images": async () => {
         const result = await dkClient.listImages({})
@@ -89,6 +88,32 @@ const dockerEndpoints = {
             return
         }
     },
+    'Create Docker container': async () => {
+        const getImageList = await dkClient.listImages({})
+
+        let fullImageList = {};
+
+        for (const image of getImageList.images) {
+            for (const metadata of image.metadata) {
+                // @ts-ignore
+                fullImageList[metadata.RepoTags[0]] = metadata.RepoTags[0]
+            }
+        }
+
+        // list docker images
+        const {imageTag} = await inquirer.prompt([
+            {
+                type: 'list',
+                name: 'imageTag',
+                message: 'Choose an image to use:',
+                choices: [...Object.keys(fullImageList)]
+            }
+        ]);
+
+        // select image
+        const res = await dkClient.createContainer({imageTag})
+    },
+
     'Get Container Logs': async () => {
         const {containerId} = await inquirer.prompt([
             {type: 'input', name: 'containerId', message: 'Enter the container ID:'}
@@ -106,16 +131,6 @@ const dockerEndpoints = {
         }
     },
 };
-
-async function readFileAsBytes(filePath: string): Promise<Uint8Array> {
-    try {
-        const buffer = fs.readFileSync(filePath);
-        return new Uint8Array(buffer);
-    } catch (error) {
-        console.error('Error reading file:', error);
-        throw error;
-    }
-}
 
 
 async function main() {

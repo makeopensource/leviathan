@@ -217,11 +217,19 @@ export class GetContainerLogResponse extends Message<GetContainerLogResponse> {
 }
 
 /**
- * todo figure out request/response
- *
  * @generated from message docker_rpc.v1.CreateContainerRequest
  */
 export class CreateContainerRequest extends Message<CreateContainerRequest> {
+  /**
+   * @generated from field: string imageTag = 1;
+   */
+  imageTag = "";
+
+  /**
+   * @generated from field: string machineID = 2;
+   */
+  machineID = "";
+
   constructor(data?: PartialMessage<CreateContainerRequest>) {
     super();
     proto3.util.initPartial(data, this);
@@ -230,6 +238,8 @@ export class CreateContainerRequest extends Message<CreateContainerRequest> {
   static readonly runtime = proto3;
   static readonly typeName = "docker_rpc.v1.CreateContainerRequest";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "imageTag", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "machineID", kind: "scalar", T: 9 /* ScalarType.STRING */ },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): CreateContainerRequest {
@@ -253,6 +263,11 @@ export class CreateContainerRequest extends Message<CreateContainerRequest> {
  * @generated from message docker_rpc.v1.CreateContainerResponse
  */
 export class CreateContainerResponse extends Message<CreateContainerResponse> {
+  /**
+   * @generated from field: string containerId = 1;
+   */
+  containerId = "";
+
   constructor(data?: PartialMessage<CreateContainerResponse>) {
     super();
     proto3.util.initPartial(data, this);
@@ -261,6 +276,7 @@ export class CreateContainerResponse extends Message<CreateContainerResponse> {
   static readonly runtime = proto3;
   static readonly typeName = "docker_rpc.v1.CreateContainerResponse";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "containerId", kind: "scalar", T: 9 /* ScalarType.STRING */ },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): CreateContainerResponse {

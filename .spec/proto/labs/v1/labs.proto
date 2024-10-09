@@ -5,26 +5,27 @@ package labs.v1;
 option go_package = "github.com/makeopensource/leviathan/internal/generated/labs/v1";
 
 service LabService {
-  rpc NewLab(NewLabRequest) returns (NewLabResponse) {}
-  rpc EditLab(EditLabRequest) returns (EditLabResponse) {}
+  rpc NewLab(LabRequest) returns (NewLabResponse) {}
+  rpc EditLab(LabRequest) returns (EditLabResponse) {}
   rpc DeleteLab(DeleteLabRequest) returns (DeleteLabResponse) {}
 }
 
-// todo figure out request/response
-message NewLabRequest {
+message LabRequest {
+  string LabName = 1;
+  FileUpload graderFile = 2;
 }
 
-message NewLabResponse {
-}
+message NewLabResponse {}
 
-message EditLabRequest {
-}
-
-message EditLabResponse {
-}
+message EditLabResponse {}
 
 message DeleteLabRequest {
+  string LabName = 1;
 }
 
-message DeleteLabResponse {
+message DeleteLabResponse {}
+
+message FileUpload {
+  string filename = 1;
+  bytes content = 2;
 }

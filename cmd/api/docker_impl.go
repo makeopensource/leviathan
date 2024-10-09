@@ -15,6 +15,15 @@ type DockerServer struct {
 }
 
 func (dk *DockerServer) CreateContainer(_ context.Context, req *connect.Request[dkrpc.CreateContainerRequest]) (*connect.Response[dkrpc.CreateContainerResponse], error) {
+	machineID := "ca068799-ce39-472e-a442-6c30a73cbafe"
+	jobId := "freeddrf444"
+	imageTag := req.Msg.GetImageTag()
+
+	_, err := dockerclient.HandleCreateContainerReq(dk.clientList, machineID, jobId, imageTag)
+	if err != nil {
+		return nil, err
+	}
+
 	res := connect.NewResponse(&dkrpc.CreateContainerResponse{})
 	return res, nil
 }

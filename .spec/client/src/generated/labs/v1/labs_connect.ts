@@ -3,7 +3,7 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { DeleteLabRequest, DeleteLabResponse, EditLabRequest, EditLabResponse, NewLabRequest, NewLabResponse } from "./labs_pb";
+import { DeleteLabRequest, DeleteLabResponse, EditLabResponse, LabRequest, NewLabResponse } from "./labs_pb";
 import { MethodKind } from "@bufbuild/protobuf";
 
 /**
@@ -17,7 +17,7 @@ export const LabService = {
      */
     newLab: {
       name: "NewLab",
-      I: NewLabRequest,
+      I: LabRequest,
       O: NewLabResponse,
       kind: MethodKind.Unary,
     },
@@ -26,7 +26,7 @@ export const LabService = {
      */
     editLab: {
       name: "EditLab",
-      I: EditLabRequest,
+      I: LabRequest,
       O: EditLabResponse,
       kind: MethodKind.Unary,
     },

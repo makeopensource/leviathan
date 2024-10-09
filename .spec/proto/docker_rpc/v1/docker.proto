@@ -34,10 +34,14 @@ message GetContainerLogResponse{
   string logs = 1;
 }
 
-// todo figure out request/response
-message CreateContainerRequest {}
+message CreateContainerRequest {
+  string imageTag = 1;
+  string machineID = 2;
+}
 
-message CreateContainerResponse {}
+message CreateContainerResponse {
+  string containerId = 1;
+}
 
 message DeleteContainerRequest {
   string containerId = 1;

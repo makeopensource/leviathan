@@ -7,35 +7,45 @@ import type { BinaryReadOptions, FieldList, JsonReadOptions, JsonValue, PartialM
 import { Message, proto3 } from "@bufbuild/protobuf";
 
 /**
- * todo figure out request/response
- *
- * @generated from message labs.v1.NewLabRequest
+ * @generated from message labs.v1.LabRequest
  */
-export class NewLabRequest extends Message<NewLabRequest> {
-  constructor(data?: PartialMessage<NewLabRequest>) {
+export class LabRequest extends Message<LabRequest> {
+  /**
+   * @generated from field: string LabName = 1;
+   */
+  LabName = "";
+
+  /**
+   * @generated from field: labs.v1.FileUpload graderFile = 2;
+   */
+  graderFile?: FileUpload;
+
+  constructor(data?: PartialMessage<LabRequest>) {
     super();
     proto3.util.initPartial(data, this);
   }
 
   static readonly runtime = proto3;
-  static readonly typeName = "labs.v1.NewLabRequest";
+  static readonly typeName = "labs.v1.LabRequest";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "LabName", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "graderFile", kind: "message", T: FileUpload },
   ]);
 
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): NewLabRequest {
-    return new NewLabRequest().fromBinary(bytes, options);
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): LabRequest {
+    return new LabRequest().fromBinary(bytes, options);
   }
 
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): NewLabRequest {
-    return new NewLabRequest().fromJson(jsonValue, options);
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): LabRequest {
+    return new LabRequest().fromJson(jsonValue, options);
   }
 
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): NewLabRequest {
-    return new NewLabRequest().fromJsonString(jsonString, options);
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): LabRequest {
+    return new LabRequest().fromJsonString(jsonString, options);
   }
 
-  static equals(a: NewLabRequest | PlainMessage<NewLabRequest> | undefined, b: NewLabRequest | PlainMessage<NewLabRequest> | undefined): boolean {
-    return proto3.util.equals(NewLabRequest, a, b);
+  static equals(a: LabRequest | PlainMessage<LabRequest> | undefined, b: LabRequest | PlainMessage<LabRequest> | undefined): boolean {
+    return proto3.util.equals(LabRequest, a, b);
   }
 }
 
@@ -67,37 +77,6 @@ export class NewLabResponse extends Message<NewLabResponse> {
 
   static equals(a: NewLabResponse | PlainMessage<NewLabResponse> | undefined, b: NewLabResponse | PlainMessage<NewLabResponse> | undefined): boolean {
     return proto3.util.equals(NewLabResponse, a, b);
-  }
-}
-
-/**
- * @generated from message labs.v1.EditLabRequest
- */
-export class EditLabRequest extends Message<EditLabRequest> {
-  constructor(data?: PartialMessage<EditLabRequest>) {
-    super();
-    proto3.util.initPartial(data, this);
-  }
-
-  static readonly runtime = proto3;
-  static readonly typeName = "labs.v1.EditLabRequest";
-  static readonly fields: FieldList = proto3.util.newFieldList(() => [
-  ]);
-
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): EditLabRequest {
-    return new EditLabRequest().fromBinary(bytes, options);
-  }
-
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): EditLabRequest {
-    return new EditLabRequest().fromJson(jsonValue, options);
-  }
-
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): EditLabRequest {
-    return new EditLabRequest().fromJsonString(jsonString, options);
-  }
-
-  static equals(a: EditLabRequest | PlainMessage<EditLabRequest> | undefined, b: EditLabRequest | PlainMessage<EditLabRequest> | undefined): boolean {
-    return proto3.util.equals(EditLabRequest, a, b);
   }
 }
 
@@ -136,6 +115,11 @@ export class EditLabResponse extends Message<EditLabResponse> {
  * @generated from message labs.v1.DeleteLabRequest
  */
 export class DeleteLabRequest extends Message<DeleteLabRequest> {
+  /**
+   * @generated from field: string LabName = 1;
+   */
+  LabName = "";
+
   constructor(data?: PartialMessage<DeleteLabRequest>) {
     super();
     proto3.util.initPartial(data, this);
@@ -144,6 +128,7 @@ export class DeleteLabRequest extends Message<DeleteLabRequest> {
   static readonly runtime = proto3;
   static readonly typeName = "labs.v1.DeleteLabRequest";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "LabName", kind: "scalar", T: 9 /* ScalarType.STRING */ },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): DeleteLabRequest {
@@ -191,6 +176,49 @@ export class DeleteLabResponse extends Message<DeleteLabResponse> {
 
   static equals(a: DeleteLabResponse | PlainMessage<DeleteLabResponse> | undefined, b: DeleteLabResponse | PlainMessage<DeleteLabResponse> | undefined): boolean {
     return proto3.util.equals(DeleteLabResponse, a, b);
+  }
+}
+
+/**
+ * @generated from message labs.v1.FileUpload
+ */
+export class FileUpload extends Message<FileUpload> {
+  /**
+   * @generated from field: string filename = 1;
+   */
+  filename = "";
+
+  /**
+   * @generated from field: bytes content = 2;
+   */
+  content = new Uint8Array(0);
+
+  constructor(data?: PartialMessage<FileUpload>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime = proto3;
+  static readonly typeName = "labs.v1.FileUpload";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "filename", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "content", kind: "scalar", T: 12 /* ScalarType.BYTES */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): FileUpload {
+    return new FileUpload().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): FileUpload {
+    return new FileUpload().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): FileUpload {
+    return new FileUpload().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: FileUpload | PlainMessage<FileUpload> | undefined, b: FileUpload | PlainMessage<FileUpload> | undefined): boolean {
+    return proto3.util.equals(FileUpload, a, b);
   }
 }
 

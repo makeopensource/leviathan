@@ -141,7 +141,7 @@ const labEndpoints = {
             {type: 'input', name: 'labName', message: 'Enter lab name:'}
         ]);
         const {filepath} = await inquirer.prompt([
-            {type: 'input', name: 'filepath', message: 'Enter grader file name:'}
+            {type: 'input', name: 'filepath', message: 'Enter grader file path:'}
         ]);
 
         const filename = path.basename(filepath)
@@ -154,10 +154,10 @@ const labEndpoints = {
     },
     "Edit lab": async () => {
         const {labName} = await inquirer.prompt([
-            {type: 'input', name: 'labName', message: 'Enter grader file name:'}
+            {type: 'input', name: 'labName', message: 'Enter lab name:'}
         ]);
         const {filepath} = await inquirer.prompt([
-            {type: 'input', name: 'filepath', message: 'Enter grader file name:'}
+            {type: 'input', name: 'filepath', message: 'Enter grader file path:'}
         ]);
 
         const filename = path.basename(filepath)

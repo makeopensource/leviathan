@@ -4,6 +4,7 @@ import (
 	"connectrpc.com/connect"
 	"context"
 	"fmt"
+	cont "github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
 	dktypes "github.com/makeopensource/leviathan/internal/generated/docker_rpc/v1"
@@ -11,6 +12,19 @@ import (
 	"github.com/rs/zerolog/log"
 	"io"
 )
+
+// logStreamWriter implements io.Writer interface, to send docker output to
+type logStreamWriter struct {
+	stream *connect.ServerStream[dktypes.GetContainerLogResponse]
+}
+
+func (w *logStreamWriter) Write(p []byte) (n int, err error) {
+	err = w.stream.Send(&dktypes.GetContainerLogResponse{Logs: string(p)})
+	if err != nil {
+		return 0, err
+	}
+	return len(p), nil
+}
 
 func HandleStartContainerReq(clientList map[string]*client.Client, combinedId string) error {
 	containerId, machineId, err := parseCombinedID(combinedId)
@@ -119,19 +133,6 @@ func HandleListContainerReq(clientList map[string]*client.Client) []*dktypes.Doc
 	return result
 }
 
-// streamWriter implements io.Writer interface
-type logStreamWriter struct {
-	stream *connect.ServerStream[dktypes.GetContainerLogResponse]
-}
-
-func (w *logStreamWriter) Write(p []byte) (n int, err error) {
-	err = w.stream.Send(&dktypes.GetContainerLogResponse{Logs: string(p)})
-	if err != nil {
-		return 0, err
-	}
-	return len(p), nil
-}
-
 func HandleGetContainerLogsReq(clientList map[string]*client.Client, combinedId string, responseStream *connect.ServerStream[dktypes.GetContainerLogResponse]) error {
 	containerId, machineId, err := parseCombinedID(combinedId)
 	if err != nil {
@@ -152,5 +153,34 @@ func HandleGetContainerLogsReq(clientList map[string]*client.Client, combinedId 
 	return nil
 }
 
-// TODO
-//func HandleCreateContainerReq(clientList []*client.Client, imageTag string, studentCode string) {}
+func HandleCreateContainerReq(clientList map[string]*client.Client, machineId string, jobId string, imageTag string) (string, error) {
+	if machineId == "" {
+		return "", errors.New("machineId is empty or missing")
+	}
+	if jobId == "" {
+		return "", errors.New("jobID is empty or missing")
+	}
+	if imageTag == "" {
+		return "", errors.New("imageTag is empty or missing")
+	}
+
+	cli := clientList[machineId]
+	cmd := []string{
+		"sh",
+		"-c",
+		"su autolab -c \"autodriver -u 100 -f 104857600 -t 900 -o 104857600 autolab\"",
+	}
+
+	resources := cont.Resources{
+		Memory:   512 * 1000000,
+		NanoCPUs: 2 * 1000000000,
+	}
+
+	containerID, err := CreateNewContainer(cli, jobId, imageTag, cmd, resources)
+	if err != nil {
+		log.Error().Err(err).Msgf("Failed to create container for job %s", jobId)
+		return "", err
+	}
+
+	return containerID, nil
+}

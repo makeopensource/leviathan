@@ -45,7 +45,6 @@ func InitConfig() {
 }
 
 func createDefaultConfigFile(configPath string) {
-	// todo figure out config options
 	filename := "config.toml"
 	finalPath := filepath.Join(configPath, filename)
 	_, err := os.Create(finalPath)
@@ -63,6 +62,7 @@ func createDefaultConfigFile(configPath string) {
 }
 
 func createDefaultOptions() {
+	// todo figure out config options
 	viper.SetDefault("clients.enable_local_docker", true)
 }
 

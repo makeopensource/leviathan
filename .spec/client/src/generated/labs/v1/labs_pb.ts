@@ -16,7 +16,12 @@ export class LabRequest extends Message<LabRequest> {
   LabName = "";
 
   /**
-   * @generated from field: labs.v1.FileUpload graderFile = 2;
+   * @generated from field: labs.v1.FileUpload makeFile = 2;
+   */
+  makeFile?: FileUpload;
+
+  /**
+   * @generated from field: labs.v1.FileUpload graderFile = 3;
    */
   graderFile?: FileUpload;
 
@@ -29,7 +34,8 @@ export class LabRequest extends Message<LabRequest> {
   static readonly typeName = "labs.v1.LabRequest";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "LabName", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 2, name: "graderFile", kind: "message", T: FileUpload },
+    { no: 2, name: "makeFile", kind: "message", T: FileUpload },
+    { no: 3, name: "graderFile", kind: "message", T: FileUpload },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): LabRequest {

@@ -12,7 +12,8 @@ service LabService {
 
 message LabRequest {
   string LabName = 1;
-  FileUpload graderFile = 2;
+  FileUpload makeFile = 2;
+  FileUpload graderFile = 3;
 }
 
 message NewLabResponse {}

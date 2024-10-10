@@ -7,6 +7,8 @@ import {createPromiseClient} from "@connectrpc/connect";
 import {DockerService} from "leviathan-generated-sdk/src/generated/docker_rpc/v1/docker_connect";
 import {readFileAsBytes} from "./utils";
 import {FileUpload} from "leviathan-generated-sdk/src/generated/docker_rpc/v1/docker_pb";
+import {LabService} from "leviathan-generated-sdk/src/generated/labs/v1/labs_connect";
+import path from "path";
 
 const program = new Command();
 
@@ -132,33 +134,87 @@ const dockerEndpoints = {
     },
 };
 
+const labClient = createPromiseClient(LabService, transport)
+const labEndpoints = {
+    "Create lab": async () => {
+        const {labName} = await inquirer.prompt([
+            {type: 'input', name: 'labName', message: 'Enter lab name:'}
+        ]);
+        const {filepath} = await inquirer.prompt([
+            {type: 'input', name: 'filepath', message: 'Enter grader file name:'}
+        ]);
+
+        const filename = path.basename(filepath)
+        const contents = await readFileAsBytes(filepath);
+
+        const payload = new FileUpload({filename: filename, content: contents})
+        const payload2 = new FileUpload({filename: filename + "2", content: contents})
+        
+        const result = await labClient.newLab({LabName: labName, graderFile: payload, makeFile: payload2})
+    },
+    "Edit lab": async () => {
+        const {labName} = await inquirer.prompt([
+            {type: 'input', name: 'labName', message: 'Enter grader file name:'}
+        ]);
+        const {filepath} = await inquirer.prompt([
+            {type: 'input', name: 'filepath', message: 'Enter grader file name:'}
+        ]);
+
+        const filename = path.basename(filepath)
+        const contents = await readFileAsBytes(filepath);
+
+        const payload = new FileUpload({filename: filename, content: contents})
+        const result = await labClient.editLab({LabName: labName, graderFile: payload})
+    },
+    "Delete lab": async () => {
+        const {labName} = await inquirer.prompt([
+            {type: 'input', name: 'labName', message: 'Enter grader file name:'}
+        ]);
+        const result = await labClient.deleteLab({LabName: labName})
+    },
+}
+
 
 async function main() {
+    const allEndpoints = {"Docker endpoints": dockerEndpoints, "Lab endpoint": labEndpoints}
+
     while (true) {
+        const {endpoint} = await inquirer.prompt([
+            {
+                type: 'list',
+                name: 'endpoint',
+                message: 'Choose an endpoint to call:',
+                choices: [...Object.keys(allEndpoints), 'Exit']
+            }
+        ]);
+
+        if (endpoint === 'Exit') {
+            console.log('Goodbye!');
+            break;
+        }
+
+
         const {action} = await inquirer.prompt([
             {
                 type: 'list',
                 name: 'action',
                 message: 'Choose an endpoint to call:',
-                choices: [...Object.keys(dockerEndpoints), 'Exit']
+                // @ts-ignore
+                choices: [...Object.keys(allEndpoints[endpoint]), 'Exit']
             }
         ]);
 
-        if (action === 'Exit') {
-            console.log('Goodbye!');
-            break;
-        }
 
         try {
             const act = action as string
             // @ts-ignore
-            await dockerEndpoints[act]();
+            await allEndpoints[endpoint][action]();
         } catch (error) {
             // @ts-ignore
             console.error('An error occurred:', error.message);
         }
-
         console.log('\n');
+
     }
 }
 

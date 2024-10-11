@@ -26,11 +26,18 @@ jobs:
       - name: Login to GHCR registry
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-      - name: build image
+      - name: build leviathan image
         run: docker build . -t ghcr.io/${{ github.repository }}:beta
 
-      - name: push
+      - name: push leviathan
         run: docker push ghcr.io/${{ github.repository }}:beta
+
+      - name: build hydra image
+        working-directory: .example/hydra
+        run: docker build ../../ -f ./Dockerfile -t ghcr.io/makeopensource/hydra:beta
+
+      - name: push hydra
+        run: docker push ghcr.io/makeopensource/hydra:beta
 
       #      if the binary needs to built directly
       #      - name: Set up Go

@@ -1,52 +1,93 @@
 package api
 
 import (
-	"github.com/gin-gonic/gin"
+	"connectrpc.com/connect"
+	"context"
+	"errors"
+	"github.com/docker/docker/client"
+	"github.com/makeopensource/leviathan/internal/dockerclient"
+	dkrpc "github.com/makeopensource/leviathan/internal/generated/docker_rpc/v1"
 	"github.com/rs/zerolog/log"
 )
 
-type DockerAPI struct {
+type DockerServer struct {
+	clientList map[string]*client.Client
 }
 
-// DockerContainerIdDelete Delete /docker/:containerId
-func (dk DockerAPI) DockerContainerIdDelete(c *gin.Context) {
-	log.Debug().Msgf("Recived Delete container request with id: %s", c.Param("containerId"))
-	c.Status(200)
-}
+func (dk *DockerServer) CreateContainer(_ context.Context, req *connect.Request[dkrpc.CreateContainerRequest]) (*connect.Response[dkrpc.CreateContainerResponse], error) {
+	machineID := "ca068799-ce39-472e-a442-6c30a73cbafe"
+	jobId := "freeddrf444"
+	imageTag := req.Msg.GetImageTag()
 
-// DockerContainerIdGet Get /docker/:containerId
-func (dk DockerAPI) DockerContainerIdGet(c *gin.Context) {
-	log.Debug().Msgf("Recived container info request with id: %s", c.Param("containerId"))
-	c.Status(200)
-}
-
-// DockerContainerIdStartGet Get /docker/:containerId/start
-func (dk DockerAPI) DockerContainerIdStartGet(c *gin.Context) {
-	log.Debug().Msgf("Recived start container request with id: %s", c.Param("containerId"))
-	c.Status(200)
-}
-
-// DockerContainerIdStopGet Get /docker/:containerId/stop
-func (dk DockerAPI) DockerContainerIdStopGet(c *gin.Context) {
-	log.Debug().Msgf("Recived stop container request with id: %s", c.Param("containerId"))
-	c.Status(200)
-}
-
-// DockerImagesCreatePost Post /docker/images/create
-func (dk DockerAPI) DockerImagesCreatePost(c *gin.Context) {
-	form, err := c.MultipartForm()
+	_, err := dockerclient.HandleCreateContainerReq(dk.clientList, machineID, jobId, imageTag)
 	if err != nil {
-		log.Error().Err(err).Msgf("Could not parse multipart form")
-		return
+		return nil, err
 	}
-	tagName := form.Value["tagName"]
 
-	log.Debug().Any("Tagname", tagName).Msgf("Recived create image request")
-	c.Status(200)
+	res := connect.NewResponse(&dkrpc.CreateContainerResponse{})
+	return res, nil
 }
 
-// DockerImagesGet Get /docker/images
-func (dk DockerAPI) DockerImagesGet(c *gin.Context) {
-	log.Debug().Msgf("Recived list image request")
-	c.Status(200)
+func (dk *DockerServer) StartContainer(_ context.Context, req *connect.Request[dkrpc.StartContainerRequest]) (*connect.Response[dkrpc.StartContainerResponse], error) {
+	err := dockerclient.HandleStartContainerReq(dk.clientList, req.Msg.GetCombinedId())
+	if err != nil {
+		return nil, err
+	}
+	res := connect.NewResponse(&dkrpc.StartContainerResponse{})
+	return res, nil
+}
+
+func (dk *DockerServer) DeleteContainer(_ context.Context, req *connect.Request[dkrpc.DeleteContainerRequest]) (*connect.Response[dkrpc.DeleteContainerResponse], error) {
+	containerId := req.Msg.GetContainerId()
+	log.Debug().Str("Container ID", req.Msg.GetContainerId()).Msgf("Recivied delete container request")
+
+	if containerId == "" {
+		return nil, errors.New("no container Id found")
+	}
+
+	res := connect.NewResponse(&dkrpc.DeleteContainerResponse{})
+	return res, nil
+}
+
+func (dk *DockerServer) StopContainer(_ context.Context, req *connect.Request[dkrpc.StopContainerRequest]) (*connect.Response[dkrpc.StopContainerResponse], error) {
+	combinedId := req.Msg.GetCombinedId()
+	err := dockerclient.HandleStopContainerReq(dk.clientList, combinedId)
+	if err != nil {
+		return nil, err
+	}
+	res := connect.NewResponse(&dkrpc.StopContainerResponse{})
+	return res, nil
+}
+
+func (dk *DockerServer) GetContainerLogs(_ context.Context, req *connect.Request[dkrpc.GetContainerLogRequest], responseStream *connect.ServerStream[dkrpc.GetContainerLogResponse]) error {
+	err := dockerclient.HandleGetContainerLogsReq(dk.clientList, req.Msg.GetCombinedId(), responseStream)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (dk *DockerServer) CreateNewImage(_ context.Context, req *connect.Request[dkrpc.NewImageRequest]) (*connect.Response[dkrpc.NewImageResponse], error) {
+	filename := req.Msg.File.GetFilename()
+	contents := req.Msg.File.GetContent()
+	imageTag := req.Msg.GetImageTag()
+
+	err := dockerclient.HandleNewImageReq(filename, contents, imageTag, dk.clientList)
+	if err != nil {
+		return nil, err
+	}
+
+	res := connect.NewResponse(&dkrpc.NewImageResponse{})
+	return res, nil
+}
+func (dk *DockerServer) ListImages(_ context.Context, _ *connect.Request[dkrpc.ListImageRequest]) (*connect.Response[dkrpc.ListImageResponse], error) {
+	images := dockerclient.HandleListImagesReq(dk.clientList)
+	res := connect.NewResponse(&dkrpc.ListImageResponse{Images: images})
+	return res, nil
+}
+
+func (dk *DockerServer) ListContainers(_ context.Context, _ *connect.Request[dkrpc.ListContainersRequest]) (*connect.Response[dkrpc.ListContainersResponse], error) {
+	containerList := dockerclient.HandleListContainerReq(dk.clientList)
+	res := connect.NewResponse(&dkrpc.ListContainersResponse{Containers: containerList})
+	return res, nil
 }

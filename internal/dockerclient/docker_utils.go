@@ -3,6 +3,7 @@ package dockerclient
 import (
 	"archive/tar"
 	"bytes"
+	"github.com/makeopensource/leviathan/internal/util"
 	"github.com/rs/zerolog/log"
 	"io"
 	"os"
@@ -51,4 +52,33 @@ func ConvertToTar(dockerFilePath string) (*bytes.Reader, string) {
 	}
 
 	return bytes.NewReader(buf.Bytes()), dockerFile
+}
+
+func saveDockerfile(fullPath string, contents []byte) error {
+
+	log.Debug().Str("filename", fullPath).Msgf("Recivied new container request")
+
+	if err := os.MkdirAll(filepath.Dir(fullPath), 0755); err != nil {
+		log.Error().Err(err).Msgf("Failed to create file and folder at %s", fullPath)
+		return err
+	}
+
+	err := os.WriteFile(fullPath, contents, 0644)
+	if err != nil {
+		log.Error().Err(err).Msgf("Failed to write contents to file")
+		return err
+	}
+
+	return nil
+}
+
+// parseCombinedID decode combined id which should contain the machine id and container id
+func parseCombinedID(combinedId string) (string, string, error) {
+	machineId, containerId, err := util.DecodeID(combinedId)
+	if err != nil {
+		log.Error().Err(err).Str("ID", combinedId).Msg("Could not decode ID")
+		return "", "", err
+	}
+
+	return containerId, machineId, nil
 }

@@ -1,12 +1,11 @@
-dkbuild:
-	docker build . -t github.com/makeopensource/leviathan
+dk:
+	docker build . -t leviathan:dev
 
-dkrun:
-	docker run -p 9221:9221 github.com/makeopensource/leviathan
+dkrn:
+	docker compose up
 
-buildrun:
-	make dkbuild
-	make dkrun
+lint:
+	golangci-lint run
 
-pullrun:
-	docker run --rm --name leviathan -p 9221:9221 ghcr.io/makeopensource/leviathan:beta
+bdrn:
+	docker compose up --build

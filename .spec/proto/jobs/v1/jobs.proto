@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package jobs.v1;
+
+option go_package = "github.com/makeopensource/leviathan/internal/generated/jobs/v1";
+
+
+service JobService {
+  rpc NewJob(NewJobRequest) returns (NewJobResponse) {}
+  rpc JobStatus(JobStatusRequest) returns (JobStatusResponse) {}
+  rpc CancelJob(CancelJobRequest) returns (CancelJobResponse) {}
+}
+
+// todo figure out request/response
+message NewJobRequest {
+}
+
+message NewJobResponse {
+}
+
+message JobStatusRequest {
+}
+
+message JobStatusResponse {
+}
+
+message CancelJobRequest {
+  // You can add filters here if needed
+}
+
+message CancelJobResponse {
+}

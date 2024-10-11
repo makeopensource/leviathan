@@ -1,11 +1,17 @@
 package api
 
-import "github.com/gin-gonic/gin"
+import (
+	"connectrpc.com/connect"
+	"context"
+	"github.com/docker/docker/client"
+	v1 "github.com/makeopensource/leviathan/internal/generated/stats/v1"
+)
 
-type StatsAPI struct {
+type StatsServer struct {
+	clientList map[string]*client.Client
 }
 
-// StatsGet Get /stats
-func (stats StatsAPI) StatsGet(c *gin.Context) {
-
+func (stats *StatsServer) Echo(context.Context, *connect.Request[v1.EchoRequest]) (*connect.Response[v1.EchoResponse], error) {
+	res := connect.NewResponse(&v1.EchoResponse{})
+	return res, nil
 }

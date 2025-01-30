@@ -1,6 +1,6 @@
 # Build the docker cli for docker consumption
 
-# Build client library
+# Build web_gen library
 FROM node:20 AS client-builder
 
 WORKDIR /client
@@ -22,8 +22,6 @@ COPY --from=client-builder client client
 
 # Install the application dependencies
 RUN npm install
-
-RUN npm install ./client
 
 # Set the entrypoint to run the CLI
 ENTRYPOINT ["npm", "run", "cli"]

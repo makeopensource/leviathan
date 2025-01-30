@@ -15,6 +15,6 @@ plugins:
     opt: paths=source_relative
 
   - local: protoc-gen-es
-    out: web_gen/src/generated
+    out: web_client/src/generated
     include_imports: true
     opt: target=ts

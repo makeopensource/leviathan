@@ -1,23 +1,47 @@
-# OpenApi Spec
+# Leviathan gRPC Specification
 
-This is where the spec is defined and the code is generated.
+Leviathan uses [gRPC](https://grpc.io/) as its communication protocol, offering several advantages over traditional REST, such as 
 
-# What is this
+* improved performance, 
+* bidirectional streaming 
+* efficient serialization
+* type-safe apis and auto-generated clients
 
-We implement the api using the [spec](./leviathan.yaml), this contains the all paths and types defined in
-the [open API spec](https://swagger.io/specification/v3/) format.
-This allows us to autogenerate the client and server code, in a (relatively)typesafe manner, the spec only defines the
-types it is up to us to follow it.
+Leviathan uses a variant of gRPC called [ConnectRPC](https://connectrpc.com/docs/introduction/), which simplifies usage
+compared to vanilla gRPC while maintaining compatibility and performance benefits.
 
-## Generated code usage
+This directory defines the gRPC specification and serves as the source for code generation.
 
-The server files are automatically moved to [internal/generated-server](../internal/generated-server), can be directly
-used.
+## Requirements
 
-To use the client TS code install it via:
+To generate code for the api, you must install
+
+* [Docker](https://docs.docker.com/engine/install/)
+* [Just runner](https://just.systems/man/en/) - cross-platform alternative to makefile
+
+## Code generation
+
+To generate gRPC stubs, in the `spec` folder run,
 
 ```
-npm install 'https://gitpkg.vercel.app/makeopensource/leviathan/.spec/client?master'
+just gen
+```
+
+This will:
+
+* This will build the Dockerfile, which installs all the required dependencies for code gen 
+* Runs the [gen-stubs.sh](./gen-stubs.sh) script, which calls the code gen CLI 
+* The go files will be moved to the [go src](../src)
+* The node files will be moved to [web_client](./web_client), which is npm package that can be used by any typescript project.
+
+## Installing clients
+
+### Node
+
+To use the node TS code install via:
+
+```
+npm install 'https://gitpkg.vercel.app/makeopensource/leviathan/spec/client?master'
 ```
 
 This install the generated code on the ```master``` branch.
@@ -26,65 +50,10 @@ This install the generated code on the ```master``` branch.
 
 The folder contains the following folders and files
 
-* [leviathan.yaml](./leviathan.yaml) - This is the actual spec file where the definitions are written.
-* [config-go-server.yml](./config-go-server.yml) - Configuration options for generating the go server
-  code, [Possible options](https://openapi-generator.tech/docs/generators/go-gin-server)
-* [config-ts-client.yml](./config-ts-client.yml) - Configuration options for generating the typescript client
-  code, [Possible options](https://openapi-generator.tech/docs/generators/typescript-axios)
-* [Makefile](./Makefile) - Makefile to run code generation and other helpful commands.
-
-##### Generation directories
-
-YOU SHOULD NEVER MODIFY THE CODE IN THIS DIRECTORY.
-
-* [client](./web_gen) - This is where the generated client-side code is outputted.
-
-## Development setup
-
-1. 
-
-##### Node setup
-
-```
-npm i @connectrpc/protoc-gen-connect-es -g
-```
-
-```
-npm i @bufbuild/protoc-gen-es -g
-```
-
-nce you have set this up, you should be good to go.
-
-## Code generation
-
-We have included a handy makefile to generate client and server code.
-
-To generate the server side go code,
-This will generate the code, then copy the resulting api stubs
-to [internal/generated-server](../internal/generated-server)
-
-Before you run the commands make sure you are in the [spec](.) directory to access the makefile.
-
-```
-make generate
-```
-
-There is also a small issue with code generation where it gets the import type wrong
-
-i.e 
-
-```
-import {...} from "./docker_pb.js"; <--- this should not have a js extension
-```
-
-Correct version:
-
-```
-import {...} from "./docker_pb.js"; <--- this should not have a js extension
-```
-
-We use a sed command to strip out ```.js```
-
-```
-find client/src/generated/ -type f -exec sed -i 's/_pb\.js/_pb/g' {} +
-```
+* [buf.gen.yaml](buf.gen.yaml) - the connect rpc config
+* [buf.yaml](buf.yaml) - another connect rpc config
+* [Dockerfile](Dockerfile) - Dockerfile that installs all dependencies for code gen
+* [gen-stub.sh](gen-stubs.sh) - Script to run the connect rpc code gen cli 
+* [Justfile](Justfile) - Justfile to run helpful commands
+* [web_client](web_client) - node web client
+* [proto](proto) - Contains the protocol definitions 

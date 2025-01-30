@@ -8,7 +8,7 @@
     "dk:bd": "docker build ../../ -f ./Dockerfile -t hydra",
     "dk:rn": "docker run --rm --name hydra -it --network host hydra start",
     "dk:pl": "docker run --rm --name hydra -it --network host ghcr.io/makeopensource/hydra:beta start",
-    "bd:rn" : "npm run dk:bd && npm run dk:rn"
+    "bd:rn": "npm run dk:bd && npm run dk:rn"
   },
   "type": "commonjs",
   "keywords": [],
@@ -18,7 +18,7 @@
     "@connectrpc/connect-node": "^1.5.0",
     "commander": "^12.1.0",
     "inquirer": "^11.1.0",
-    "leviathan-generated-sdk": "file:../../.spec/client"
+    "leviathan-generated-sdk": "https://gitpkg.vercel.app/makeopensource/leviathan/.spec/client?master"
   },
   "devDependencies": {
     "@types/node": "^22.7.2",

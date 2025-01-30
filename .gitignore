@@ -17,6 +17,7 @@
 bin
 config.toml
 uploads
-.spec/server/*
+spec/server/*
 appdata
 .env
+/spec/generated/

@@ -1,0 +1,20 @@
+version: v2
+clean: true
+
+managed:
+  enabled: true
+
+plugins:
+  # Go
+  - local: protoc-gen-go
+    out: generated/go
+    opt: paths=source_relative
+
+  - local: protoc-gen-connect-go
+    out: generated/go
+    opt: paths=source_relative
+
+  - local: protoc-gen-es
+    out: web_gen/src/generated
+    include_imports: true
+    opt: target=ts

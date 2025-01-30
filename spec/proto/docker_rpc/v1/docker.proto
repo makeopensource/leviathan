@@ -1,0 +1,101 @@
+syntax = "proto3";
+
+package docker_rpc.v1;
+
+option go_package = "github.com/makeopensource/leviathan/generated/docker_rpc/v1";
+
+service DockerService {
+  rpc CreateContainer(CreateContainerRequest) returns (CreateContainerResponse) {}
+  rpc DeleteContainer(DeleteContainerRequest) returns (DeleteContainerResponse) {}
+  rpc ListContainers(ListContainersRequest) returns (ListContainersResponse) {}
+  rpc StartContainer(StartContainerRequest) returns (StartContainerResponse) {};
+  rpc StopContainer(StopContainerRequest) returns (StopContainerResponse) {};
+  rpc GetContainerLogs(GetContainerLogRequest) returns (stream GetContainerLogResponse) {};
+  rpc CreateNewImage(NewImageRequest) returns (NewImageResponse) {};
+  rpc ListImages(ListImageRequest) returns (ListImageResponse) {};
+}
+
+message StartContainerRequest{
+  string combinedId = 1;
+}
+message StartContainerResponse{}
+
+
+message StopContainerRequest{
+  string combinedId = 1;
+}
+message StopContainerResponse{}
+
+message GetContainerLogRequest{
+  string combinedId = 1;
+}
+
+message GetContainerLogResponse{
+  string logs = 1;
+}
+
+message CreateContainerRequest {
+  string imageTag = 1;
+  string machineID = 2;
+}
+
+message CreateContainerResponse {
+  string containerId = 1;
+}
+
+message DeleteContainerRequest {
+  string containerId = 1;
+}
+
+message DeleteContainerResponse {}
+
+message ListContainersRequest {}
+
+message ListContainersResponse {
+  repeated DockerContainer containers = 1;
+}
+
+message NewImageResponse {}
+
+message NewImageRequest {
+  string imageTag = 1;
+  FileUpload file = 2;
+}
+
+message FileUpload {
+  string filename = 1;
+  bytes content = 2;
+}
+
+message ListImageResponse{
+  repeated DockerImage images = 1;
+}
+
+message ListImageRequest{}
+
+// Contains a machine id and its associated containers
+message DockerContainer{
+  string id = 1;
+  repeated ContainerMetaData metadata = 2;
+}
+
+message ContainerMetaData {
+  string Id = 1;
+  repeated string ContainerNames = 2;
+  string Image = 4;
+  string Status = 3;
+  string State = 6;
+}
+
+// Contains a machine id and its associated images
+message DockerImage {
+  string id = 1;
+  repeated ImageMetaData metadata = 2;
+}
+
+message ImageMetaData {
+  string Id = 1;
+  repeated string  RepoTags = 2;
+  int64  Size = 3;
+  int64 CreatedAt = 4;
+}

@@ -41,7 +41,7 @@ This will:
 To use the node TS code install via:
 
 ```
-npm install 'https://gitpkg.vercel.app/makeopensource/leviathan/spec/client?master'
+npm install 'https://gitpkg.vercel.app/makeopensource/leviathan/spec/web_client?master'
 ```
 
 This install the generated code on the ```master``` branch.

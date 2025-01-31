@@ -32,7 +32,7 @@ This will:
 * This will build the Dockerfile, which installs all the required dependencies for code gen 
 * Runs the [gen-stubs.sh](./gen-stubs.sh) script, which calls the code gen CLI 
 * The go files will be moved to the [go src](../src)
-* The node files will be moved to [web_client](./web_client), which is npm package that can be used by any typescript project.
+* The node files will be moved to [web_client](./leviathan_node), which is npm package that can be used by any typescript project.
 
 ## Installing clients
 
@@ -55,5 +55,5 @@ The folder contains the following folders and files
 * [Dockerfile](Dockerfile) - Dockerfile that installs all dependencies for code gen
 * [gen-stub.sh](gen-stubs.sh) - Script to run the connect rpc code gen cli 
 * [Justfile](Justfile) - Justfile to run helpful commands
-* [web_client](web_client) - node web client
+* [web_client](leviathan_node) - node web client
 * [proto](proto) - Contains the protocol definitions 

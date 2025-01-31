@@ -15,6 +15,6 @@ plugins:
     opt: paths=source_relative
 
   - local: protoc-gen-es
-    out: web_client/src/generated
+    out: leviathan_node/src/generated
     include_imports: true
     opt: target=ts

@@ -2,13 +2,13 @@
 
 import {Command} from 'commander';
 import inquirer from 'inquirer';
-import {createConnectTransport} from "@connectrpc/connect-node";
 import {createPromiseClient} from "@connectrpc/connect";
-import {DockerService} from "leviathan-generated-sdk/src/generated/docker_rpc/v1/docker_connect";
+import {DockerService} from "leviathan-generated-sdk/src/generated/docker_rpc/v1/docker_pb";
 import {readFileAsBytes} from "./utils";
-import {FileUpload} from "leviathan-generated-sdk/src/generated/docker_rpc/v1/docker_pb";
-import {LabService} from "leviathan-generated-sdk/src/generated/labs/v1/labs_connect";
+import {LabService} from "leviathan-generated-sdk/src/generated/labs/v1/labs_pb";
 import path from "path";
+import { createConnectTransport } from "@connectrpc/connect-node";
+import { createClient } from "@connectrpc/connect";
 
 const program = new Command();
 
@@ -16,14 +16,6 @@ program
     .version('1.0.0')
     .description('A CLI to interact with the Leviathan API');
 
-const baseUrl = "http://localhost:9221"
-
-let transport = createConnectTransport({
-    baseUrl: baseUrl,
-    httpVersion: "2"
-});
-
-const dkClient = createPromiseClient(DockerService, transport)
 const dockerEndpoints = {
     "List images": async () => {
         const result = await dkClient.listImages({})

@@ -2,9 +2,7 @@ FROM golang:1.23-alpine AS builder
 
 WORKDIR /app
 
-RUN apk update
-
-COPY . .
+COPY ./src .
 
 # get depedencies
 RUN go mod tidy
@@ -16,12 +14,7 @@ FROM alpine:latest
 
 WORKDIR /app/
 
-RUN apk update && apk add openssh
-
 COPY --from=builder /app/app .
-
-# start go-gin in release mode
-ENV GIN_MODE=release
 
 ENV IS_DOCKER=true
 

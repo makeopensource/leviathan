@@ -70,14 +70,14 @@ jobs:
         run: docker push ghcr.io/${{ github.repository }}:latest
 
       - name: build hydra image latest
-        working-directory: .example/hydra
+        working-directory: example/hydra
         run: docker build ../../ -f ./Dockerfile -t ghcr.io/makeopensource/hydra:latest
 
       - name: push hydra latest
         run: docker push ghcr.io/makeopensource/hydra:latest
 
       - name: build hydra image versioned
-        working-directory: .example/hydra
+        working-directory: example/hydra
         run: docker build ../../ -f ./Dockerfile -t ghcr.io/makeopensource/hydra:${{ steps.tagName.outputs.tag }}
 
       - name: push hydra versioned

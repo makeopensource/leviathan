@@ -5,7 +5,7 @@ import {LabService} from "./generated/labs/v1/labs_pb";
 import {JobService} from "./generated/jobs/v1/jobs_pb";
 
 
-function initGrpcClients(baseUrl: string) {
+export function initGrpcClients(baseUrl: string) {
     const transport = createConnectTransport({
         baseUrl: baseUrl,
         httpVersion: "2"

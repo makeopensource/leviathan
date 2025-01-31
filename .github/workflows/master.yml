@@ -1,10 +1,10 @@
 # Builds leviathan images on master
 
 name: Build master
-on:
-  push:
-    branches:
-      - master
+#on:
+#  push:
+#    branches:
+#      - master
 
 jobs:
   build-docker:

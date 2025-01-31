@@ -4,13 +4,15 @@
 
 import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv1";
 import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv1";
+import type { FileUpload } from "../../types/v1/types_pb";
+import { file_types_v1_types } from "../../types/v1/types_pb";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file docker_rpc/v1/docker.proto.
  */
 export const file_docker_rpc_v1_docker: GenFile = /*@__PURE__*/
-  fileDesc("Chpkb2NrZXJfcnBjL3YxL2RvY2tlci5wcm90bxINZG9ja2VyX3JwYy52MSIrChVTdGFydENvbnRhaW5lclJlcXVlc3QSEgoKY29tYmluZWRJZBgBIAEoCSIYChZTdGFydENvbnRhaW5lclJlc3BvbnNlIioKFFN0b3BDb250YWluZXJSZXF1ZXN0EhIKCmNvbWJpbmVkSWQYASABKAkiFwoVU3RvcENvbnRhaW5lclJlc3BvbnNlIiwKFkdldENvbnRhaW5lckxvZ1JlcXVlc3QSEgoKY29tYmluZWRJZBgBIAEoCSInChdHZXRDb250YWluZXJMb2dSZXNwb25zZRIMCgRsb2dzGAEgASgJIj0KFkNyZWF0ZUNvbnRhaW5lclJlcXVlc3QSEAoIaW1hZ2VUYWcYASABKAkSEQoJbWFjaGluZUlEGAIgASgJIi4KF0NyZWF0ZUNvbnRhaW5lclJlc3BvbnNlEhMKC2NvbnRhaW5lcklkGAEgASgJIi0KFkRlbGV0ZUNvbnRhaW5lclJlcXVlc3QSEwoLY29udGFpbmVySWQYASABKAkiGQoXRGVsZXRlQ29udGFpbmVyUmVzcG9uc2UiFwoVTGlzdENvbnRhaW5lcnNSZXF1ZXN0IkwKFkxpc3RDb250YWluZXJzUmVzcG9uc2USMgoKY29udGFpbmVycxgBIAMoCzIeLmRvY2tlcl9ycGMudjEuRG9ja2VyQ29udGFpbmVyIhIKEE5ld0ltYWdlUmVzcG9uc2UiTAoPTmV3SW1hZ2VSZXF1ZXN0EhAKCGltYWdlVGFnGAEgASgJEicKBGZpbGUYAiABKAsyGS5kb2NrZXJfcnBjLnYxLkZpbGVVcGxvYWQiLwoKRmlsZVVwbG9hZBIQCghmaWxlbmFtZRgBIAEoCRIPCgdjb250ZW50GAIgASgMIj8KEUxpc3RJbWFnZVJlc3BvbnNlEioKBmltYWdlcxgBIAMoCzIaLmRvY2tlcl9ycGMudjEuRG9ja2VySW1hZ2UiEgoQTGlzdEltYWdlUmVxdWVzdCJRCg9Eb2NrZXJDb250YWluZXISCgoCaWQYASABKAkSMgoIbWV0YWRhdGEYAiADKAsyIC5kb2NrZXJfcnBjLnYxLkNvbnRhaW5lck1ldGFEYXRhImUKEUNvbnRhaW5lck1ldGFEYXRhEgoKAklkGAEgASgJEhYKDkNvbnRhaW5lck5hbWVzGAIgAygJEg0KBUltYWdlGAQgASgJEg4KBlN0YXR1cxgDIAEoCRINCgVTdGF0ZRgGIAEoCSJJCgtEb2NrZXJJbWFnZRIKCgJpZBgBIAEoCRIuCghtZXRhZGF0YRgCIAMoCzIcLmRvY2tlcl9ycGMudjEuSW1hZ2VNZXRhRGF0YSJOCg1JbWFnZU1ldGFEYXRhEgoKAklkGAEgASgJEhAKCFJlcG9UYWdzGAIgAygJEgwKBFNpemUYAyABKAMSEQoJQ3JlYXRlZEF0GAQgASgDMoYGCg1Eb2NrZXJTZXJ2aWNlEmIKD0NyZWF0ZUNvbnRhaW5lchIlLmRvY2tlcl9ycGMudjEuQ3JlYXRlQ29udGFpbmVyUmVxdWVzdBomLmRvY2tlcl9ycGMudjEuQ3JlYXRlQ29udGFpbmVyUmVzcG9uc2UiABJiCg9EZWxldGVDb250YWluZXISJS5kb2NrZXJfcnBjLnYxLkRlbGV0ZUNvbnRhaW5lclJlcXVlc3QaJi5kb2NrZXJfcnBjLnYxLkRlbGV0ZUNvbnRhaW5lclJlc3BvbnNlIgASXwoOTGlzdENvbnRhaW5lcnMSJC5kb2NrZXJfcnBjLnYxLkxpc3RDb250YWluZXJzUmVxdWVzdBolLmRvY2tlcl9ycGMudjEuTGlzdENvbnRhaW5lcnNSZXNwb25zZSIAEl8KDlN0YXJ0Q29udGFpbmVyEiQuZG9ja2VyX3JwYy52MS5TdGFydENvbnRhaW5lclJlcXVlc3QaJS5kb2NrZXJfcnBjLnYxLlN0YXJ0Q29udGFpbmVyUmVzcG9uc2UiABJcCg1TdG9wQ29udGFpbmVyEiMuZG9ja2VyX3JwYy52MS5TdG9wQ29udGFpbmVyUmVxdWVzdBokLmRvY2tlcl9ycGMudjEuU3RvcENvbnRhaW5lclJlc3BvbnNlIgASZQoQR2V0Q29udGFpbmVyTG9ncxIlLmRvY2tlcl9ycGMudjEuR2V0Q29udGFpbmVyTG9nUmVxdWVzdBomLmRvY2tlcl9ycGMudjEuR2V0Q29udGFpbmVyTG9nUmVzcG9uc2UiADABElMKDkNyZWF0ZU5ld0ltYWdlEh4uZG9ja2VyX3JwYy52MS5OZXdJbWFnZVJlcXVlc3QaHy5kb2NrZXJfcnBjLnYxLk5ld0ltYWdlUmVzcG9uc2UiABJRCgpMaXN0SW1hZ2VzEh8uZG9ja2VyX3JwYy52MS5MaXN0SW1hZ2VSZXF1ZXN0GiAuZG9ja2VyX3JwYy52MS5MaXN0SW1hZ2VSZXNwb25zZSIAQq4BChFjb20uZG9ja2VyX3JwYy52MUILRG9ja2VyUHJvdG9QAVo7Z2l0aHViLmNvbS9tYWtlb3BlbnNvdXJjZS9sZXZpYXRoYW4vZ2VuZXJhdGVkL2RvY2tlcl9ycGMvdjGiAgNEWFiqAgxEb2NrZXJScGMuVjHKAgxEb2NrZXJScGNcVjHiAhhEb2NrZXJScGNcVjFcR1BCTWV0YWRhdGHqAg1Eb2NrZXJScGM6OlYxYgZwcm90bzM");
+  fileDesc("Chpkb2NrZXJfcnBjL3YxL2RvY2tlci5wcm90bxINZG9ja2VyX3JwYy52MSIrChVTdGFydENvbnRhaW5lclJlcXVlc3QSEgoKY29tYmluZWRJZBgBIAEoCSIYChZTdGFydENvbnRhaW5lclJlc3BvbnNlIioKFFN0b3BDb250YWluZXJSZXF1ZXN0EhIKCmNvbWJpbmVkSWQYASABKAkiFwoVU3RvcENvbnRhaW5lclJlc3BvbnNlIiwKFkdldENvbnRhaW5lckxvZ1JlcXVlc3QSEgoKY29tYmluZWRJZBgBIAEoCSInChdHZXRDb250YWluZXJMb2dSZXNwb25zZRIMCgRsb2dzGAEgASgJIj0KFkNyZWF0ZUNvbnRhaW5lclJlcXVlc3QSEAoIaW1hZ2VUYWcYASABKAkSEQoJbWFjaGluZUlEGAIgASgJIi4KF0NyZWF0ZUNvbnRhaW5lclJlc3BvbnNlEhMKC2NvbnRhaW5lcklkGAEgASgJIi0KFkRlbGV0ZUNvbnRhaW5lclJlcXVlc3QSEwoLY29udGFpbmVySWQYASABKAkiGQoXRGVsZXRlQ29udGFpbmVyUmVzcG9uc2UiFwoVTGlzdENvbnRhaW5lcnNSZXF1ZXN0IkwKFkxpc3RDb250YWluZXJzUmVzcG9uc2USMgoKY29udGFpbmVycxgBIAMoCzIeLmRvY2tlcl9ycGMudjEuRG9ja2VyQ29udGFpbmVyIhIKEE5ld0ltYWdlUmVzcG9uc2UiRwoPTmV3SW1hZ2VSZXF1ZXN0EhAKCGltYWdlVGFnGAEgASgJEiIKBGZpbGUYAiABKAsyFC50eXBlcy52MS5GaWxlVXBsb2FkIj8KEUxpc3RJbWFnZVJlc3BvbnNlEioKBmltYWdlcxgBIAMoCzIaLmRvY2tlcl9ycGMudjEuRG9ja2VySW1hZ2UiEgoQTGlzdEltYWdlUmVxdWVzdCJRCg9Eb2NrZXJDb250YWluZXISCgoCaWQYASABKAkSMgoIbWV0YWRhdGEYAiADKAsyIC5kb2NrZXJfcnBjLnYxLkNvbnRhaW5lck1ldGFEYXRhImUKEUNvbnRhaW5lck1ldGFEYXRhEgoKAklkGAEgASgJEhYKDkNvbnRhaW5lck5hbWVzGAIgAygJEg0KBUltYWdlGAQgASgJEg4KBlN0YXR1cxgDIAEoCRINCgVTdGF0ZRgGIAEoCSJJCgtEb2NrZXJJbWFnZRIKCgJpZBgBIAEoCRIuCghtZXRhZGF0YRgCIAMoCzIcLmRvY2tlcl9ycGMudjEuSW1hZ2VNZXRhRGF0YSJOCg1JbWFnZU1ldGFEYXRhEgoKAklkGAEgASgJEhAKCFJlcG9UYWdzGAIgAygJEgwKBFNpemUYAyABKAMSEQoJQ3JlYXRlZEF0GAQgASgDMoYGCg1Eb2NrZXJTZXJ2aWNlEmIKD0NyZWF0ZUNvbnRhaW5lchIlLmRvY2tlcl9ycGMudjEuQ3JlYXRlQ29udGFpbmVyUmVxdWVzdBomLmRvY2tlcl9ycGMudjEuQ3JlYXRlQ29udGFpbmVyUmVzcG9uc2UiABJiCg9EZWxldGVDb250YWluZXISJS5kb2NrZXJfcnBjLnYxLkRlbGV0ZUNvbnRhaW5lclJlcXVlc3QaJi5kb2NrZXJfcnBjLnYxLkRlbGV0ZUNvbnRhaW5lclJlc3BvbnNlIgASXwoOTGlzdENvbnRhaW5lcnMSJC5kb2NrZXJfcnBjLnYxLkxpc3RDb250YWluZXJzUmVxdWVzdBolLmRvY2tlcl9ycGMudjEuTGlzdENvbnRhaW5lcnNSZXNwb25zZSIAEl8KDlN0YXJ0Q29udGFpbmVyEiQuZG9ja2VyX3JwYy52MS5TdGFydENvbnRhaW5lclJlcXVlc3QaJS5kb2NrZXJfcnBjLnYxLlN0YXJ0Q29udGFpbmVyUmVzcG9uc2UiABJcCg1TdG9wQ29udGFpbmVyEiMuZG9ja2VyX3JwYy52MS5TdG9wQ29udGFpbmVyUmVxdWVzdBokLmRvY2tlcl9ycGMudjEuU3RvcENvbnRhaW5lclJlc3BvbnNlIgASZQoQR2V0Q29udGFpbmVyTG9ncxIlLmRvY2tlcl9ycGMudjEuR2V0Q29udGFpbmVyTG9nUmVxdWVzdBomLmRvY2tlcl9ycGMudjEuR2V0Q29udGFpbmVyTG9nUmVzcG9uc2UiADABElMKDkNyZWF0ZU5ld0ltYWdlEh4uZG9ja2VyX3JwYy52MS5OZXdJbWFnZVJlcXVlc3QaHy5kb2NrZXJfcnBjLnYxLk5ld0ltYWdlUmVzcG9uc2UiABJRCgpMaXN0SW1hZ2VzEh8uZG9ja2VyX3JwYy52MS5MaXN0SW1hZ2VSZXF1ZXN0GiAuZG9ja2VyX3JwYy52MS5MaXN0SW1hZ2VSZXNwb25zZSIAQq4BChFjb20uZG9ja2VyX3JwYy52MUILRG9ja2VyUHJvdG9QAVo7Z2l0aHViLmNvbS9tYWtlb3BlbnNvdXJjZS9sZXZpYXRoYW4vZ2VuZXJhdGVkL2RvY2tlcl9ycGMvdjGiAgNEWFiqAgxEb2NrZXJScGMuVjHKAgxEb2NrZXJScGNcVjHiAhhEb2NrZXJScGNcVjFcR1BCTWV0YWRhdGHqAg1Eb2NrZXJScGM6OlYxYgZwcm90bzM", [file_types_v1_types]);
 
 /**
  * @generated from message docker_rpc.v1.StartContainerRequest
@@ -228,7 +230,7 @@ export type NewImageRequest = Message<"docker_rpc.v1.NewImageRequest"> & {
   imageTag: string;
 
   /**
-   * @generated from field: docker_rpc.v1.FileUpload file = 2;
+   * @generated from field: types.v1.FileUpload file = 2;
    */
   file?: FileUpload;
 };
@@ -239,28 +241,6 @@ export type NewImageRequest = Message<"docker_rpc.v1.NewImageRequest"> & {
  */
 export const NewImageRequestSchema: GenMessage<NewImageRequest> = /*@__PURE__*/
   messageDesc(file_docker_rpc_v1_docker, 13);
-
-/**
- * @generated from message docker_rpc.v1.FileUpload
- */
-export type FileUpload = Message<"docker_rpc.v1.FileUpload"> & {
-  /**
-   * @generated from field: string filename = 1;
-   */
-  filename: string;
-
-  /**
-   * @generated from field: bytes content = 2;
-   */
-  content: Uint8Array;
-};
-
-/**
- * Describes the message docker_rpc.v1.FileUpload.
- * Use `create(FileUploadSchema)` to create a new message.
- */
-export const FileUploadSchema: GenMessage<FileUpload> = /*@__PURE__*/
-  messageDesc(file_docker_rpc_v1_docker, 14);
 
 /**
  * @generated from message docker_rpc.v1.ListImageResponse
@@ -277,7 +257,7 @@ export type ListImageResponse = Message<"docker_rpc.v1.ListImageResponse"> & {
  * Use `create(ListImageResponseSchema)` to create a new message.
  */
 export const ListImageResponseSchema: GenMessage<ListImageResponse> = /*@__PURE__*/
-  messageDesc(file_docker_rpc_v1_docker, 15);
+  messageDesc(file_docker_rpc_v1_docker, 14);
 
 /**
  * @generated from message docker_rpc.v1.ListImageRequest
@@ -290,7 +270,7 @@ export type ListImageRequest = Message<"docker_rpc.v1.ListImageRequest"> & {
  * Use `create(ListImageRequestSchema)` to create a new message.
  */
 export const ListImageRequestSchema: GenMessage<ListImageRequest> = /*@__PURE__*/
-  messageDesc(file_docker_rpc_v1_docker, 16);
+  messageDesc(file_docker_rpc_v1_docker, 15);
 
 /**
  * Contains a machine id and its associated containers
@@ -314,7 +294,7 @@ export type DockerContainer = Message<"docker_rpc.v1.DockerContainer"> & {
  * Use `create(DockerContainerSchema)` to create a new message.
  */
 export const DockerContainerSchema: GenMessage<DockerContainer> = /*@__PURE__*/
-  messageDesc(file_docker_rpc_v1_docker, 17);
+  messageDesc(file_docker_rpc_v1_docker, 16);
 
 /**
  * @generated from message docker_rpc.v1.ContainerMetaData
@@ -351,7 +331,7 @@ export type ContainerMetaData = Message<"docker_rpc.v1.ContainerMetaData"> & {
  * Use `create(ContainerMetaDataSchema)` to create a new message.
  */
 export const ContainerMetaDataSchema: GenMessage<ContainerMetaData> = /*@__PURE__*/
-  messageDesc(file_docker_rpc_v1_docker, 18);
+  messageDesc(file_docker_rpc_v1_docker, 17);
 
 /**
  * Contains a machine id and its associated images
@@ -375,7 +355,7 @@ export type DockerImage = Message<"docker_rpc.v1.DockerImage"> & {
  * Use `create(DockerImageSchema)` to create a new message.
  */
 export const DockerImageSchema: GenMessage<DockerImage> = /*@__PURE__*/
-  messageDesc(file_docker_rpc_v1_docker, 19);
+  messageDesc(file_docker_rpc_v1_docker, 18);
 
 /**
  * @generated from message docker_rpc.v1.ImageMetaData
@@ -407,7 +387,7 @@ export type ImageMetaData = Message<"docker_rpc.v1.ImageMetaData"> & {
  * Use `create(ImageMetaDataSchema)` to create a new message.
  */
 export const ImageMetaDataSchema: GenMessage<ImageMetaData> = /*@__PURE__*/
-  messageDesc(file_docker_rpc_v1_docker, 20);
+  messageDesc(file_docker_rpc_v1_docker, 19);
 
 /**
  * @generated from service docker_rpc.v1.DockerService

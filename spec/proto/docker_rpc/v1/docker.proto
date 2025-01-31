@@ -4,6 +4,8 @@ package docker_rpc.v1;
 
 option go_package = "github.com/makeopensource/leviathan/generated/docker_rpc/v1";
 
+import "types/v1/types.proto";
+
 service DockerService {
   rpc CreateContainer(CreateContainerRequest) returns (CreateContainerResponse) {}
   rpc DeleteContainer(DeleteContainerRequest) returns (DeleteContainerResponse) {}
@@ -59,12 +61,7 @@ message NewImageResponse {}
 
 message NewImageRequest {
   string imageTag = 1;
-  FileUpload file = 2;
-}
-
-message FileUpload {
-  string filename = 1;
-  bytes content = 2;
+  types.v1.FileUpload file = 2;
 }
 
 message ListImageResponse{

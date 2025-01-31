@@ -4,13 +4,15 @@
 
 import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv1";
 import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv1";
+import type { FileUpload } from "../../types/v1/types_pb";
+import { file_types_v1_types } from "../../types/v1/types_pb";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file labs/v1/labs.proto.
  */
 export const file_labs_v1_labs: GenFile = /*@__PURE__*/
-  fileDesc("ChJsYWJzL3YxL2xhYnMucHJvdG8SB2xhYnMudjEibQoKTGFiUmVxdWVzdBIPCgdMYWJOYW1lGAEgASgJEiUKCG1ha2VGaWxlGAIgASgLMhMubGFicy52MS5GaWxlVXBsb2FkEicKCmdyYWRlckZpbGUYAyABKAsyEy5sYWJzLnYxLkZpbGVVcGxvYWQiEAoOTmV3TGFiUmVzcG9uc2UiEQoPRWRpdExhYlJlc3BvbnNlIiMKEERlbGV0ZUxhYlJlcXVlc3QSDwoHTGFiTmFtZRgBIAEoCSITChFEZWxldGVMYWJSZXNwb25zZSIvCgpGaWxlVXBsb2FkEhAKCGZpbGVuYW1lGAEgASgJEg8KB2NvbnRlbnQYAiABKAwyyAEKCkxhYlNlcnZpY2USOAoGTmV3TGFiEhMubGFicy52MS5MYWJSZXF1ZXN0GhcubGFicy52MS5OZXdMYWJSZXNwb25zZSIAEjoKB0VkaXRMYWISEy5sYWJzLnYxLkxhYlJlcXVlc3QaGC5sYWJzLnYxLkVkaXRMYWJSZXNwb25zZSIAEkQKCURlbGV0ZUxhYhIZLmxhYnMudjEuRGVsZXRlTGFiUmVxdWVzdBoaLmxhYnMudjEuRGVsZXRlTGFiUmVzcG9uc2UiAEKMAQoLY29tLmxhYnMudjFCCUxhYnNQcm90b1ABWjVnaXRodWIuY29tL21ha2VvcGVuc291cmNlL2xldmlhdGhhbi9nZW5lcmF0ZWQvbGFicy92MaICA0xYWKoCB0xhYnMuVjHKAgdMYWJzXFYx4gITTGFic1xWMVxHUEJNZXRhZGF0YeoCCExhYnM6OlYxYgZwcm90bzM");
+  fileDesc("ChJsYWJzL3YxL2xhYnMucHJvdG8SB2xhYnMudjEibwoKTGFiUmVxdWVzdBIPCgdMYWJOYW1lGAEgASgJEiYKCG1ha2VGaWxlGAIgASgLMhQudHlwZXMudjEuRmlsZVVwbG9hZBIoCgpncmFkZXJGaWxlGAMgASgLMhQudHlwZXMudjEuRmlsZVVwbG9hZCIQCg5OZXdMYWJSZXNwb25zZSIRCg9FZGl0TGFiUmVzcG9uc2UiIwoQRGVsZXRlTGFiUmVxdWVzdBIPCgdMYWJOYW1lGAEgASgJIhMKEURlbGV0ZUxhYlJlc3BvbnNlMsgBCgpMYWJTZXJ2aWNlEjgKBk5ld0xhYhITLmxhYnMudjEuTGFiUmVxdWVzdBoXLmxhYnMudjEuTmV3TGFiUmVzcG9uc2UiABI6CgdFZGl0TGFiEhMubGFicy52MS5MYWJSZXF1ZXN0GhgubGFicy52MS5FZGl0TGFiUmVzcG9uc2UiABJECglEZWxldGVMYWISGS5sYWJzLnYxLkRlbGV0ZUxhYlJlcXVlc3QaGi5sYWJzLnYxLkRlbGV0ZUxhYlJlc3BvbnNlIgBCjAEKC2NvbS5sYWJzLnYxQglMYWJzUHJvdG9QAVo1Z2l0aHViLmNvbS9tYWtlb3BlbnNvdXJjZS9sZXZpYXRoYW4vZ2VuZXJhdGVkL2xhYnMvdjGiAgNMWFiqAgdMYWJzLlYxygIHTGFic1xWMeICE0xhYnNcVjFcR1BCTWV0YWRhdGHqAghMYWJzOjpWMWIGcHJvdG8z", [file_types_v1_types]);
 
 /**
  * @generated from message labs.v1.LabRequest
@@ -22,12 +24,12 @@ export type LabRequest = Message<"labs.v1.LabRequest"> & {
   LabName: string;
 
   /**
-   * @generated from field: labs.v1.FileUpload makeFile = 2;
+   * @generated from field: types.v1.FileUpload makeFile = 2;
    */
   makeFile?: FileUpload;
 
   /**
-   * @generated from field: labs.v1.FileUpload graderFile = 3;
+   * @generated from field: types.v1.FileUpload graderFile = 3;
    */
   graderFile?: FileUpload;
 };
@@ -94,28 +96,6 @@ export type DeleteLabResponse = Message<"labs.v1.DeleteLabResponse"> & {
  */
 export const DeleteLabResponseSchema: GenMessage<DeleteLabResponse> = /*@__PURE__*/
   messageDesc(file_labs_v1_labs, 4);
-
-/**
- * @generated from message labs.v1.FileUpload
- */
-export type FileUpload = Message<"labs.v1.FileUpload"> & {
-  /**
-   * @generated from field: string filename = 1;
-   */
-  filename: string;
-
-  /**
-   * @generated from field: bytes content = 2;
-   */
-  content: Uint8Array;
-};
-
-/**
- * Describes the message labs.v1.FileUpload.
- * Use `create(FileUploadSchema)` to create a new message.
- */
-export const FileUploadSchema: GenMessage<FileUpload> = /*@__PURE__*/
-  messageDesc(file_labs_v1_labs, 5);
 
 /**
  * @generated from service labs.v1.LabService

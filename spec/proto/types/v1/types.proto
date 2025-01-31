@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package types.v1;
+
+option go_package = "github.com/makeopensource/leviathan/generated/types/v1";
+
+message FileUpload {
+  string filename = 1;
+  bytes content = 2;
+}

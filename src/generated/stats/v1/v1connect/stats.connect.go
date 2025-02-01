@@ -37,12 +37,12 @@ const (
 	StatsServiceEchoProcedure = "/stats.v1.StatsService/Echo"
 )
 
-// StatsServiceClient is a web_gen for the stats.v1.StatsService service.
+// StatsServiceClient is a client for the stats.v1.StatsService service.
 type StatsServiceClient interface {
 	Echo(context.Context, *connect.Request[v1.EchoRequest]) (*connect.Response[v1.EchoResponse], error)
 }
 
-// NewStatsServiceClient constructs a web_gen for the stats.v1.StatsService service. By default, it
+// NewStatsServiceClient constructs a client for the stats.v1.StatsService service. By default, it
 // uses the Connect protocol with the binary Protobuf Codec, asks for gzipped responses, and sends
 // uncompressed requests. To use the gRPC or gRPC-Web protocols, supply the connect.WithGRPC() or
 // connect.WithGRPCWeb() options.

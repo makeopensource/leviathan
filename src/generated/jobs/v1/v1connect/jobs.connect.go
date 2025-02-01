@@ -41,14 +41,14 @@ const (
 	JobServiceCancelJobProcedure = "/jobs.v1.JobService/CancelJob"
 )
 
-// JobServiceClient is a web_gen for the jobs.v1.JobService service.
+// JobServiceClient is a client for the jobs.v1.JobService service.
 type JobServiceClient interface {
 	NewJob(context.Context, *connect.Request[v1.NewJobRequest]) (*connect.Response[v1.NewJobResponse], error)
 	JobStatus(context.Context, *connect.Request[v1.JobStatusRequest]) (*connect.Response[v1.JobStatusResponse], error)
 	CancelJob(context.Context, *connect.Request[v1.CancelJobRequest]) (*connect.Response[v1.CancelJobResponse], error)
 }
 
-// NewJobServiceClient constructs a web_gen for the jobs.v1.JobService service. By default, it uses
+// NewJobServiceClient constructs a client for the jobs.v1.JobService service. By default, it uses
 // the Connect protocol with the binary Protobuf Codec, asks for gzipped responses, and sends
 // uncompressed requests. To use the gRPC or gRPC-Web protocols, supply the connect.WithGRPC() or
 // connect.WithGRPCWeb() options.

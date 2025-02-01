@@ -59,7 +59,7 @@ const (
 	DockerServiceListImagesProcedure = "/docker_rpc.v1.DockerService/ListImages"
 )
 
-// DockerServiceClient is a web_gen for the docker_rpc.v1.DockerService service.
+// DockerServiceClient is a client for the docker_rpc.v1.DockerService service.
 type DockerServiceClient interface {
 	CreateContainer(context.Context, *connect.Request[v1.CreateContainerRequest]) (*connect.Response[v1.CreateContainerResponse], error)
 	DeleteContainer(context.Context, *connect.Request[v1.DeleteContainerRequest]) (*connect.Response[v1.DeleteContainerResponse], error)
@@ -71,7 +71,7 @@ type DockerServiceClient interface {
 	ListImages(context.Context, *connect.Request[v1.ListImageRequest]) (*connect.Response[v1.ListImageResponse], error)
 }
 
-// NewDockerServiceClient constructs a web_gen for the docker_rpc.v1.DockerService service. By
+// NewDockerServiceClient constructs a client for the docker_rpc.v1.DockerService service. By
 // default, it uses the Connect protocol with the binary Protobuf Codec, asks for gzipped responses,
 // and sends uncompressed requests. To use the gRPC or gRPC-Web protocols, supply the
 // connect.WithGRPC() or connect.WithGRPCWeb() options.

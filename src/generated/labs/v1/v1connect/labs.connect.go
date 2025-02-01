@@ -41,14 +41,14 @@ const (
 	LabServiceDeleteLabProcedure = "/labs.v1.LabService/DeleteLab"
 )
 
-// LabServiceClient is a web_gen for the labs.v1.LabService service.
+// LabServiceClient is a client for the labs.v1.LabService service.
 type LabServiceClient interface {
 	NewLab(context.Context, *connect.Request[v1.LabRequest]) (*connect.Response[v1.NewLabResponse], error)
 	EditLab(context.Context, *connect.Request[v1.LabRequest]) (*connect.Response[v1.EditLabResponse], error)
 	DeleteLab(context.Context, *connect.Request[v1.DeleteLabRequest]) (*connect.Response[v1.DeleteLabResponse], error)
 }
 
-// NewLabServiceClient constructs a web_gen for the labs.v1.LabService service. By default, it uses
+// NewLabServiceClient constructs a client for the labs.v1.LabService service. By default, it uses
 // the Connect protocol with the binary Protobuf Codec, asks for gzipped responses, and sends
 // uncompressed requests. To use the gRPC or gRPC-Web protocols, supply the connect.WithGRPC() or
 // connect.WithGRPCWeb() options.

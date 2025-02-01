@@ -11,7 +11,7 @@ type StatsServer struct {
 	clientList map[string]*client.Client
 }
 
-func (stats *StatsServer) Echo(context.Context, *connect.Request[v1.EchoRequest]) (*connect.Response[v1.EchoResponse], error) {
-	res := connect.NewResponse(&v1.EchoResponse{})
+func (stats *StatsServer) Echo(_ context.Context, req *connect.Request[v1.EchoRequest]) (*connect.Response[v1.EchoResponse], error) {
+	res := connect.NewResponse(&v1.EchoResponse{MessageResponse: req.Msg.GetMessage()})
 	return res, nil
 }

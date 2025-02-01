@@ -3,12 +3,27 @@ package dockerclient
 import (
 	"archive/tar"
 	"bytes"
+	"connectrpc.com/connect"
+	dktypes "github.com/makeopensource/leviathan/generated/docker_rpc/v1"
 	"github.com/makeopensource/leviathan/utils"
 	"github.com/rs/zerolog/log"
 	"io"
 	"os"
 	"path/filepath"
 )
+
+// logStreamWriter implements io.Writer interface, to send docker output to
+type logStreamWriter struct {
+	stream *connect.ServerStream[dktypes.GetContainerLogResponse]
+}
+
+func (w *logStreamWriter) Write(p []byte) (n int, err error) {
+	err = w.stream.Send(&dktypes.GetContainerLogResponse{Logs: string(p)})
+	if err != nil {
+		return 0, err
+	}
+	return len(p), nil
+}
 
 // ConvertToTar make input tar file from dockerfile path
 // courtesy of https://stackoverflow.com/a/46518557/23258902

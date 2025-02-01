@@ -4,13 +4,13 @@ import (
 	"connectrpc.com/connect"
 	"context"
 	"errors"
-	"github.com/docker/docker/client"
+	"github.com/makeopensource/leviathan/service/labs"
+
 	v1 "github.com/makeopensource/leviathan/generated/labs/v1"
-	"github.com/makeopensource/leviathan/service"
 )
 
 type LabServer struct {
-	clientList map[string]*client.Client
+	service *labs.LabService
 }
 
 func (labSrv *LabServer) NewLab(ctx context.Context, req *connect.Request[v1.LabRequest]) (*connect.Response[v1.NewLabResponse], error) {
@@ -26,7 +26,7 @@ func (labSrv *LabServer) NewLab(ctx context.Context, req *connect.Request[v1.Lab
 		return nil, errors.New("empty graderfile")
 	}
 
-	err := service.NewLab(labName, grader.GetFilename(), grader.GetContent(), makeFile.GetFilename(), makeFile.GetContent())
+	err := labSrv.service.NewLab(labName, grader.GetFilename(), grader.GetContent(), makeFile.GetFilename(), makeFile.GetContent())
 	if err != nil {
 		return nil, err
 	}
@@ -39,7 +39,7 @@ func (labSrv *LabServer) EditLab(ctx context.Context, req *connect.Request[v1.La
 	makeFile := req.Msg.GetMakeFile()
 	labName := req.Msg.GetLabName()
 
-	err := service.EditLab(labName, grader.GetFilename(), grader.GetContent(), makeFile.GetFilename(), makeFile.GetContent())
+	err := labSrv.service.EditLab(labName, grader.GetFilename(), grader.GetContent(), makeFile.GetFilename(), makeFile.GetContent())
 	if err != nil {
 		return nil, err
 	}
@@ -51,7 +51,7 @@ func (labSrv *LabServer) EditLab(ctx context.Context, req *connect.Request[v1.La
 func (labSrv *LabServer) DeleteLab(ctx context.Context, req *connect.Request[v1.DeleteLabRequest]) (*connect.Response[v1.DeleteLabResponse], error) {
 	labName := req.Msg.GetLabName()
 
-	err := service.DeleteLab(labName)
+	err := labSrv.service.DeleteLab(labName)
 	if err != nil {
 		return nil, err
 	}

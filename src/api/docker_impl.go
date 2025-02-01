@@ -4,14 +4,13 @@ import (
 	"connectrpc.com/connect"
 	"context"
 	"errors"
-	"github.com/docker/docker/client"
 	dkrpc "github.com/makeopensource/leviathan/generated/docker_rpc/v1"
 	"github.com/makeopensource/leviathan/service/dockerclient"
 	"github.com/rs/zerolog/log"
 )
 
 type DockerServer struct {
-	clientList map[string]*client.Client
+	service *dockerclient.DockerService
 }
 
 func (dk *DockerServer) CreateContainer(_ context.Context, req *connect.Request[dkrpc.CreateContainerRequest]) (*connect.Response[dkrpc.CreateContainerResponse], error) {
@@ -19,7 +18,7 @@ func (dk *DockerServer) CreateContainer(_ context.Context, req *connect.Request[
 	jobId := "freeddrf444"
 	imageTag := req.Msg.GetImageTag()
 
-	_, err := dockerclient.HandleCreateContainerReq(dk.clientList, machineID, jobId, imageTag)
+	_, err := dk.service.CreateContainerReq(machineID, jobId, imageTag)
 	if err != nil {
 		return nil, err
 	}
@@ -29,7 +28,7 @@ func (dk *DockerServer) CreateContainer(_ context.Context, req *connect.Request[
 }
 
 func (dk *DockerServer) StartContainer(_ context.Context, req *connect.Request[dkrpc.StartContainerRequest]) (*connect.Response[dkrpc.StartContainerResponse], error) {
-	err := dockerclient.HandleStartContainerReq(dk.clientList, req.Msg.GetCombinedId())
+	err := dk.service.StartContainerReq(req.Msg.GetCombinedId())
 	if err != nil {
 		return nil, err
 	}
@@ -51,7 +50,7 @@ func (dk *DockerServer) DeleteContainer(_ context.Context, req *connect.Request[
 
 func (dk *DockerServer) StopContainer(_ context.Context, req *connect.Request[dkrpc.StopContainerRequest]) (*connect.Response[dkrpc.StopContainerResponse], error) {
 	combinedId := req.Msg.GetCombinedId()
-	err := dockerclient.HandleStopContainerReq(dk.clientList, combinedId)
+	err := dk.service.StopContainerReq(combinedId)
 	if err != nil {
 		return nil, err
 	}
@@ -60,7 +59,7 @@ func (dk *DockerServer) StopContainer(_ context.Context, req *connect.Request[dk
 }
 
 func (dk *DockerServer) GetContainerLogs(_ context.Context, req *connect.Request[dkrpc.GetContainerLogRequest], responseStream *connect.ServerStream[dkrpc.GetContainerLogResponse]) error {
-	err := dockerclient.HandleGetContainerLogsReq(dk.clientList, req.Msg.GetCombinedId(), responseStream)
+	err := dk.service.StreamContainerLogs(req.Msg.GetCombinedId(), responseStream)
 	if err != nil {
 		return err
 	}
@@ -72,7 +71,7 @@ func (dk *DockerServer) CreateNewImage(_ context.Context, req *connect.Request[d
 	contents := req.Msg.File.GetContent()
 	imageTag := req.Msg.GetImageTag()
 
-	err := dockerclient.HandleNewImageReq(filename, contents, imageTag, dk.clientList)
+	err := dk.service.NewImageReq(filename, contents, imageTag)
 	if err != nil {
 		return nil, err
 	}
@@ -81,13 +80,13 @@ func (dk *DockerServer) CreateNewImage(_ context.Context, req *connect.Request[d
 	return res, nil
 }
 func (dk *DockerServer) ListImages(_ context.Context, _ *connect.Request[dkrpc.ListImageRequest]) (*connect.Response[dkrpc.ListImageResponse], error) {
-	images := dockerclient.HandleListImagesReq(dk.clientList)
+	images := dk.service.ListImagesReq()
 	res := connect.NewResponse(&dkrpc.ListImageResponse{Images: images})
 	return res, nil
 }
 
 func (dk *DockerServer) ListContainers(_ context.Context, _ *connect.Request[dkrpc.ListContainersRequest]) (*connect.Response[dkrpc.ListContainersResponse], error) {
-	containerList := dockerclient.HandleListContainerReq(dk.clientList)
+	containerList := dk.service.ListContainerReq()
 	res := connect.NewResponse(&dkrpc.ListContainersResponse{Containers: containerList})
 	return res, nil
 }

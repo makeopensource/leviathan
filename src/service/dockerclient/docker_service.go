@@ -13,26 +13,21 @@ import (
 	"io"
 )
 
-// logStreamWriter implements io.Writer interface, to send docker output to
-type logStreamWriter struct {
-	stream *connect.ServerStream[dktypes.GetContainerLogResponse]
+type DockerService struct {
+	clientList map[string]*client.Client
 }
 
-func (w *logStreamWriter) Write(p []byte) (n int, err error) {
-	err = w.stream.Send(&dktypes.GetContainerLogResponse{Logs: string(p)})
-	if err != nil {
-		return 0, err
-	}
-	return len(p), nil
+func NewDockerService(clientList map[string]*client.Client) *DockerService {
+	return &DockerService{clientList: clientList}
 }
 
-func HandleStartContainerReq(clientList map[string]*client.Client, combinedId string) error {
+func (service *DockerService) StartContainerReq(combinedId string) error {
 	containerId, machineId, err := parseCombinedID(combinedId)
 	if err != nil {
 		return err
 	}
 
-	err = StartContainer(clientList[machineId], containerId)
+	err = StartContainer(service.clientList[machineId], containerId)
 	if err != nil {
 		log.Error().Err(err).Msgf("Failed to stop container at machine: %s with id", containerId)
 		return errors.New("Failed to start container")
@@ -40,13 +35,13 @@ func HandleStartContainerReq(clientList map[string]*client.Client, combinedId st
 	return nil
 }
 
-func HandleStopContainerReq(clientList map[string]*client.Client, combinedId string) error {
+func (service *DockerService) StopContainerReq(combinedId string) error {
 	containerId, machineId, err := parseCombinedID(combinedId)
 	if err != nil {
 		return err
 	}
 
-	err = StopContainer(clientList[machineId], containerId)
+	err = StopContainer(service.clientList[machineId], containerId)
 	if err != nil {
 		log.Error().Err(err).Msgf("Failed to stop container at machine: %s with id", containerId)
 		return errors.New("Failed to stop container")
@@ -54,10 +49,10 @@ func HandleStopContainerReq(clientList map[string]*client.Client, combinedId str
 	return nil
 }
 
-func HandleListImagesReq(clientList map[string]*client.Client) []*dktypes.DockerImage {
+func (service *DockerService) ListImagesReq() []*dktypes.DockerImage {
 	var result []*dktypes.DockerImage
 
-	for machineID, cli := range clientList {
+	for machineID, cli := range service.clientList {
 		images, err := ListImages(cli)
 		if err != nil {
 			info, err := cli.Info(context.Background())
@@ -77,7 +72,7 @@ func HandleListImagesReq(clientList map[string]*client.Client) []*dktypes.Docker
 	return result
 }
 
-func HandleNewImageReq(filename string, contents []byte, imageTag string, clientList map[string]*client.Client) error {
+func (service *DockerService) NewImageReq(filename string, contents []byte, imageTag string) error {
 	if len(filename) == 0 {
 		return errors.New("filename is missing")
 	} else if len(contents) == 0 {
@@ -94,7 +89,7 @@ func HandleNewImageReq(filename string, contents []byte, imageTag string, client
 		return err
 	}
 
-	for _, cli := range clientList {
+	for _, cli := range service.clientList {
 		err := BuildImageFromDockerfile(cli, fullpath, imageTag)
 		if err != nil {
 			info, err := cli.Info(context.Background())
@@ -110,9 +105,9 @@ func HandleNewImageReq(filename string, contents []byte, imageTag string, client
 	return nil
 }
 
-func HandleListContainerReq(clientList map[string]*client.Client) []*dktypes.DockerContainer {
+func (service *DockerService) ListContainerReq() []*dktypes.DockerContainer {
 	var result []*dktypes.DockerContainer
-	for machineID, cli := range clientList {
+	for machineID, cli := range service.clientList {
 		info, err := cli.Info(context.Background())
 		if err != nil {
 			log.Error().Err(err).Msg("failed to get docker server info")
@@ -133,12 +128,12 @@ func HandleListContainerReq(clientList map[string]*client.Client) []*dktypes.Doc
 	return result
 }
 
-func HandleGetContainerLogsReq(clientList map[string]*client.Client, combinedId string, responseStream *connect.ServerStream[dktypes.GetContainerLogResponse]) error {
+func (service *DockerService) StreamContainerLogs(combinedId string, responseStream *connect.ServerStream[dktypes.GetContainerLogResponse]) error {
 	containerId, machineId, err := parseCombinedID(combinedId)
 	if err != nil {
 		return err
 	}
-	reader, err := TailContainerLogs(context.Background(), clientList[machineId], containerId)
+	reader, err := TailContainerLogs(context.Background(), service.clientList[machineId], containerId)
 	if err != nil {
 		return err
 	}
@@ -153,7 +148,7 @@ func HandleGetContainerLogsReq(clientList map[string]*client.Client, combinedId 
 	return nil
 }
 
-func HandleCreateContainerReq(clientList map[string]*client.Client, machineId string, jobId string, imageTag string) (string, error) {
+func (service *DockerService) CreateContainerReq(machineId string, jobId string, imageTag string) (string, error) {
 	if machineId == "" {
 		return "", errors.New("machineId is empty or missing")
 	}
@@ -164,19 +159,14 @@ func HandleCreateContainerReq(clientList map[string]*client.Client, machineId st
 		return "", errors.New("imageTag is empty or missing")
 	}
 
-	cli := clientList[machineId]
-	cmd := []string{
-		"sh",
-		"-c",
-		"su autolab -c \"autodriver -u 100 -f 104857600 -t 900 -o 104857600 autolab\"",
-	}
+	cli := service.clientList[machineId]
 
 	resources := cont.Resources{
 		Memory:   512 * 1000000,
 		NanoCPUs: 2 * 1000000000,
 	}
 
-	containerID, err := CreateNewContainer(cli, jobId, imageTag, cmd, resources)
+	containerID, err := CreateNewContainer(cli, jobId, imageTag, resources)
 	if err != nil {
 		log.Error().Err(err).Msgf("Failed to create container for job %s", jobId)
 		return "", err

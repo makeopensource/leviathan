@@ -20,13 +20,14 @@ import (
 func main() {
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
 	utils.InitConfig()
+	db := utils.InitDB()
 
 	clientList := initDockerClients()
 
+	mux := api.SetupEndpoints(clientList, db)
+
 	port := "9221"
 	srvAddr := fmt.Sprintf(":%s", port)
-	mux := api.SetupPaths(clientList)
-
 	log.Info().Msgf("Started server on %s", srvAddr)
 	err := http.ListenAndServe(
 		srvAddr,

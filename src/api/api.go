@@ -6,13 +6,19 @@ import (
 	jobClient "github.com/makeopensource/leviathan/generated/jobs/v1/v1connect"
 	labClient "github.com/makeopensource/leviathan/generated/labs/v1/v1connect"
 	statsClient "github.com/makeopensource/leviathan/generated/stats/v1/v1connect"
+	"github.com/makeopensource/leviathan/service/dockerclient"
+	"github.com/makeopensource/leviathan/service/labs"
+	"gorm.io/gorm"
 	"net/http"
 )
 
-func SetupPaths(clientList map[string]*client.Client) *http.ServeMux {
+func SetupEndpoints(clientList map[string]*client.Client, db *gorm.DB) *http.ServeMux {
 	mux := http.NewServeMux()
 
-	services := []func() (string, http.Handler){
+	dkService := dockerclient.NewDockerService(clientList)
+	labService := labs.NewLabService(db)
+
+	endpoints := []func() (string, http.Handler){
 		// jobs endpoints
 		func() (string, http.Handler) {
 			jobSrv := &JobServer{clientList: clientList}
@@ -20,12 +26,12 @@ func SetupPaths(clientList map[string]*client.Client) *http.ServeMux {
 		},
 		// docker endpoints
 		func() (string, http.Handler) {
-			dkSrv := &DockerServer{clientList: clientList}
+			dkSrv := &DockerServer{service: dkService}
 			return dkclient.NewDockerServiceHandler(dkSrv)
 		},
 		// lab endpoints
 		func() (string, http.Handler) {
-			labSrv := &LabServer{clientList: clientList}
+			labSrv := &LabServer{service: labService}
 			return labClient.NewLabServiceHandler(labSrv)
 		},
 		// stats endpoints
@@ -35,7 +41,7 @@ func SetupPaths(clientList map[string]*client.Client) *http.ServeMux {
 		},
 	}
 
-	for _, svc := range services {
+	for _, svc := range endpoints {
 		path, handler := svc()
 		mux.Handle(path, handler)
 	}

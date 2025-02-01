@@ -153,13 +153,12 @@ func ListContainers(client *client.Client, machineId string) ([]*dktypes.Contain
 }
 
 // CreateNewContainer creates a new container from given image
-func CreateNewContainer(client *client.Client, jobUuid string, image string, entryPointCmd []string, machineLimits container.Resources) (string, error) {
+func CreateNewContainer(client *client.Client, jobUuid string, image string, machineLimits container.Resources) (string, error) {
 	config := &container.Config{
 		Image: image,
 		Labels: map[string]string{
 			"con": jobUuid,
 		},
-		Cmd: entryPointCmd,
 	}
 	hostConfig := &container.HostConfig{
 		Resources:  machineLimits,

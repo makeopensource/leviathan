@@ -28,32 +28,12 @@ jobs:
 
       - name: build and push leviathan
         run: |
-          docker build . -t ghcr.io/${{ github.repository }}:master
-          docker push ghcr.io/${{ github.repository }}:master
+          REGISTRY="ghcr.io/${{ github.repository }}"
+          VERSION="${{ steps.tagName.outputs.tag }}"
+          docker build . -t ${REGISTRY}:master --push
 
-      - name: build hydra
-        working-directory: example/hydra
-        run: docker build ../../ -f ./Dockerfile -t ghcr.io/makeopensource/hydra:master
-
-      - name: push hydra
-        run: docker push ghcr.io/makeopensource/hydra:master
-
-      #      if the binary needs to built directly
-      #      - name: Set up Go
-      #        uses: actions/setup-go@v4
-      #        with:
-      #          go-version: '1.22'
-      #      - name: Install dependencies
-      #        run: go mod tidy
-      #
-      #      - name: Build
-      #        run: go build -ldflags "-w -s" -o multipacman_linux_${{ steps.tagName.outputs.tag }}
-      #
-      #      - name: Upload Release Asset
-      #        uses: softprops/action-gh-release@v2
-      #        with:
-      #          files: |
-      #            multipacman_linux_${{ steps.tagName.outputs.tag }}
-      #          tag_name: ${{ steps.tagName.outputs.tag }}
-      #        env:
-      #          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: build and push hydra
+        working-directory: hydra
+        run: |
+          REGISTRY="ghcr.io/makeopensource/hydra"
+          docker build . -t ${REGISTRY}:master --push

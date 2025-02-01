@@ -57,29 +57,23 @@ jobs:
       - name: Login to GHCR registry
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-      - name: build version tagged image
-        run: docker build . -t ghcr.io/${{ github.repository }}:${{ steps.tagName.outputs.tag }}
+      - name: build and push leviathan
+        run: |
+          REGISTRY="ghcr.io/${{ github.repository }}"
+          VERSION="${{ steps.tagName.outputs.tag }}"
+          
+          docker build . \
+            -t ${REGISTRY}:${VERSION} \
+            -t ${REGISTRY}:latest \
+            --push
 
-      - name: push tagged
-        run: docker push ghcr.io/${{ github.repository }}:${{ steps.tagName.outputs.tag }}
-
-      - name: build latest tagged image
-        run: docker build . -t ghcr.io/${{ github.repository }}:latest
-
-      - name: push latest
-        run: docker push ghcr.io/${{ github.repository }}:latest
-
-      - name: build hydra image latest
-        working-directory: example/hydra
-        run: docker build ../../ -f ./Dockerfile -t ghcr.io/makeopensource/hydra:latest
-
-      - name: push hydra latest
-        run: docker push ghcr.io/makeopensource/hydra:latest
-
-      - name: build hydra image versioned
-        working-directory: example/hydra
-        run: docker build ../../ -f ./Dockerfile -t ghcr.io/makeopensource/hydra:${{ steps.tagName.outputs.tag }}
-
-      - name: push hydra versioned
-        run: docker push ghcr.io/makeopensource/hydra:${{ steps.tagName.outputs.tag }}
-
+      - name: build and push hydra
+        working-directory: hydra
+        run: |
+          REGISTRY="ghcr.io/makeopensource/hydra"
+          VERSION="${{ steps.tagName.outputs.tag }}"
+          
+          docker build . \
+            -t ${REGISTRY}:${VERSION} \
+            -t ${REGISTRY}:latest \
+            --push

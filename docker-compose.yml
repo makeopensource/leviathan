@@ -13,3 +13,22 @@ services:
       # warning mounting ssh will not work in windows hosts https://nickjanetakis.com/blog/docker-tip-56-volume-mounting-ssh-keys-into-a-docker-container
       - ${USERPROFILE}/.ssh:/root/.ssh:ro
     restart: "no"
+    depends_on:
+      - minio
+    profiles:
+      - '' # so it starts with normal docker compose
+
+  minio:
+    container_name: leviathan_minio
+    image: quay.io/minio/minio
+    command: server /data --console-address ":9001"
+    env_file:
+      - .env
+    volumes:
+      - ./appdata/leviathan_minio:/data
+    ports:
+      - "9012:9000"
+      - "9013:9001"
+    profiles:
+      - dev
+      - '' # so it starts with normal docker compose

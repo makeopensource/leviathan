@@ -4,9 +4,9 @@ import (
 	"connectrpc.com/connect"
 	"context"
 	"errors"
-	"github.com/makeopensource/leviathan/service/labs"
-
 	v1 "github.com/makeopensource/leviathan/generated/labs/v1"
+	"github.com/makeopensource/leviathan/models"
+	"github.com/makeopensource/leviathan/service/labs"
 )
 
 type LabServer struct {
@@ -26,7 +26,15 @@ func (labSrv *LabServer) NewLab(ctx context.Context, req *connect.Request[v1.Lab
 		return nil, errors.New("empty graderfile")
 	}
 
-	err := labSrv.service.NewLab(labName, grader.GetFilename(), grader.GetContent(), makeFile.GetFilename(), makeFile.GetContent())
+	lab := models.LabModel{
+		LabName:        labName,
+		GraderFilename: grader.GetFilename(),
+		GraderFile:     grader.GetContent(),
+		MakeFilename:   makeFile.GetFilename(),
+		MakeFile:       makeFile.GetContent(),
+	}
+
+	err := labSrv.service.NewLab(&lab)
 	if err != nil {
 		return nil, err
 	}
@@ -39,7 +47,15 @@ func (labSrv *LabServer) EditLab(ctx context.Context, req *connect.Request[v1.La
 	makeFile := req.Msg.GetMakeFile()
 	labName := req.Msg.GetLabName()
 
-	err := labSrv.service.EditLab(labName, grader.GetFilename(), grader.GetContent(), makeFile.GetFilename(), makeFile.GetContent())
+	lab := models.LabModel{
+		LabName:        labName,
+		GraderFilename: grader.GetFilename(),
+		GraderFile:     grader.GetContent(),
+		MakeFilename:   makeFile.GetFilename(),
+		MakeFile:       makeFile.GetContent(),
+	}
+
+	err := labSrv.service.EditLab(&lab)
 	if err != nil {
 		return nil, err
 	}

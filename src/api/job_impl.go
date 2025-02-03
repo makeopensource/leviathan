@@ -3,12 +3,12 @@ package api
 import (
 	"connectrpc.com/connect"
 	"context"
-	"github.com/docker/docker/client"
 	v1 "github.com/makeopensource/leviathan/generated/jobs/v1"
+	"github.com/makeopensource/leviathan/service/jobs"
 )
 
 type JobServer struct {
-	clientList map[string]*client.Client
+	service *jobs.JobService
 }
 
 func (job *JobServer) NewJob(ctx context.Context, req *connect.Request[v1.NewJobRequest]) (*connect.Response[v1.NewJobResponse], error) {

@@ -3,12 +3,12 @@ package api
 import (
 	"connectrpc.com/connect"
 	"context"
-	"github.com/docker/docker/client"
 	v1 "github.com/makeopensource/leviathan/generated/stats/v1"
+	"github.com/makeopensource/leviathan/service/stats"
 )
 
 type StatsServer struct {
-	clientList map[string]*client.Client
+	service *stats.StatService
 }
 
 func (stats *StatsServer) Echo(_ context.Context, req *connect.Request[v1.EchoRequest]) (*connect.Response[v1.EchoResponse], error) {

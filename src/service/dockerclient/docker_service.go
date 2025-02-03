@@ -74,11 +74,11 @@ func (service *DockerService) ListImagesReq() []*dktypes.DockerImage {
 
 func (service *DockerService) NewImageReq(filename string, contents []byte, imageTag string) error {
 	if len(filename) == 0 {
-		return errors.New("filename is missing")
+		return fmt.Errorf("filename is missing")
 	} else if len(contents) == 0 {
-		return errors.New("file contents are missing")
+		return fmt.Errorf("file contents are missing")
 	} else if len(imageTag) == 0 {
-		return errors.New("imagetag is missing")
+		return fmt.Errorf("imagetag is missing")
 	}
 
 	uploadDir := "./appdata/uploads"
@@ -95,10 +95,10 @@ func (service *DockerService) NewImageReq(filename string, contents []byte, imag
 			info, err := cli.Info(context.Background())
 			if err != nil {
 				log.Error().Err(err).Msg("failed to get server info")
-				return errors.New("failed to get server info")
+				return fmt.Errorf("failed to get server info")
 			}
 			log.Error().Err(err).Msgf("Error building image for %s", info.Name)
-			return errors.New("failed to create image for a web_gen")
+			return fmt.Errorf("failed to create image for a web_gen")
 		}
 	}
 

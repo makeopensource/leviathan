@@ -35,10 +35,12 @@ jobs:
         run: |
           REGISTRY="ghcr.io/${{ github.repository }}"
           VERSION="${{ steps.tagName.outputs.tag }}"
-          docker build . -t ${REGISTRY}:master --push
+          docker build . -t ${REGISTRY}:master
+          docker push ${REGISTRY}:master
 
       - name: build and push hydra
         working-directory: hydra
         run: |
           REGISTRY="ghcr.io/makeopensource/hydra"
-          docker build . -t ${REGISTRY}:master --push
+          docker build . -t ${REGISTRY}:master
+          docker push ${REGISTRY}:master

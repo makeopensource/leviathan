@@ -38,9 +38,9 @@ jobs:
           docker build . -t ${REGISTRY}:master
           docker push ${REGISTRY}:master
 
-      - name: build and push hydra
-        working-directory: hydra
-        run: |
-          REGISTRY="ghcr.io/makeopensource/hydra"
-          docker build . -t ${REGISTRY}:master
-          docker push ${REGISTRY}:master
+#      - name: build and push hydra
+#        working-directory: hydra
+#        run: |
+#          REGISTRY="ghcr.io/makeopensource/hydra"
+#          docker build . -t ${REGISTRY}:master
+#          docker push ${REGISTRY}:master

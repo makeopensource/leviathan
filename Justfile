@@ -7,7 +7,7 @@ dk:
 
 # docker compose up shorthand
 up:
-    docker compose up
+    docker compose up --build
 
 # docker compose down shorthand
 down:

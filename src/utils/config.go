@@ -19,6 +19,11 @@ func InitConfig() {
 
 	setupDefaultOptions(configDir)
 
+	submissionFolder := getStringEnvOrDefault("SUBMISSION_FOLDER", fmt.Sprintf("%s/%s", baseDir, "submissions"))
+	viper.SetDefault("submission_folder", submissionFolder)
+
+	err := makeDirectories([]string{submissionFolder})
+
 	if err := viper.SafeWriteConfig(); err != nil {
 		var configFileAlreadyExistsError viper.ConfigFileAlreadyExistsError
 		if !errors.As(err, &configFileAlreadyExistsError) {
@@ -26,7 +31,7 @@ func InitConfig() {
 		}
 	}
 
-	err := viper.ReadInConfig()
+	err = viper.ReadInConfig()
 	if err != nil {
 		log.Fatal().Err(err).Msg("could not read config file")
 	}
@@ -47,6 +52,14 @@ func getConfigDir(baseDir string) string {
 	return configDir
 }
 
+func getStringEnvOrDefault(key, defaultVal string) string {
+	value := os.Getenv(key)
+	if value == "" {
+		return defaultVal
+	}
+	return value
+}
+
 func setupDefaultOptions(configDir string) {
 	// misc application files
 	// set database path
@@ -65,6 +78,16 @@ func getBaseDir() string {
 		baseDir = "/appdata"
 	}
 	return baseDir
+}
+
+func makeDirectories(dirs []string) error {
+	for _, dir := range dirs {
+		err := os.MkdirAll(dir, DefaultFilePerm)
+		if err != nil {
+			return fmt.Errorf("unable to create directory at %s: %v", dir, err)
+		}
+	}
+	return nil
 }
 
 func GetClientList() []models.MachineOptions {

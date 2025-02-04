@@ -13,11 +13,15 @@ const (
 	Failed   JobStatus = "failed"
 )
 
-type JobMessage struct {
+type Job struct {
 	gorm.Model
-	JobId          string
-	Status         JobStatus
-	StudentTarFile []byte
-	LabName        string
-	LabData        LabModel `gorm:"-"` // This field will be ignored by GORM
+	JobId                     string
+	MachineId                 string
+	ContainerId               string
+	ImageTag                  string
+	Status                    JobStatus
+	StatusMessage             string
+	StudentSubmissionFileName string
+	StudentSubmissionFile     []byte
+	LabData                   LabModel `gorm:"-"` // This field will be ignored by GORM
 }

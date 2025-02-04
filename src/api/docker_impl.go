@@ -5,12 +5,12 @@ import (
 	"context"
 	"errors"
 	dkrpc "github.com/makeopensource/leviathan/generated/docker_rpc/v1"
-	"github.com/makeopensource/leviathan/service/dockerclient"
+	"github.com/makeopensource/leviathan/service/docker"
 	"github.com/rs/zerolog/log"
 )
 
 type DockerServer struct {
-	service *dockerclient.DockerService
+	service *docker.DockerService
 }
 
 func (dk *DockerServer) CreateContainer(_ context.Context, req *connect.Request[dkrpc.CreateContainerRequest]) (*connect.Response[dkrpc.CreateContainerResponse], error) {

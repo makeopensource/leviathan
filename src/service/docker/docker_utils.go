@@ -1,4 +1,4 @@
-package dockerclient
+package docker
 
 import (
 	"archive/tar"
@@ -12,13 +12,13 @@ import (
 	"path/filepath"
 )
 
-// logStreamWriter implements io.Writer interface, to send docker output to
-type logStreamWriter struct {
-	stream *connect.ServerStream[dktypes.GetContainerLogResponse]
+// LogStreamWriter implements io.Writer interface, to send docker output to
+type LogStreamWriter struct {
+	Stream *connect.ServerStream[dktypes.GetContainerLogResponse]
 }
 
-func (w *logStreamWriter) Write(p []byte) (n int, err error) {
-	err = w.stream.Send(&dktypes.GetContainerLogResponse{Logs: string(p)})
+func (w *LogStreamWriter) Write(p []byte) (n int, err error) {
+	err = w.Stream.Send(&dktypes.GetContainerLogResponse{Logs: string(p)})
 	if err != nil {
 		return 0, err
 	}
@@ -69,7 +69,7 @@ func ConvertToTar(dockerFilePath string) (*bytes.Reader, string) {
 	return bytes.NewReader(buf.Bytes()), dockerFile
 }
 
-func saveDockerfile(fullPath string, contents []byte) error {
+func SaveDockerfile(fullPath string, contents []byte) error {
 
 	log.Debug().Str("filename", fullPath).Msgf("Recivied new container request")
 
@@ -87,8 +87,8 @@ func saveDockerfile(fullPath string, contents []byte) error {
 	return nil
 }
 
-// parseCombinedID decode combined id which should contain the machine id and container id
-func parseCombinedID(combinedId string) (string, string, error) {
+// ParseCombinedID decode combined id which should contain the machine id and container id
+func ParseCombinedID(combinedId string) (string, string, error) {
 	machineId, containerId, err := utils.DecodeID(combinedId)
 	if err != nil {
 		log.Error().Err(err).Str("ID", combinedId).Msg("Could not decode ID")

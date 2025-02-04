@@ -4,6 +4,7 @@ package jobs.v1;
 
 option go_package = "github.com/makeopensource/leviathan/generated/jobs/v1";
 
+import "types/v1/types.proto";
 
 service JobService {
   rpc NewJob(NewJobRequest) returns (NewJobResponse) {}
@@ -13,9 +14,13 @@ service JobService {
 
 // todo figure out request/response
 message NewJobRequest {
+  types.v1.FileUpload makeFile = 1;
+  types.v1.FileUpload graderFile = 2;
+  types.v1.FileUpload studentSubmission = 3;
 }
 
 message NewJobResponse {
+
 }
 
 message JobStatusRequest {

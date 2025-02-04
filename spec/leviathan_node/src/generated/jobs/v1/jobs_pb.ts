@@ -4,13 +4,15 @@
 
 import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv1";
 import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv1";
+import type { FileUpload } from "../../types/v1/types_pb";
+import { file_types_v1_types } from "../../types/v1/types_pb";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file jobs/v1/jobs.proto.
  */
 export const file_jobs_v1_jobs: GenFile = /*@__PURE__*/
-  fileDesc("ChJqb2JzL3YxL2pvYnMucHJvdG8SB2pvYnMudjEiDwoNTmV3Sm9iUmVxdWVzdCIQCg5OZXdKb2JSZXNwb25zZSISChBKb2JTdGF0dXNSZXF1ZXN0IhMKEUpvYlN0YXR1c1Jlc3BvbnNlIhIKEENhbmNlbEpvYlJlcXVlc3QiEwoRQ2FuY2VsSm9iUmVzcG9uc2Uy1QEKCkpvYlNlcnZpY2USOwoGTmV3Sm9iEhYuam9icy52MS5OZXdKb2JSZXF1ZXN0Ghcuam9icy52MS5OZXdKb2JSZXNwb25zZSIAEkQKCUpvYlN0YXR1cxIZLmpvYnMudjEuSm9iU3RhdHVzUmVxdWVzdBoaLmpvYnMudjEuSm9iU3RhdHVzUmVzcG9uc2UiABJECglDYW5jZWxKb2ISGS5qb2JzLnYxLkNhbmNlbEpvYlJlcXVlc3QaGi5qb2JzLnYxLkNhbmNlbEpvYlJlc3BvbnNlIgBCjAEKC2NvbS5qb2JzLnYxQglKb2JzUHJvdG9QAVo1Z2l0aHViLmNvbS9tYWtlb3BlbnNvdXJjZS9sZXZpYXRoYW4vZ2VuZXJhdGVkL2pvYnMvdjGiAgNKWFiqAgdKb2JzLlYxygIHSm9ic1xWMeICE0pvYnNcVjFcR1BCTWV0YWRhdGHqAghKb2JzOjpWMWIGcHJvdG8z");
+  fileDesc("ChJqb2JzL3YxL2pvYnMucHJvdG8SB2pvYnMudjEikgEKDU5ld0pvYlJlcXVlc3QSJgoIbWFrZUZpbGUYASABKAsyFC50eXBlcy52MS5GaWxlVXBsb2FkEigKCmdyYWRlckZpbGUYAiABKAsyFC50eXBlcy52MS5GaWxlVXBsb2FkEi8KEXN0dWRlbnRTdWJtaXNzaW9uGAMgASgLMhQudHlwZXMudjEuRmlsZVVwbG9hZCIQCg5OZXdKb2JSZXNwb25zZSISChBKb2JTdGF0dXNSZXF1ZXN0IhMKEUpvYlN0YXR1c1Jlc3BvbnNlIhIKEENhbmNlbEpvYlJlcXVlc3QiEwoRQ2FuY2VsSm9iUmVzcG9uc2Uy1QEKCkpvYlNlcnZpY2USOwoGTmV3Sm9iEhYuam9icy52MS5OZXdKb2JSZXF1ZXN0Ghcuam9icy52MS5OZXdKb2JSZXNwb25zZSIAEkQKCUpvYlN0YXR1cxIZLmpvYnMudjEuSm9iU3RhdHVzUmVxdWVzdBoaLmpvYnMudjEuSm9iU3RhdHVzUmVzcG9uc2UiABJECglDYW5jZWxKb2ISGS5qb2JzLnYxLkNhbmNlbEpvYlJlcXVlc3QaGi5qb2JzLnYxLkNhbmNlbEpvYlJlc3BvbnNlIgBCjAEKC2NvbS5qb2JzLnYxQglKb2JzUHJvdG9QAVo1Z2l0aHViLmNvbS9tYWtlb3BlbnNvdXJjZS9sZXZpYXRoYW4vZ2VuZXJhdGVkL2pvYnMvdjGiAgNKWFiqAgdKb2JzLlYxygIHSm9ic1xWMeICE0pvYnNcVjFcR1BCTWV0YWRhdGHqAghKb2JzOjpWMWIGcHJvdG8z", [file_types_v1_types]);
 
 /**
  * todo figure out request/response
@@ -18,6 +20,20 @@ export const file_jobs_v1_jobs: GenFile = /*@__PURE__*/
  * @generated from message jobs.v1.NewJobRequest
  */
 export type NewJobRequest = Message<"jobs.v1.NewJobRequest"> & {
+  /**
+   * @generated from field: types.v1.FileUpload makeFile = 1;
+   */
+  makeFile?: FileUpload;
+
+  /**
+   * @generated from field: types.v1.FileUpload graderFile = 2;
+   */
+  graderFile?: FileUpload;
+
+  /**
+   * @generated from field: types.v1.FileUpload studentSubmission = 3;
+   */
+  studentSubmission?: FileUpload;
 };
 
 /**

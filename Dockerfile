@@ -10,10 +10,13 @@ RUN apk update && apk add --no-cache gcc musl-dev
 ENV CGO_ENABLED=1
 
 WORKDIR /app
-COPY ./src .
 
-# get depedencies
-RUN go mod tidy
+COPY src/go.mod .
+COPY src/go.sum .
+
+RUN go mod download
+
+COPY ./src .
 
 # build optimized binary without debugging symbols
 RUN go build -ldflags "-s -w" -o app

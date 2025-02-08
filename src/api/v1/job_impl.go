@@ -1,18 +1,41 @@
-package api
+package v1
 
 import (
 	"connectrpc.com/connect"
 	"context"
 	v1 "github.com/makeopensource/leviathan/generated/jobs/v1"
+	"github.com/makeopensource/leviathan/models"
 	"github.com/makeopensource/leviathan/service/jobs"
 )
 
 type JobServer struct {
-	service *jobs.JobService
+	Service *jobs.JobService
 }
 
 func (job *JobServer) NewJob(ctx context.Context, req *connect.Request[v1.NewJobRequest]) (*connect.Response[v1.NewJobResponse], error) {
-	res := connect.NewResponse(&v1.NewJobResponse{})
+	makeF := req.Msg.GetMakeFile()
+	grader := req.Msg.GetGraderFile()
+	stu := req.Msg.GetStudentSubmission()
+	tag := req.Msg.GetImageTag()
+
+	newJob := models.Job{
+		ImageTag:                  tag,
+		StudentSubmissionFileName: stu.Filename,
+		StudentSubmissionFile:     stu.Content,
+		LabData: models.LabModel{
+			GraderFilename: grader.Filename,
+			GraderFile:     grader.Content,
+			MakeFilename:   makeF.Filename,
+			MakeFile:       makeF.Content,
+		},
+	}
+
+	jobId, err := job.Service.NewJob(&newJob)
+	if err != nil {
+		return nil, err
+	}
+
+	res := connect.NewResponse(&v1.NewJobResponse{JobId: jobId})
 	return res, nil
 }
 func (job *JobServer) JobStatus(ctx context.Context, req *connect.Request[v1.JobStatusRequest]) (*connect.Response[v1.JobStatusResponse], error) {

@@ -1,4 +1,4 @@
-package api
+package v1
 
 import (
 	"connectrpc.com/connect"
@@ -10,7 +10,7 @@ import (
 )
 
 type LabServer struct {
-	service *labs.LabService
+	Service *labs.LabService
 }
 
 func (labSrv *LabServer) NewLab(ctx context.Context, req *connect.Request[v1.LabRequest]) (*connect.Response[v1.NewLabResponse], error) {
@@ -34,7 +34,7 @@ func (labSrv *LabServer) NewLab(ctx context.Context, req *connect.Request[v1.Lab
 		MakeFile:       makeFile.GetContent(),
 	}
 
-	err := labSrv.service.NewLab(&lab)
+	err := labSrv.Service.NewLab(&lab)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +55,7 @@ func (labSrv *LabServer) EditLab(ctx context.Context, req *connect.Request[v1.La
 		MakeFile:       makeFile.GetContent(),
 	}
 
-	err := labSrv.service.EditLab(&lab)
+	err := labSrv.Service.EditLab(&lab)
 	if err != nil {
 		return nil, err
 	}
@@ -67,7 +67,7 @@ func (labSrv *LabServer) EditLab(ctx context.Context, req *connect.Request[v1.La
 func (labSrv *LabServer) DeleteLab(ctx context.Context, req *connect.Request[v1.DeleteLabRequest]) (*connect.Response[v1.DeleteLabResponse], error) {
 	labName := req.Msg.GetLabName()
 
-	err := labSrv.service.DeleteLab(labName)
+	err := labSrv.Service.DeleteLab(labName)
 	if err != nil {
 		return nil, err
 	}

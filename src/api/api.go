@@ -1,6 +1,7 @@
 package api
 
 import (
+	v1 "github.com/makeopensource/leviathan/api/v1"
 	dkclient "github.com/makeopensource/leviathan/generated/docker_rpc/v1/v1connect"
 	jobClient "github.com/makeopensource/leviathan/generated/jobs/v1/v1connect"
 	labClient "github.com/makeopensource/leviathan/generated/labs/v1/v1connect"
@@ -15,22 +16,22 @@ func SetupEndpoints() *http.ServeMux {
 	endpoints := []func() (string, http.Handler){
 		// jobs endpoints
 		func() (string, http.Handler) {
-			jobSrv := &JobServer{service: job}
+			jobSrv := &v1.JobServer{Service: job}
 			return jobClient.NewJobServiceHandler(jobSrv)
 		},
 		// docker endpoints
 		func() (string, http.Handler) {
-			dkSrv := &DockerServer{service: docker}
+			dkSrv := &v1.DockerServer{Service: docker}
 			return dkclient.NewDockerServiceHandler(dkSrv)
 		},
 		// lab endpoints
 		func() (string, http.Handler) {
-			labSrv := &LabServer{service: lab}
+			labSrv := &v1.LabServer{Service: lab}
 			return labClient.NewLabServiceHandler(labSrv)
 		},
 		// stats endpoints
 		func() (string, http.Handler) {
-			statsSrv := &StatsServer{service: stats}
+			statsSrv := &v1.StatsServer{Service: stats}
 			return statsClient.NewStatsServiceHandler(statsSrv)
 		},
 	}

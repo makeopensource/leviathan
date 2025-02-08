@@ -14,13 +14,14 @@ service JobService {
 
 // todo figure out request/response
 message NewJobRequest {
+  string  imageTag = 4;
   types.v1.FileUpload makeFile = 1;
   types.v1.FileUpload graderFile = 2;
   types.v1.FileUpload studentSubmission = 3;
 }
 
 message NewJobResponse {
-
+  string jobId = 1;
 }
 
 message JobStatusRequest {

@@ -2,8 +2,6 @@ package utils
 
 import (
 	"archive/tar"
-	"bytes"
-	"compress/gzip"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -11,6 +9,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -29,37 +28,44 @@ func DecodeID(combinedId string) (string, string, error) {
 }
 
 // ArchiveJobData creates a tar.gz archive from the provided file map.
-func ArchiveJobData(files map[string][]byte) (io.ReadCloser, error) {
-	var buf bytes.Buffer
-	gz := gzip.NewWriter(&buf)
-	tw := tar.NewWriter(gz)
+func ArchiveJobData(files map[string][]byte) (string, error) {
+	tmpFolder, err := os.MkdirTemp(SubmissionTarFolder.GetStr(), "submission_*")
+	tmpFile, err := os.Create(fmt.Sprintf("%s/%s", tmpFolder, "grader.tar.gz"))
+	if err != nil {
+		return "", fmt.Errorf("creating temp file: %w", err)
+	}
+	defer func(tmpFile *os.File) {
+		err := tmpFile.Close()
+		if err != nil {
+			log.Error().Err(err).Msg("while closing temp file")
+		}
+	}(tmpFile)
 
-	var filePerm int64 = 0600
+	//gz := gzip.NewWriter(tmpFile)
+	tw := tar.NewWriter(tmpFile)
 
-	// Add each file to the archive
 	for name, content := range files {
 		header := &tar.Header{
 			Name: name,
-			Mode: filePerm,
+			Mode: DefaultFilePerm,
 			Size: int64(len(content)),
 		}
 		if err := tw.WriteHeader(header); err != nil {
-			return nil, err
+			return "", fmt.Errorf("writing header: %w", err)
 		}
 		if _, err := tw.Write(content); err != nil {
-			return nil, err
+			return "", fmt.Errorf("writing content: %w", err)
 		}
 	}
-	if err := tw.Close(); err != nil {
-		return nil, err
-	}
-	if err := gz.Close(); err != nil {
-		return nil, err
-	}
 
-	// we create a new reader so that
-	// we can close and cleanup the above tar/gzip writers
-	return io.NopCloser(bytes.NewReader(buf.Bytes())), nil
+	if err := tw.Close(); err != nil {
+		return "", fmt.Errorf("closing tar writer: %w", err)
+	}
+	//if err := gz.Close(); err != nil {
+	//	return "", fmt.Errorf("closing gzip writer: %w", err)
+	//}
+
+	return filepath.Abs(tmpFile.Name())
 }
 
 func ArchiveFiles(filePath string) (io.ReadCloser, error) {
@@ -121,4 +127,33 @@ func GetLastLine(file *os.File) (string, error) {
 func IsValidJSON(s string) bool {
 	var js json.RawMessage
 	return json.Unmarshal([]byte(s), &js) == nil
+}
+
+// ReadFileBytes reads a file at the given filepath and returns its content as a byte slice.
+// It handles errors and returns an error if the file cannot be read.
+func ReadFileBytes(filepath string) ([]byte, error) {
+	// Check if the file exists
+	if _, err := os.Stat(filepath); os.IsNotExist(err) {
+		return nil, fmt.Errorf("file not found: %s", filepath)
+	}
+
+	// Open the file for reading
+	file, err := os.Open(filepath)
+	if err != nil {
+		return nil, fmt.Errorf("error opening file: %w", err) // Wrap the error
+	}
+	defer func(file *os.File) {
+		err := file.Close()
+		if err != nil {
+			log.Error().Err(err).Msgf("error closing file: %s", filepath)
+		}
+	}(file) // Important: Close the file when done
+
+	// Read all bytes from the file
+	fileBytes, err := io.ReadAll(file)
+	if err != nil {
+		return nil, fmt.Errorf("error reading file: %w", err) // Wrap the error
+	}
+
+	return fileBytes, nil
 }

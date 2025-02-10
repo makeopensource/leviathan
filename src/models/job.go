@@ -23,5 +23,6 @@ type Job struct {
 	StatusMessage             string
 	StudentSubmissionFileName string
 	StudentSubmissionFile     []byte
-	LabData                   LabModel `gorm:"-"` // This field will be ignored by GORM
+	LabData                   LabModel `gorm:"-"`
+	OutputFilePath            string
 }

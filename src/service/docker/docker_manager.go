@@ -7,7 +7,6 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/makeopensource/leviathan/utils"
 	"github.com/rs/zerolog/log"
-	"github.com/spf13/viper"
 	"sync"
 )
 
@@ -35,7 +34,7 @@ func InitDockerClients() *RemoteClientManager {
 			continue
 		}
 
-		info, err := testClientConn(remoteClient.client)
+		info, err := testClientConn(remoteClient.Client)
 		if err != nil {
 			log.Warn().Err(err).Msgf("Client failed to connect: %s", machine.Name)
 			continue
@@ -47,13 +46,13 @@ func InitDockerClients() *RemoteClientManager {
 		}
 	}
 
-	if viper.GetBool("clients.enable_local_docker") {
+	if utils.EnableLocalDocker.GetBool() {
 		localClient, err := NewLocalClient()
 		if err != nil {
 			log.Error().Err(err).Msg("Failed to setup local docker client")
 		}
 
-		info, err := testClientConn(localClient.client)
+		info, err := testClientConn(localClient.Client)
 		if err != nil {
 			log.Warn().Err(err).Msgf("Client failed to connect: localdocker")
 		}
@@ -82,7 +81,7 @@ func (man *RemoteClientManager) GetLeastJobCountMachineId() string {
 	var minCount uint64 = 0
 	machineInd := ""
 	for i, v := range man.Clients {
-		if v.activeJobs < minCount {
+		if v.activeJobs <= minCount {
 			minCount = v.activeJobs
 			machineInd = i
 		}

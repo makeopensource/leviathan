@@ -64,7 +64,7 @@ func (service *DockerService) ListImagesReq() []*dktypes.DockerImage {
 	for machineID, cli := range service.ClientManager.Clients {
 		images, err := cli.Client.ListImages()
 		if err != nil {
-			info, err := cli.Client.client.Info(context.Background())
+			info, err := cli.Client.Client.Info(context.Background())
 			if err != nil {
 				log.Error().Err(err).Msg("failed to get docker server info")
 				continue
@@ -90,10 +90,7 @@ func (service *DockerService) NewImageReq(filename string, contents []byte, imag
 		return fmt.Errorf("imagetag is missing")
 	}
 
-	uploadDir := "./appdata/uploads"
-	fullpath := fmt.Sprintf("%s/%s", uploadDir, filename)
-
-	err := SaveDockerfile(fullpath, contents)
+	fullpath, err := SaveDockerfile(filename, contents)
 	if err != nil {
 		return err
 	}
@@ -101,7 +98,7 @@ func (service *DockerService) NewImageReq(filename string, contents []byte, imag
 	for _, item := range service.ClientManager.Clients {
 		err := item.Client.BuildImageFromDockerfile(fullpath, imageTag)
 		if err != nil {
-			info, err := item.Client.client.Info(context.Background())
+			info, err := item.Client.Client.Info(context.Background())
 			if err != nil {
 				log.Error().Err(err).Msg("failed to get server info")
 				return fmt.Errorf("failed to get server info")
@@ -117,7 +114,7 @@ func (service *DockerService) NewImageReq(filename string, contents []byte, imag
 func (service *DockerService) ListContainerReq() []*dktypes.DockerContainer {
 	var result []*dktypes.DockerContainer
 	for machineID, cli := range service.ClientManager.Clients {
-		info, err := cli.Client.client.Info(context.Background())
+		info, err := cli.Client.Client.Info(context.Background())
 		if err != nil {
 			log.Error().Err(err).Msg("failed to get docker server info")
 			continue
@@ -184,7 +181,7 @@ func (service *DockerService) CreateContainerReq(machineId string, jobId string,
 		NanoCPUs: 2 * 1000000000,
 	}
 
-	containerID, err := machine.CreateNewContainer(jobId, imageTag, resources)
+	containerID, err := machine.CreateNewContainer(jobId, imageTag, resources, "")
 	if err != nil {
 		log.Error().Err(err).Msgf("Failed to create container for job %s", jobId)
 		return "", err

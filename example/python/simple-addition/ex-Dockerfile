@@ -1,0 +1,7 @@
+FROM python:3-alpine3.10
+
+WORKDIR /home/autolab
+
+RUN apk add build-base
+
+#CMD ["/bin/sh", "-c", "while true; do sleep 1; done"]

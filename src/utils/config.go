@@ -19,10 +19,16 @@ func InitConfig() {
 
 	setupDefaultOptions(configDir)
 
-	submissionFolder := getStringEnvOrDefault("SUBMISSION_FOLDER", fmt.Sprintf("%s/%s", baseDir, "submissions"))
-	viper.SetDefault("submission_folder", submissionFolder)
+	submissionFolderPath := getStringEnvOrDefault("SUBMISSION_FOLDER", fmt.Sprintf("%s/%s", baseDir, "submissions"))
+	viper.SetDefault(submissionFolderKey, submissionFolderPath)
 
-	err := makeDirectories([]string{submissionFolder})
+	outputFolderPath := getStringEnvOrDefault("OUTPUT_FOLDER", fmt.Sprintf("%s/%s", baseDir, "output"))
+	viper.SetDefault(outputFolderKey, submissionFolderPath)
+
+	dockerFolderPath := getStringEnvOrDefault("DOCKERFILE_FOLDER", fmt.Sprintf("%s/%s", baseDir, "dockerfiles"))
+	viper.SetDefault(dockerFilesFolderKey, dockerFolderPath)
+
+	err := makeDirectories([]string{submissionFolderPath, dockerFolderPath, outputFolderPath})
 
 	if err := viper.SafeWriteConfig(); err != nil {
 		var configFileAlreadyExistsError viper.ConfigFileAlreadyExistsError
@@ -62,14 +68,10 @@ func getStringEnvOrDefault(key, defaultVal string) string {
 
 func setupDefaultOptions(configDir string) {
 	// misc application files
-	// set database path
-	viper.SetDefault("db_path", fmt.Sprintf("%s/leviathan.db", configDir))
-	// create log directory
-	viper.SetDefault("log_file", fmt.Sprintf("%s/logs/leviathan.log", configDir))
-	// Set general settings
-	viper.SetDefault("server.port", "11200")
-	// enable local docker
-	viper.SetDefault("clients.enable_local_docker", true)
+	viper.SetDefault(dbPathKey, fmt.Sprintf("%s/leviathan.db", configDir))
+	viper.SetDefault(logDirKey, fmt.Sprintf("%s/logs/leviathan.log", configDir))
+	viper.SetDefault(serverPortKey, "11200")
+	viper.SetDefault(enableLocalDockerKey, true)
 }
 
 func getBaseDir() string {

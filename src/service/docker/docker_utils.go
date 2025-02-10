@@ -4,6 +4,7 @@ import (
 	"archive/tar"
 	"bytes"
 	"connectrpc.com/connect"
+	"fmt"
 	dktypes "github.com/makeopensource/leviathan/generated/docker_rpc/v1"
 	"github.com/makeopensource/leviathan/utils"
 	"github.com/rs/zerolog/log"
@@ -69,22 +70,29 @@ func ConvertToTar(dockerFilePath string) (*bytes.Reader, string) {
 	return bytes.NewReader(buf.Bytes()), dockerFile
 }
 
-func SaveDockerfile(fullPath string, contents []byte) error {
-
-	log.Debug().Str("filename", fullPath).Msgf("Recivied new container request")
-
-	if err := os.MkdirAll(filepath.Dir(fullPath), 0755); err != nil {
-		log.Error().Err(err).Msgf("Failed to create file and folder at %s", fullPath)
-		return err
-	}
-
-	err := os.WriteFile(fullPath, contents, 0644)
+func SaveDockerfile(filename string, contents []byte) (string, error) {
+	tmpPath, err := os.CreateTemp(utils.DockerFilesFolder.GetStr(), fmt.Sprintf("%s_*", filename))
 	if err != nil {
-		log.Error().Err(err).Msgf("Failed to write contents to file")
-		return err
+		return "", err
 	}
 
-	return nil
+	_, err = tmpPath.Write(contents)
+	if err != nil {
+		return "", err
+	}
+	defer func(tmpPath *os.File) {
+		err := tmpPath.Close()
+		if err != nil {
+			log.Error().Err(err).Msg("Error closing temp file")
+		}
+	}(tmpPath)
+
+	abs, err := filepath.Abs(tmpPath.Name())
+	if err != nil {
+		return "", err
+	}
+
+	return abs, nil
 }
 
 // ParseCombinedID decode combined id which should contain the machine id and container id

@@ -1,13 +1,19 @@
 package jobs
 
 import (
+	"connectrpc.com/connect"
+	"context"
+	"errors"
 	"fmt"
+	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/google/uuid"
+	v1 "github.com/makeopensource/leviathan/generated/jobs/v1"
 	"github.com/makeopensource/leviathan/models"
 	"github.com/makeopensource/leviathan/service/docker"
 	"github.com/makeopensource/leviathan/utils"
 	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
+	"io"
 	"os"
 	"path/filepath"
 	"time"
@@ -16,11 +22,11 @@ import (
 type JobService struct {
 	db           *gorm.DB
 	labFileCache *utils.LabFilesCache
-	dockerSrv    *docker.DockerService
+	dockerSrv    *docker.DkService
 	queue        *JobQueue
 }
 
-func NewJobService(db *gorm.DB, cache *utils.LabFilesCache, dockerService *docker.DockerService) *JobService {
+func NewJobService(db *gorm.DB, cache *utils.LabFilesCache, dockerService *docker.DkService) *JobService {
 	return &JobService{
 		db:           db,
 		labFileCache: cache,
@@ -59,7 +65,29 @@ func (job *JobService) NewJob(jobReq *models.Job) (string, error) {
 	return jobId.String(), nil
 }
 
-func (job *JobService) GetJobStatus(jobUuid string) error {
+func (job *JobService) StreamJobLogs(ctx context.Context, jobUuid string, stream *connect.ServerStream[v1.JobLogsResponse]) error {
+	jobInfo, err := job.getJob(jobUuid)
+	if err != nil {
+		return err
+	}
+
+	machine, err := job.dockerSrv.ClientManager.GetClientById(jobInfo.MachineId)
+	if err != nil {
+		return err
+	}
+
+	logs, err := machine.TailContainerLogs(ctx, jobUuid)
+	if err != nil {
+		return err
+	}
+
+	streamWriter := &models.LogStreamWriter{Stream: stream}
+	_, err = stdcopy.StdCopy(streamWriter, streamWriter, logs)
+	if err != nil && err != io.EOF && !errors.Is(err, context.Canceled) {
+		log.Error().Err(err).Msgf("failed to tail Docker container")
+		return fmt.Errorf("failed to tail Docker container")
+	}
+
 	return nil
 }
 

@@ -174,6 +174,7 @@ func (service *DockerService) CreateContainerReq(machineId string, jobId string,
 	machine, err := service.ClientManager.GetClientById(machineId)
 	if err != nil {
 		log.Warn().Err(err).Msgf("Failed to get machine info")
+		return "", fmt.Errorf("failed to get machine info")
 	}
 
 	resources := cont.Resources{

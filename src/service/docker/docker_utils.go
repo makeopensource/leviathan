@@ -13,19 +13,6 @@ import (
 	"path/filepath"
 )
 
-// LogStreamWriter implements io.Writer interface, to send docker output to
-type LogStreamWriter struct {
-	Stream *connect.ServerStream[dktypes.GetContainerLogResponse]
-}
-
-func (w *LogStreamWriter) Write(p []byte) (n int, err error) {
-	err = w.Stream.Send(&dktypes.GetContainerLogResponse{Logs: string(p)})
-	if err != nil {
-		return 0, err
-	}
-	return len(p), nil
-}
-
 // ConvertToTar make input tar file from dockerfile path
 // courtesy of https://stackoverflow.com/a/46518557/23258902
 func ConvertToTar(dockerFilePath string) (*bytes.Reader, string) {

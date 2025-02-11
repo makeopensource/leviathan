@@ -8,7 +8,7 @@ import (
 	"github.com/makeopensource/leviathan/utils"
 )
 
-func InitServices() (*docker.DockerService, *labs.LabService, *jobs.JobService, *stats.StatService) {
+func InitServices() (*docker.DkService, *labs.LabService, *jobs.JobService, *stats.StatService) {
 	// utils for services
 	db := utils.InitDB()
 	fCache := utils.NewLabFilesCache(db)

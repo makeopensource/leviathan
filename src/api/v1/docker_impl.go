@@ -10,7 +10,7 @@ import (
 )
 
 type DockerServer struct {
-	Service *docker.DockerService
+	Service *docker.DkService
 }
 
 func (dk *DockerServer) CreateContainer(_ context.Context, req *connect.Request[dkrpc.CreateContainerRequest]) (*connect.Response[dkrpc.CreateContainerResponse], error) {

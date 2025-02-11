@@ -26,7 +26,7 @@ const (
 )
 
 var (
-	dkService  *docker.DockerService
+	dkService  *docker.DkService
 	jobService *jobs.JobService
 )
 

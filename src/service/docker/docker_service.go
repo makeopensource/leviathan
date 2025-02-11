@@ -5,22 +5,20 @@ import (
 	"context"
 	"fmt"
 	cont "github.com/docker/docker/api/types/container"
-	"github.com/docker/docker/pkg/stdcopy"
 	dktypes "github.com/makeopensource/leviathan/generated/docker_rpc/v1"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
-	"io"
 )
 
-type DockerService struct {
+type DkService struct {
 	ClientManager *RemoteClientManager
 }
 
-func NewDockerService(clientList *RemoteClientManager) *DockerService {
-	return &DockerService{ClientManager: clientList}
+func NewDockerService(clientList *RemoteClientManager) *DkService {
+	return &DkService{ClientManager: clientList}
 }
 
-func (service *DockerService) StartContainerReq(combinedId string) error {
+func (service *DkService) StartContainerReq(combinedId string) error {
 	containerId, machineId, err := ParseCombinedID(combinedId)
 	if err != nil {
 		return err
@@ -39,7 +37,7 @@ func (service *DockerService) StartContainerReq(combinedId string) error {
 	return nil
 }
 
-func (service *DockerService) StopContainerReq(combinedId string) error {
+func (service *DkService) StopContainerReq(combinedId string) error {
 	containerId, machineId, err := ParseCombinedID(combinedId)
 	if err != nil {
 		return err
@@ -58,7 +56,7 @@ func (service *DockerService) StopContainerReq(combinedId string) error {
 	return nil
 }
 
-func (service *DockerService) ListImagesReq() []*dktypes.DockerImage {
+func (service *DkService) ListImagesReq() []*dktypes.DockerImage {
 	var result []*dktypes.DockerImage
 
 	for machineID, cli := range service.ClientManager.Clients {
@@ -81,7 +79,7 @@ func (service *DockerService) ListImagesReq() []*dktypes.DockerImage {
 	return result
 }
 
-func (service *DockerService) NewImageReq(filename string, contents []byte, imageTag string) error {
+func (service *DkService) NewImageReq(filename string, contents []byte, imageTag string) error {
 	if len(filename) == 0 {
 		return fmt.Errorf("filename is missing")
 	} else if len(contents) == 0 {
@@ -111,7 +109,7 @@ func (service *DockerService) NewImageReq(filename string, contents []byte, imag
 	return nil
 }
 
-func (service *DockerService) ListContainerReq() []*dktypes.DockerContainer {
+func (service *DkService) ListContainerReq() []*dktypes.DockerContainer {
 	var result []*dktypes.DockerContainer
 	for machineID, cli := range service.ClientManager.Clients {
 		info, err := cli.Client.Client.Info(context.Background())
@@ -134,33 +132,11 @@ func (service *DockerService) ListContainerReq() []*dktypes.DockerContainer {
 	return result
 }
 
-func (service *DockerService) StreamContainerLogs(combinedId string, responseStream *connect.ServerStream[dktypes.GetContainerLogResponse]) error {
-	containerId, machineId, err := ParseCombinedID(combinedId)
-	if err != nil {
-		return err
-	}
-
-	machine, err := service.ClientManager.GetClientById(machineId)
-	if err != nil {
-		return err
-	}
-
-	reader, err := machine.TailContainerLogs(context.Background(), containerId)
-	if err != nil {
-		return err
-	}
-
-	writer := &LogStreamWriter{Stream: responseStream}
-	_, err = stdcopy.StdCopy(writer, writer, reader)
-	if err != nil && err != io.EOF && !errors.Is(err, context.Canceled) {
-		log.Error().Err(err).Msgf("failed to tail Docker container")
-		return errors.New("failed to tail Docker container")
-	}
-
+func (service *DkService) StreamContainerLogs(combinedId string, responseStream *connect.ServerStream[dktypes.GetContainerLogResponse]) error {
 	return nil
 }
 
-func (service *DockerService) CreateContainerReq(machineId string, jobId string, imageTag string) (string, error) {
+func (service *DkService) CreateContainerReq(machineId string, jobId string, imageTag string) (string, error) {
 	if machineId == "" {
 		return "", errors.New("machineId is empty or missing")
 	}

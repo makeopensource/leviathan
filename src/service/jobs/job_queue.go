@@ -11,6 +11,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
 	"os"
+	"path/filepath"
 	"time"
 )
 
@@ -18,10 +19,10 @@ type JobQueue struct {
 	jobChannel chan *models.Job
 	totalJobs  uint
 	db         *gorm.DB
-	dkSrv      *docker.DockerService
+	dkSrv      *docker.DkService
 }
 
-func NewJobQueue(totalJobs uint, db *gorm.DB, dk *docker.DockerService) *JobQueue {
+func NewJobQueue(totalJobs uint, db *gorm.DB, dk *docker.DkService) *JobQueue {
 	queue := &JobQueue{
 		jobChannel: make(chan *models.Job, totalJobs),
 		totalJobs:  totalJobs,
@@ -49,12 +50,12 @@ func (q *JobQueue) messageProcessors(workerId int) {
 func (q *JobQueue) runJob(msg *models.Job) {
 	q.jobInProgress(msg)
 
-	client, contId := q.setupLikeKing(msg)
+	client, contId, jobTar := q.setupLikeKing(msg)
 	if client == nil || contId == "" {
 		return
 	}
 	defer func() {
-		q.cleanUpLikeChampion(msg, client)
+		q.cleanUpLikeChampion(msg, client, jobTar)
 	}()
 
 	var statusChannel = make(chan int)
@@ -129,7 +130,7 @@ func (q *JobQueue) AddJob(mes *models.Job) {
 
 // setupLikeKing Set up job like king, yes!
 // returns nil client if an error occurred while setup
-func (q *JobQueue) setupLikeKing(msg *models.Job) (*docker.DkClient, string) {
+func (q *JobQueue) setupLikeKing(msg *models.Job) (*docker.DkClient, string, string) {
 	jobTar, err := utils.ArchiveJobData(map[string][]byte{
 		msg.LabData.GraderFilename:    msg.LabData.GraderFile,
 		msg.LabData.MakeFilename:      msg.LabData.MakeFile,
@@ -137,13 +138,13 @@ func (q *JobQueue) setupLikeKing(msg *models.Job) (*docker.DkClient, string) {
 	})
 	if err != nil {
 		q.bigProblem("Failed to convert job data to tar", msg, err, jobTar)
-		return nil, ""
+		return nil, "", ""
 	}
 
 	machine, err := q.dkSrv.ClientManager.GetClientById(msg.MachineId)
 	if err != nil {
 		q.bigProblem("Failed to get machine info", msg, err, jobTar)
-		return nil, ""
+		return nil, "", ""
 	}
 
 	// todo load from job message
@@ -156,7 +157,7 @@ func (q *JobQueue) setupLikeKing(msg *models.Job) (*docker.DkClient, string) {
 	contId, err := machine.CreateNewContainer(msg.JobId, msg.ImageTag, resources, jobTar)
 	if err != nil {
 		q.bigProblem("Unable to create job container", msg, err, jobTar)
-		return nil, ""
+		return nil, "", ""
 	}
 
 	//err = machine.CopyToContainer(contId, jobTar)
@@ -169,10 +170,10 @@ func (q *JobQueue) setupLikeKing(msg *models.Job) (*docker.DkClient, string) {
 	res := q.db.Save(msg)
 	if res.Error != nil {
 		q.bigProblem("Unable to update job in db", msg, res.Error, jobTar)
-		return nil, ""
+		return nil, "", ""
 	}
 
-	return machine, contId
+	return machine, contId, jobTar
 }
 
 // bigProblem job failed, Not good!
@@ -200,14 +201,19 @@ func (q *JobQueue) greatSuccess(job *models.Job, jobResult string) {
 	job.StatusMessage = jobResult
 }
 
-func (q *JobQueue) cleanUpLikeChampion(msg *models.Job, client *docker.DkClient) {
+func (q *JobQueue) cleanUpLikeChampion(msg *models.Job, client *docker.DkClient, tar string) {
 	q.updateDataVeryNice(msg)
 
-	// TODO add after debugging
-	//err := client.RemoveContainer(msg.ContainerId, true, true)
-	//if err != nil {
-	//	log.Error().Err(err).Msgf("Unable to remove container %s", msg.ContainerId)
-	//}
+	err := client.RemoveContainer(msg.ContainerId, true, true)
+	if err != nil {
+		log.Error().Err(err).Msgf("Unable to remove container %s", msg.ContainerId)
+	}
+
+	err = os.RemoveAll(filepath.Dir(tar))
+	if err != nil {
+		log.Error().Err(err).Msgf("Unable to remove tmp job directory %s", filepath.Dir(tar))
+		return
+	}
 }
 
 // Job is in progress, success soon!

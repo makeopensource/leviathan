@@ -3,6 +3,7 @@ import sys
 
 from student import add, subtract, divide, multiply
 
+
 def grade_student_code(student_code_filename):
     """Grades student code by importing and testing functions."""
 
@@ -25,7 +26,8 @@ def grade_student_code(student_code_filename):
             else:
                 results["addition"]["message"] = f"Addition failed. Expected 8, got {result}"
         except Exception as e:
-            results["addition"]["message"] = f"Addition test caused an error: {e}"
+            results[("addition"
+                     "")]["message"] = f"Addition test caused an error: {e}"
 
         # Test subtraction
         try:

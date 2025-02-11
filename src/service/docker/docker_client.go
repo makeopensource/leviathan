@@ -263,7 +263,6 @@ func (c *DkClient) CopyToContainer(containerID string, tarPath string) error {
 	return nil
 }
 
-// TailContainerLogs get logs TODO
 func (c *DkClient) TailContainerLogs(ctx context.Context, containerID string) (io.ReadCloser, error) {
 	reader, err := c.Client.ContainerLogs(ctx, containerID, container.LogsOptions{
 		ShowStdout: true,

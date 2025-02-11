@@ -31,7 +31,7 @@ func NewJobService(db *gorm.DB, cache *utils.LabFilesCache, dockerService *docke
 		db:           db,
 		labFileCache: cache,
 		dockerSrv:    dockerService,
-		queue:        NewJobQueue(30, db, dockerService),
+		queue:        NewJobQueue(utils.ConcurrentJobs.GetInt(), db, dockerService),
 	}
 }
 

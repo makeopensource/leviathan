@@ -72,6 +72,7 @@ func setupDefaultOptions(configDir string) {
 	viper.SetDefault(logDirKey, fmt.Sprintf("%s/logs/leviathan.log", configDir))
 	viper.SetDefault(serverPortKey, "11200")
 	viper.SetDefault(enableLocalDockerKey, true)
+	viper.SetDefault(concurrentJobsKey, 50)
 }
 
 func getBaseDir() string {

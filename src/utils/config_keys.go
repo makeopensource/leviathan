@@ -6,10 +6,12 @@ import (
 )
 
 const (
-	dbPathKey     = "db_path"
-	logDirKey     = "log_dir"
-	apiKeyKey     = "apikey"
-	serverPortKey = "server.port"
+	dbPathKey         = "db_path"
+	logDirKey         = "log_dir"
+	apiKeyKey         = "apikey"
+	serverPortKey     = "server.port"
+	concurrentJobsKey = "concurrent_jobs"
+
 	// folders
 	submissionFolderKey  = "folder.submission_folder"
 	dockerFilesFolderKey = "folder.docker_files_folder"
@@ -23,8 +25,9 @@ var (
 	LogDir = Config{logDirKey}
 	DbPath = Config{dbPathKey}
 	// general
-	ApiKey     = Config{apiKeyKey}
-	ServerPort = Config{serverPortKey}
+	ApiKey         = Config{apiKeyKey}
+	ServerPort     = Config{serverPortKey}
+	ConcurrentJobs = Config{concurrentJobsKey}
 	// folderstuff
 	SubmissionTarFolder = Config{submissionFolderKey}
 	DockerFilesFolder   = Config{dockerFilesFolderKey}

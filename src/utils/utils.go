@@ -27,7 +27,7 @@ func DecodeID(combinedId string) (string, string, error) {
 	return strs[0], strs[1], nil
 }
 
-// ArchiveJobData creates a tar.gz archive from the provided file map.
+// ArchiveJobData creates a tar.gz archive from the provided file map.3
 func ArchiveJobData(files map[string][]byte) (string, error) {
 	tmpFolder, err := os.MkdirTemp(SubmissionTarFolder.GetStr(), "submission_*")
 	tmpFile, err := os.Create(fmt.Sprintf("%s/%s", tmpFolder, "grader.tar.gz"))

@@ -38,9 +38,14 @@ func (job *JobServer) NewJob(ctx context.Context, req *connect.Request[v1.NewJob
 	res := connect.NewResponse(&v1.NewJobResponse{JobId: jobId})
 	return res, nil
 }
-func (job *JobServer) JobStatus(ctx context.Context, req *connect.Request[v1.JobStatusRequest]) (*connect.Response[v1.JobStatusResponse], error) {
-	res := connect.NewResponse(&v1.JobStatusResponse{})
-	return res, nil
+
+func (job *JobServer) StreamJobLogs(ctx context.Context, req *connect.Request[v1.JobLogRequest], responseStream *connect.ServerStream[v1.JobLogsResponse]) error {
+	err := job.Service.StreamJobLogs(ctx, req.Msg.GetJobId(), responseStream)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (job *JobServer) CancelJob(ctx context.Context, req *connect.Request[v1.CancelJobRequest]) (*connect.Response[v1.CancelJobResponse], error) {

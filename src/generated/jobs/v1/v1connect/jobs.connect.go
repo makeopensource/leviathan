@@ -35,8 +35,9 @@ const (
 const (
 	// JobServiceNewJobProcedure is the fully-qualified name of the JobService's NewJob RPC.
 	JobServiceNewJobProcedure = "/jobs.v1.JobService/NewJob"
-	// JobServiceJobStatusProcedure is the fully-qualified name of the JobService's JobStatus RPC.
-	JobServiceJobStatusProcedure = "/jobs.v1.JobService/JobStatus"
+	// JobServiceStreamJobLogsProcedure is the fully-qualified name of the JobService's StreamJobLogs
+	// RPC.
+	JobServiceStreamJobLogsProcedure = "/jobs.v1.JobService/StreamJobLogs"
 	// JobServiceCancelJobProcedure is the fully-qualified name of the JobService's CancelJob RPC.
 	JobServiceCancelJobProcedure = "/jobs.v1.JobService/CancelJob"
 )
@@ -44,7 +45,7 @@ const (
 // JobServiceClient is a client for the jobs.v1.JobService service.
 type JobServiceClient interface {
 	NewJob(context.Context, *connect.Request[v1.NewJobRequest]) (*connect.Response[v1.NewJobResponse], error)
-	JobStatus(context.Context, *connect.Request[v1.JobStatusRequest]) (*connect.Response[v1.JobStatusResponse], error)
+	StreamJobLogs(context.Context, *connect.Request[v1.JobLogRequest]) (*connect.ServerStreamForClient[v1.JobLogsResponse], error)
 	CancelJob(context.Context, *connect.Request[v1.CancelJobRequest]) (*connect.Response[v1.CancelJobResponse], error)
 }
 
@@ -65,10 +66,10 @@ func NewJobServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...
 			connect.WithSchema(jobServiceMethods.ByName("NewJob")),
 			connect.WithClientOptions(opts...),
 		),
-		jobStatus: connect.NewClient[v1.JobStatusRequest, v1.JobStatusResponse](
+		streamJobLogs: connect.NewClient[v1.JobLogRequest, v1.JobLogsResponse](
 			httpClient,
-			baseURL+JobServiceJobStatusProcedure,
-			connect.WithSchema(jobServiceMethods.ByName("JobStatus")),
+			baseURL+JobServiceStreamJobLogsProcedure,
+			connect.WithSchema(jobServiceMethods.ByName("StreamJobLogs")),
 			connect.WithClientOptions(opts...),
 		),
 		cancelJob: connect.NewClient[v1.CancelJobRequest, v1.CancelJobResponse](
@@ -82,9 +83,9 @@ func NewJobServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...
 
 // jobServiceClient implements JobServiceClient.
 type jobServiceClient struct {
-	newJob    *connect.Client[v1.NewJobRequest, v1.NewJobResponse]
-	jobStatus *connect.Client[v1.JobStatusRequest, v1.JobStatusResponse]
-	cancelJob *connect.Client[v1.CancelJobRequest, v1.CancelJobResponse]
+	newJob        *connect.Client[v1.NewJobRequest, v1.NewJobResponse]
+	streamJobLogs *connect.Client[v1.JobLogRequest, v1.JobLogsResponse]
+	cancelJob     *connect.Client[v1.CancelJobRequest, v1.CancelJobResponse]
 }
 
 // NewJob calls jobs.v1.JobService.NewJob.
@@ -92,9 +93,9 @@ func (c *jobServiceClient) NewJob(ctx context.Context, req *connect.Request[v1.N
 	return c.newJob.CallUnary(ctx, req)
 }
 
-// JobStatus calls jobs.v1.JobService.JobStatus.
-func (c *jobServiceClient) JobStatus(ctx context.Context, req *connect.Request[v1.JobStatusRequest]) (*connect.Response[v1.JobStatusResponse], error) {
-	return c.jobStatus.CallUnary(ctx, req)
+// StreamJobLogs calls jobs.v1.JobService.StreamJobLogs.
+func (c *jobServiceClient) StreamJobLogs(ctx context.Context, req *connect.Request[v1.JobLogRequest]) (*connect.ServerStreamForClient[v1.JobLogsResponse], error) {
+	return c.streamJobLogs.CallServerStream(ctx, req)
 }
 
 // CancelJob calls jobs.v1.JobService.CancelJob.
@@ -105,7 +106,7 @@ func (c *jobServiceClient) CancelJob(ctx context.Context, req *connect.Request[v
 // JobServiceHandler is an implementation of the jobs.v1.JobService service.
 type JobServiceHandler interface {
 	NewJob(context.Context, *connect.Request[v1.NewJobRequest]) (*connect.Response[v1.NewJobResponse], error)
-	JobStatus(context.Context, *connect.Request[v1.JobStatusRequest]) (*connect.Response[v1.JobStatusResponse], error)
+	StreamJobLogs(context.Context, *connect.Request[v1.JobLogRequest], *connect.ServerStream[v1.JobLogsResponse]) error
 	CancelJob(context.Context, *connect.Request[v1.CancelJobRequest]) (*connect.Response[v1.CancelJobResponse], error)
 }
 
@@ -122,10 +123,10 @@ func NewJobServiceHandler(svc JobServiceHandler, opts ...connect.HandlerOption) 
 		connect.WithSchema(jobServiceMethods.ByName("NewJob")),
 		connect.WithHandlerOptions(opts...),
 	)
-	jobServiceJobStatusHandler := connect.NewUnaryHandler(
-		JobServiceJobStatusProcedure,
-		svc.JobStatus,
-		connect.WithSchema(jobServiceMethods.ByName("JobStatus")),
+	jobServiceStreamJobLogsHandler := connect.NewServerStreamHandler(
+		JobServiceStreamJobLogsProcedure,
+		svc.StreamJobLogs,
+		connect.WithSchema(jobServiceMethods.ByName("StreamJobLogs")),
 		connect.WithHandlerOptions(opts...),
 	)
 	jobServiceCancelJobHandler := connect.NewUnaryHandler(
@@ -138,8 +139,8 @@ func NewJobServiceHandler(svc JobServiceHandler, opts ...connect.HandlerOption) 
 		switch r.URL.Path {
 		case JobServiceNewJobProcedure:
 			jobServiceNewJobHandler.ServeHTTP(w, r)
-		case JobServiceJobStatusProcedure:
-			jobServiceJobStatusHandler.ServeHTTP(w, r)
+		case JobServiceStreamJobLogsProcedure:
+			jobServiceStreamJobLogsHandler.ServeHTTP(w, r)
 		case JobServiceCancelJobProcedure:
 			jobServiceCancelJobHandler.ServeHTTP(w, r)
 		default:
@@ -155,8 +156,8 @@ func (UnimplementedJobServiceHandler) NewJob(context.Context, *connect.Request[v
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("jobs.v1.JobService.NewJob is not implemented"))
 }
 
-func (UnimplementedJobServiceHandler) JobStatus(context.Context, *connect.Request[v1.JobStatusRequest]) (*connect.Response[v1.JobStatusResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("jobs.v1.JobService.JobStatus is not implemented"))
+func (UnimplementedJobServiceHandler) StreamJobLogs(context.Context, *connect.Request[v1.JobLogRequest], *connect.ServerStream[v1.JobLogsResponse]) error {
+	return connect.NewError(connect.CodeUnimplemented, errors.New("jobs.v1.JobService.StreamJobLogs is not implemented"))
 }
 
 func (UnimplementedJobServiceHandler) CancelJob(context.Context, *connect.Request[v1.CancelJobRequest]) (*connect.Response[v1.CancelJobResponse], error) {

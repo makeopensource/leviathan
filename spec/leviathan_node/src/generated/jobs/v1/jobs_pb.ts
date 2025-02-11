@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file jobs/v1/jobs.proto.
  */
 export const file_jobs_v1_jobs: GenFile = /*@__PURE__*/
-  fileDesc("ChJqb2JzL3YxL2pvYnMucHJvdG8SB2pvYnMudjEipAEKDU5ld0pvYlJlcXVlc3QSEAoIaW1hZ2VUYWcYBCABKAkSJgoIbWFrZUZpbGUYASABKAsyFC50eXBlcy52MS5GaWxlVXBsb2FkEigKCmdyYWRlckZpbGUYAiABKAsyFC50eXBlcy52MS5GaWxlVXBsb2FkEi8KEXN0dWRlbnRTdWJtaXNzaW9uGAMgASgLMhQudHlwZXMudjEuRmlsZVVwbG9hZCIfCg5OZXdKb2JSZXNwb25zZRINCgVqb2JJZBgBIAEoCSISChBKb2JTdGF0dXNSZXF1ZXN0IhMKEUpvYlN0YXR1c1Jlc3BvbnNlIhIKEENhbmNlbEpvYlJlcXVlc3QiEwoRQ2FuY2VsSm9iUmVzcG9uc2Uy1QEKCkpvYlNlcnZpY2USOwoGTmV3Sm9iEhYuam9icy52MS5OZXdKb2JSZXF1ZXN0Ghcuam9icy52MS5OZXdKb2JSZXNwb25zZSIAEkQKCUpvYlN0YXR1cxIZLmpvYnMudjEuSm9iU3RhdHVzUmVxdWVzdBoaLmpvYnMudjEuSm9iU3RhdHVzUmVzcG9uc2UiABJECglDYW5jZWxKb2ISGS5qb2JzLnYxLkNhbmNlbEpvYlJlcXVlc3QaGi5qb2JzLnYxLkNhbmNlbEpvYlJlc3BvbnNlIgBCjAEKC2NvbS5qb2JzLnYxQglKb2JzUHJvdG9QAVo1Z2l0aHViLmNvbS9tYWtlb3BlbnNvdXJjZS9sZXZpYXRoYW4vZ2VuZXJhdGVkL2pvYnMvdjGiAgNKWFiqAgdKb2JzLlYxygIHSm9ic1xWMeICE0pvYnNcVjFcR1BCTWV0YWRhdGHqAghKb2JzOjpWMWIGcHJvdG8z", [file_types_v1_types]);
+  fileDesc("ChJqb2JzL3YxL2pvYnMucHJvdG8SB2pvYnMudjEipAEKDU5ld0pvYlJlcXVlc3QSEAoIaW1hZ2VUYWcYBCABKAkSJgoIbWFrZUZpbGUYASABKAsyFC50eXBlcy52MS5GaWxlVXBsb2FkEigKCmdyYWRlckZpbGUYAiABKAsyFC50eXBlcy52MS5GaWxlVXBsb2FkEi8KEXN0dWRlbnRTdWJtaXNzaW9uGAMgASgLMhQudHlwZXMudjEuRmlsZVVwbG9hZCIfCg5OZXdKb2JSZXNwb25zZRINCgVqb2JJZBgBIAEoCSIeCg1Kb2JMb2dSZXF1ZXN0Eg0KBWpvYklkGAEgASgJIh8KD0pvYkxvZ3NSZXNwb25zZRIMCgRsb2dzGAEgASgJIhIKEENhbmNlbEpvYlJlcXVlc3QiEwoRQ2FuY2VsSm9iUmVzcG9uc2Uy1gEKCkpvYlNlcnZpY2USOwoGTmV3Sm9iEhYuam9icy52MS5OZXdKb2JSZXF1ZXN0Ghcuam9icy52MS5OZXdKb2JSZXNwb25zZSIAEkUKDVN0cmVhbUpvYkxvZ3MSFi5qb2JzLnYxLkpvYkxvZ1JlcXVlc3QaGC5qb2JzLnYxLkpvYkxvZ3NSZXNwb25zZSIAMAESRAoJQ2FuY2VsSm9iEhkuam9icy52MS5DYW5jZWxKb2JSZXF1ZXN0Ghouam9icy52MS5DYW5jZWxKb2JSZXNwb25zZSIAQowBCgtjb20uam9icy52MUIJSm9ic1Byb3RvUAFaNWdpdGh1Yi5jb20vbWFrZW9wZW5zb3VyY2UvbGV2aWF0aGFuL2dlbmVyYXRlZC9qb2JzL3YxogIDSlhYqgIHSm9icy5WMcoCB0pvYnNcVjHiAhNKb2JzXFYxXEdQQk1ldGFkYXRh6gIISm9iczo6VjFiBnByb3RvMw", [file_types_v1_types]);
 
 /**
  * todo figure out request/response
@@ -66,29 +66,37 @@ export const NewJobResponseSchema: GenMessage<NewJobResponse> = /*@__PURE__*/
   messageDesc(file_jobs_v1_jobs, 1);
 
 /**
- * @generated from message jobs.v1.JobStatusRequest
+ * @generated from message jobs.v1.JobLogRequest
  */
-export type JobStatusRequest = Message<"jobs.v1.JobStatusRequest"> & {
+export type JobLogRequest = Message<"jobs.v1.JobLogRequest"> & {
+  /**
+   * @generated from field: string jobId = 1;
+   */
+  jobId: string;
 };
 
 /**
- * Describes the message jobs.v1.JobStatusRequest.
- * Use `create(JobStatusRequestSchema)` to create a new message.
+ * Describes the message jobs.v1.JobLogRequest.
+ * Use `create(JobLogRequestSchema)` to create a new message.
  */
-export const JobStatusRequestSchema: GenMessage<JobStatusRequest> = /*@__PURE__*/
+export const JobLogRequestSchema: GenMessage<JobLogRequest> = /*@__PURE__*/
   messageDesc(file_jobs_v1_jobs, 2);
 
 /**
- * @generated from message jobs.v1.JobStatusResponse
+ * @generated from message jobs.v1.JobLogsResponse
  */
-export type JobStatusResponse = Message<"jobs.v1.JobStatusResponse"> & {
+export type JobLogsResponse = Message<"jobs.v1.JobLogsResponse"> & {
+  /**
+   * @generated from field: string logs = 1;
+   */
+  logs: string;
 };
 
 /**
- * Describes the message jobs.v1.JobStatusResponse.
- * Use `create(JobStatusResponseSchema)` to create a new message.
+ * Describes the message jobs.v1.JobLogsResponse.
+ * Use `create(JobLogsResponseSchema)` to create a new message.
  */
-export const JobStatusResponseSchema: GenMessage<JobStatusResponse> = /*@__PURE__*/
+export const JobLogsResponseSchema: GenMessage<JobLogsResponse> = /*@__PURE__*/
   messageDesc(file_jobs_v1_jobs, 3);
 
 /**
@@ -132,12 +140,12 @@ export const JobService: GenService<{
     output: typeof NewJobResponseSchema;
   },
   /**
-   * @generated from rpc jobs.v1.JobService.JobStatus
+   * @generated from rpc jobs.v1.JobService.StreamJobLogs
    */
-  jobStatus: {
-    methodKind: "unary";
-    input: typeof JobStatusRequestSchema;
-    output: typeof JobStatusResponseSchema;
+  streamJobLogs: {
+    methodKind: "server_streaming";
+    input: typeof JobLogRequestSchema;
+    output: typeof JobLogsResponseSchema;
   },
   /**
    * @generated from rpc jobs.v1.JobService.CancelJob

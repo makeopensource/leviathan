@@ -8,6 +8,9 @@ import (
 	"github.com/makeopensource/leviathan/utils"
 	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
+	"os"
+	"path/filepath"
+	"time"
 )
 
 type JobService struct {
@@ -33,9 +36,16 @@ func (job *JobService) NewJob(jobReq *models.Job) (string, error) {
 		return "", fmt.Errorf("failed to generate job ID")
 	}
 
+	tmp := job.dockerSrv.ClientManager.GetLeastJobCountMachineId()
+	if tmp == "" {
+		return "", fmt.Errorf("failed to assign machine")
+	}
+
 	jobReq.JobId = jobId.String()
-	jobReq.MachineId = job.dockerSrv.ClientManager.GetLeastJobCountMachineId()
+	jobReq.MachineId = tmp
 	jobReq.Status = models.Queued
+
+	job.setupLogFile(jobReq)
 
 	res := job.db.Create(jobReq)
 	if res.Error != nil {
@@ -53,6 +63,60 @@ func (job *JobService) GetJobStatus(jobUuid string) error {
 	return nil
 }
 
+// WaitForJob is similar to GetJobStatus but is blocking and runs until job is complete or errors
+func (job *JobService) WaitForJob(jobUuid string) (*models.Job, error) {
+	// keep checking job until complete
+	for {
+		time.Sleep(5 * time.Second)
+
+		info, err := job.getJob(jobUuid)
+		if err != nil {
+			log.Error().Err(err).Msgf("Failed to get job")
+			continue
+		}
+
+		if info.Status == models.Complete || info.Status == models.Failed {
+			return info, nil
+		}
+	}
+}
+
+func (job *JobService) getJob(jobUuid string) (*models.Job, error) {
+	var jobInfo *models.Job
+	res := job.db.Find(&jobInfo, "job_id = ?", jobUuid)
+	if res.Error != nil {
+		return nil, fmt.Errorf("failed to get job info from db")
+	}
+	return jobInfo, nil
+}
+
 func (job *JobService) CancelJob(jobUuid string) error {
 	return nil
+}
+
+// setupLogFile store grader output
+// this is blocking operation make sure to
+// stream logs in a go routine
+func (job *JobService) setupLogFile(msg *models.Job) *os.File {
+	outputFile := fmt.Sprintf("%s/%s.txt", utils.OutputFolder.GetStr(), msg.JobId)
+	outFile, err := os.Create(outputFile)
+	if err != nil {
+		log.Error().Err(err).Msgf("Error while creating file")
+		return nil
+	}
+	defer func() {
+		err := outFile.Close()
+		if err != nil {
+			log.Error().Err(err).Msgf("Error while closing file")
+		}
+	}()
+
+	full, err := filepath.Abs(outputFile)
+	if err != nil {
+		log.Error().Err(err).Msgf("Error while getting absolute path")
+		return nil
+	}
+
+	msg.OutputFilePath = full
+	return outFile
 }

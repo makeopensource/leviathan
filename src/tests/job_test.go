@@ -30,7 +30,7 @@ var (
 	jobService *jobs.JobService
 )
 
-func TestJobProcessorIncorrect(t *testing.T) {
+func TestJobProcessor(t *testing.T) {
 	setupTest()
 
 	numJobs := 100

@@ -1,57 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="DataSourceManagerImpl" format="xml" multifile-model="true">
-    <data-source source="LOCAL" name="leviathan" uuid="877917e0-40fd-414d-9f25-a9daedac59f8">
-      <driver-ref>73aa1ab3-b4ad-4a86-855c-05f967c77f2f</driver-ref>
+    <data-source source="LOCAL" name="leviathan" uuid="336985b6-3b01-4dad-a038-f4aeca5b75ea">
+      <driver-ref>sqlite.xerial</driver-ref>
       <synchronize>true</synchronize>
       <jdbc-driver>org.sqlite.JDBC</jdbc-driver>
-      <jdbc-url>jdbc:sqlite:D:\Dev\Go\leviathan\appdata\config\leviathan.db</jdbc-url>
+      <jdbc-url>jdbc:sqlite:D:\Dev\Go\leviathan\src\tests\appdata\config\leviathan.db</jdbc-url>
       <jdbc-additional-properties>
         <property name="com.intellij.clouds.kubernetes.db.enabled" value="false" />
       </jdbc-additional-properties>
       <working-dir>$ProjectFileDir$</working-dir>
       <libraries>
         <library>
-          <url>file://$APPLICATION_CONFIG_DIR$/jdbc-drivers/Xerial SQLiteJDBC/3.45.1/license.txt</url>
-        </library>
-        <library>
-          <url>file://$APPLICATION_CONFIG_DIR$/jdbc-drivers/Xerial SQLiteJDBC/3.45.1/org/slf4j/slf4j-api/1.7.36/slf4j-api-1.7.36.jar</url>
-        </library>
-        <library>
-          <url>file://$APPLICATION_CONFIG_DIR$/jdbc-drivers/Xerial SQLiteJDBC/3.45.1/org/slf4j/slf4j-api/1.7.36/slf4j-api-1.7.36.jar.sha1</url>
-        </library>
-        <library>
-          <url>file://$APPLICATION_CONFIG_DIR$/jdbc-drivers/Xerial SQLiteJDBC/3.45.1/org/slf4j/slf4j-api/1.7.36/slf4j-api-1.7.36.pom</url>
-        </library>
-        <library>
-          <url>file://$APPLICATION_CONFIG_DIR$/jdbc-drivers/Xerial SQLiteJDBC/3.45.1/org/slf4j/slf4j-api/1.7.36/slf4j-api-1.7.36.pom.sha1</url>
-        </library>
-        <library>
-          <url>file://$APPLICATION_CONFIG_DIR$/jdbc-drivers/Xerial SQLiteJDBC/3.45.1/org/slf4j/slf4j-api/1.7.36/_remote.repositories</url>
-        </library>
-        <library>
-          <url>file://$APPLICATION_CONFIG_DIR$/jdbc-drivers/Xerial SQLiteJDBC/3.45.1/org/slf4j/slf4j-parent/1.7.36/slf4j-parent-1.7.36.pom</url>
-        </library>
-        <library>
-          <url>file://$APPLICATION_CONFIG_DIR$/jdbc-drivers/Xerial SQLiteJDBC/3.45.1/org/slf4j/slf4j-parent/1.7.36/slf4j-parent-1.7.36.pom.sha1</url>
-        </library>
-        <library>
-          <url>file://$APPLICATION_CONFIG_DIR$/jdbc-drivers/Xerial SQLiteJDBC/3.45.1/org/slf4j/slf4j-parent/1.7.36/_remote.repositories</url>
-        </library>
-        <library>
           <url>file://$APPLICATION_CONFIG_DIR$/jdbc-drivers/Xerial SQLiteJDBC/3.45.1/org/xerial/sqlite-jdbc/3.45.1.0/sqlite-jdbc-3.45.1.0.jar</url>
         </library>
         <library>
-          <url>file://$APPLICATION_CONFIG_DIR$/jdbc-drivers/Xerial SQLiteJDBC/3.45.1/org/xerial/sqlite-jdbc/3.45.1.0/sqlite-jdbc-3.45.1.0.jar.sha1</url>
-        </library>
-        <library>
-          <url>file://$APPLICATION_CONFIG_DIR$/jdbc-drivers/Xerial SQLiteJDBC/3.45.1/org/xerial/sqlite-jdbc/3.45.1.0/sqlite-jdbc-3.45.1.0.pom</url>
-        </library>
-        <library>
-          <url>file://$APPLICATION_CONFIG_DIR$/jdbc-drivers/Xerial SQLiteJDBC/3.45.1/org/xerial/sqlite-jdbc/3.45.1.0/sqlite-jdbc-3.45.1.0.pom.sha1</url>
-        </library>
-        <library>
-          <url>file://$APPLICATION_CONFIG_DIR$/jdbc-drivers/Xerial SQLiteJDBC/3.45.1/org/xerial/sqlite-jdbc/3.45.1.0/_remote.repositories</url>
+          <url>file://$APPLICATION_CONFIG_DIR$/jdbc-drivers/Xerial SQLiteJDBC/3.45.1/org/slf4j/slf4j-api/1.7.36/slf4j-api-1.7.36.jar</url>
         </library>
       </libraries>
     </data-source>

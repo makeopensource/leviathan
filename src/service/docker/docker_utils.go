@@ -3,9 +3,7 @@ package docker
 import (
 	"archive/tar"
 	"bytes"
-	"connectrpc.com/connect"
 	"fmt"
-	dktypes "github.com/makeopensource/leviathan/generated/docker_rpc/v1"
 	"github.com/makeopensource/leviathan/utils"
 	"github.com/rs/zerolog/log"
 	"io"

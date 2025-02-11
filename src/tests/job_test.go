@@ -7,9 +7,10 @@ import (
 	"github.com/makeopensource/leviathan/service/jobs"
 	"github.com/makeopensource/leviathan/utils"
 	log2 "log"
-	"os"
+	"math/rand"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 )
 
@@ -29,6 +30,40 @@ var (
 	jobService *jobs.JobService
 )
 
+func TestJobProcessorIncorrect(t *testing.T) {
+	setupTest()
+
+	numJobs := 100
+	var wg sync.WaitGroup
+	wg.Add(numJobs)
+
+	for i := 0; i < numJobs; i++ {
+		go func(jobID int) {
+			defer wg.Done()
+
+			// Randomly choose correct or incorrect
+			useCorrect := rand.Intn(2) == 0 // 0 or 1
+
+			studentFile := "../../example/python/simple-addition/student_incorrect.py"
+			expectedOutput := expectedIncorrectOutput
+
+			if useCorrect {
+				studentFile = "../../example/python/simple-addition/student_correct.py"
+				expectedOutput = expectedCorrectOutput
+			}
+
+			// You can still include the jobID if you need it:
+			// fmt.Printf("Job %d: Using %s\n", jobID, studentFile)
+
+			testJobProcessor(t, studentFile, expectedOutput)
+
+			fmt.Printf("Job %d finished\n", jobID)
+		}(i)
+	}
+
+	wg.Wait()
+}
+
 func initServices() {
 	fmt.Println("Starting tests")
 	// utils for services
@@ -40,24 +75,10 @@ func initServices() {
 	jobService = jobs.NewJobService(db, fCache, dkService) // depends on docker service
 }
 
-// TestMain is the entry point for running tests in this package.
-// It's called *once* before any tests are run.
-func TestMain(m *testing.M) {
+func setupTest() {
 	utils.InitConfig()
 	initServices()
 	buildImage()
-	code := m.Run() // Run the tests
-	os.Exit(code)   // Exit with the appropriate code (0 on success, non-zero on failure)
-}
-
-func TestJobProcessorCorrect(t *testing.T) {
-	fmt.Println("Starting correct code")
-	testJobProcessor(t, "../../example/python/simple-addition/student_correct.py", expectedCorrectOutput)
-}
-
-func TestJobProcessorIncorrect(t *testing.T) {
-	fmt.Println("Starting incorrect code")
-	testJobProcessor(t, "../../example/python/simple-addition/student_incorrect.py", expectedIncorrectOutput)
 }
 
 func testJobProcessor(t *testing.T, studentCodePath string, correctOutput string) {

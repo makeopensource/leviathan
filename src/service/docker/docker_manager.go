@@ -12,7 +12,7 @@ import (
 
 type MachineStatus struct {
 	Client     *DkClient
-	activeJobs uint64
+	ActiveJobs uint64
 }
 
 type RemoteClientManager struct {
@@ -42,7 +42,7 @@ func InitDockerClients() *RemoteClientManager {
 
 		clientList[info.ID] = &MachineStatus{
 			Client:     remoteClient,
-			activeJobs: 0,
+			ActiveJobs: 0,
 		}
 	}
 
@@ -58,7 +58,7 @@ func InitDockerClients() *RemoteClientManager {
 		}
 		clientList[info.ID] = &MachineStatus{
 			Client:     localClient,
-			activeJobs: 0,
+			ActiveJobs: 0,
 		}
 	} else {
 		log.Warn().Msgf("Local docker is disabled in config")
@@ -78,14 +78,25 @@ func InitDockerClients() *RemoteClientManager {
 func (man *RemoteClientManager) GetLeastJobCountMachineId() string {
 	man.mu.Lock()
 
-	var minCount uint64 = 0
+	var minCount = ^uint64(0) // Initialize with the maximum possible value
 	machineInd := ""
 	for i, v := range man.Clients {
-		if v.activeJobs <= minCount {
-			minCount = v.activeJobs
+		if v.ActiveJobs < minCount {
+			minCount = v.ActiveJobs
 			machineInd = i
 		}
 	}
+
+	// Handle the case where all machines have the same (likely 0) active jobs.
+	// In this scenario, the loop might not update machineInd if all values are equal.
+	if machineInd == "" {
+		// Pick the first machine in the list as a default if none were selected.
+		for i := range man.Clients {
+			machineInd = i
+			break
+		}
+	}
+
 	man.mu.Unlock()
 	// always unlock before calling this, or it will deadlock
 	man.increaseJobCount(machineInd)
@@ -112,7 +123,7 @@ func (man *RemoteClientManager) increaseJobCount(id string) {
 		return
 	}
 
-	mac.activeJobs++
+	mac.ActiveJobs++
 }
 
 func (man *RemoteClientManager) decreaseJobCount(id string) {
@@ -125,8 +136,8 @@ func (man *RemoteClientManager) decreaseJobCount(id string) {
 		return
 	}
 
-	if mac.activeJobs > 0 {
-		mac.activeJobs--
+	if mac.ActiveJobs > 0 {
+		mac.ActiveJobs--
 	}
 }
 

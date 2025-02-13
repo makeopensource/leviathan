@@ -41,13 +41,18 @@ func (q *JobQueue) CreateJobProcessors() {
 	}
 }
 
+func (q *JobQueue) AddJob(mes *models.Job) {
+	q.jobChannel <- mes
+}
+
 func (q *JobQueue) messageProcessors(workerId int) {
 	for msg := range q.jobChannel {
-		log.Info().Msgf("Worker: %d is now processing job: %s", workerId, msg.JobId)
+		log.Info().Msgf("Worker: %d is now processing job: %d", workerId, msg.ID)
 		q.runJob(msg)
 	}
 }
 
+// runJob should ALWAYS BE BLOCKING, as it prevents the worker from moving on to a new job
 func (q *JobQueue) runJob(msg *models.Job) {
 	q.setJobInProgress(msg)
 
@@ -80,10 +85,6 @@ func (q *JobQueue) runJob(msg *models.Job) {
 		q.bigProblem(fmt.Sprintf("Maximum timeout reached for job, job ran for %s", msg.JobTimeout), msg, nil)
 		return
 	}
-}
-
-func (q *JobQueue) AddJob(mes *models.Job) {
-	q.jobChannel <- mes
 }
 
 func (q *JobQueue) writeLogs(client *docker.DkClient, msg *models.Job) {

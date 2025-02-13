@@ -1,62 +1,43 @@
 package tests
 
 import (
-	"context"
-	"fmt"
 	"github.com/docker/docker/api/types/container"
-	"github.com/makeopensource/leviathan/service/docker"
+	"github.com/google/uuid"
 	"github.com/makeopensource/leviathan/utils"
-	"io"
 	"testing"
 )
 
 func TestCopyToContainer(t *testing.T) {
 	setupTest()
-	//
-	//machine, err := dkService.ClientManager.GetClientById(dkService.ClientManager.GetLeastJobCountMachineId())
-	//if err != nil {
-	//	t.Fatalf("%v", err)
-	//}
-	//
-	//ifg := uuid.New()
-	//
-	//contId, err := machine.CreateNewContainer(ifg.String(), imageName, container.Resources{}, "")
-	//if err != nil {
-	//	t.Fatalf("%v", err)
-	//}
 
-	//jobBytes, err := utils.TarFile()
-	//if err != nil {
-	//	t.Fatalf("%v", err)
-	//}
-
-	//err = machine.Client.CopyToContainer(
-	//	context.Background(),
-	//	contId,
-	//	"/",
-	//	jobBytes,
-	//	container.CopyToContainerOptions{},
-	//)
-	//if err != nil {
-	//	t.Fatalf("%v", err)
-	//}
-
-	//err = machine.StartContainer(contId)
-	//if err != nil {
-	//	t.Fatalf("%v", err)
-	//}
-}
-
-func copyToContainer(machine docker.DkClient, ctx context.Context, contId string, fileContent func(tw io.Writer) error, fileContentSize int64, containerFilePath string, fileMode int64) error {
-	buffer, err := utils.TarFile(containerFilePath, fileContent, fileContentSize, fileMode)
+	machine, err := dkService.ClientManager.GetClientById(dkService.ClientManager.GetLeastJobCountMachineId())
 	if err != nil {
-		return err
+		t.Fatalf("%v", err)
 	}
 
-	err = machine.Client.CopyToContainer(ctx, contId, "/", buffer, container.CopyToContainerOptions{})
+	ifg := uuid.New()
+
+	contId, err := machine.CreateNewContainer(ifg.String(), imageName, container.Resources{})
 	if err != nil {
-		return err
+		t.Fatalf("%v", err)
 	}
 
-	return nil
+	dir, err := utils.CreateTmpJobDir(map[string][]byte{
+		"test.txt": []byte("test test"),
+	})
+	if err != nil {
+		t.Fatalf("%v", err)
+		return
+	}
+
+	// just copy and check if it succeeds
+	err = machine.CopyToContainer(contId, dir)
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+
+	err = machine.RemoveContainer(contId, true, true)
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
 }

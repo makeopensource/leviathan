@@ -31,7 +31,7 @@ func NewJobService(db *gorm.DB, cache *utils.LabFilesCache, dockerService *docke
 		db:           db,
 		labFileCache: cache,
 		dockerSrv:    dockerService,
-		queue:        NewJobQueue(utils.ConcurrentJobs.GetInt(), db, dockerService),
+		queue:        NewJobQueue(uint(utils.ConcurrentJobs.GetUint64()), db, dockerService),
 	}
 }
 
@@ -95,7 +95,7 @@ func (job *JobService) StreamJobLogs(ctx context.Context, jobUuid string, stream
 func (job *JobService) WaitForJob(jobUuid string) (*models.Job, error) {
 	// keep checking job until complete
 	for {
-		time.Sleep(5 * time.Second)
+		time.Sleep(3 * time.Second)
 
 		info, err := job.getJob(jobUuid)
 		if err != nil {

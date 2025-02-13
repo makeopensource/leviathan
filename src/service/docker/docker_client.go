@@ -172,12 +172,17 @@ func (c *DkClient) CreateNewContainer(jobUuid string, image string, machineLimit
 	}
 
 	//contMount := strings.ReplaceAll("/", "\\", filepath.Dir(containerDirectory))
+	var mounts []string
+	if hostMount != "" {
+		mounts = []string{
+			fmt.Sprintf("%s:%s", filepath.Dir(hostMount), containerDirectory),
+		}
+	}
+
 	hostConfig := &container.HostConfig{
 		Resources:  machineLimits,
 		AutoRemove: false,
-		Binds: []string{
-			fmt.Sprintf("%s:%s", filepath.Dir(hostMount), containerDirectory),
-		},
+		Binds:      mounts,
 	}
 	networkingConfig := &network.NetworkingConfig{}
 
@@ -290,4 +295,13 @@ func (c *DkClient) PruneContainers() error {
 
 	log.Debug().Msgf("Docker containers pruned: %d", len(report.ContainersDeleted))
 	return nil
+}
+
+func (c *DkClient) GetContainerStatus(ctx context.Context, contId string) (*types.ContainerJSON, error) {
+	inspect, err := c.Client.ContainerInspect(ctx, contId)
+	if err != nil {
+		return nil, err
+	}
+
+	return &inspect, nil
 }

@@ -196,6 +196,8 @@ func (q *JobQueue) cleanupJob(msg *models.Job, client *docker.DkClient, tar stri
 		log.Error().Err(err).Msgf("Unable to remove container %s", msg.ContainerId)
 	}
 
+	q.dkSrv.ClientManager.DecreaseJobCount(msg.MachineId)
+
 	err = os.RemoveAll(filepath.Dir(tar))
 	if err != nil {
 		log.Error().Err(err).Msgf("Unable to remove tmp job directory %s", filepath.Dir(tar))

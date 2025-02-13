@@ -15,7 +15,7 @@ var (
 
 const (
 	imageName      = "arithmetic-python"
-	dockerFilePath = "../../example/python/simple-addition/ex-Dockerfile"
+	dockerFilePath = "../../../example/python/simple-addition/ex-Dockerfile"
 )
 
 func setupTest() {

@@ -15,8 +15,8 @@ import (
 )
 
 const (
-	makeFilePath   = "../../example/python/simple-addition/makefile"
-	graderFilePath = "../../example/python/simple-addition/grader.py"
+	makeFilePath   = "../../../example/python/simple-addition/makefile"
+	graderFilePath = "../../../example/python/simple-addition/grader.py"
 )
 
 var (
@@ -26,19 +26,39 @@ var (
 		expectedOutput string
 	}{
 		"correct": {
-			studentFile:    "../../example/python/simple-addition/student_correct.py",
+			studentFile:    "../../../example/python/simple-addition/student_correct.py",
 			expectedOutput: `{"addition": {"passed": true, "message": ""}, "subtraction": {"passed": true, "message": ""}, "multiplication": {"passed": true, "message": ""}, "division": {"passed": true, "message": ""}}`,
 		},
 		"incorrect": {
-			studentFile:    "../../example/python/simple-addition/student_incorrect.py",
+			studentFile:    "../../../example/python/simple-addition/student_incorrect.py",
 			expectedOutput: `{"addition": {"passed": true, "message": ""}, "subtraction": {"passed": true, "message": ""}, "multiplication": {"passed": false, "message": "Multiplication failed. Expected 42, got 48"}, "division": {"passed": false, "message": "Division failed. Expected 4, got 3.3333333333333335"}}`,
 		},
 		"timeout": {
-			studentFile:    "../../example/python/simple-addition/student_timeout.py",
+			studentFile:    "../../../example/python/simple-addition/student_timeout.py",
 			expectedOutput: "Maximum timeout reached for job, job ran for 10s",
 		},
 	}
 )
+
+func TestCorrect(t *testing.T) {
+	setupTest()
+	correct := testCases["correct"]
+	testJobProcessor(t, correct.studentFile, correct.expectedOutput, defaultTimeout)
+}
+
+func TestIncorrect(t *testing.T) {
+	setupTest()
+	incorrect := testCases["incorrect"]
+	testJobProcessor(t, incorrect.studentFile, incorrect.expectedOutput, defaultTimeout)
+}
+
+func TestTimeout(t *testing.T) {
+	setupTest()
+	timeLimit := time.Second * 10
+	timeout := testCases["timeout"]
+	timeout.expectedOutput = fmt.Sprintf("Maximum timeout reached for job, job ran for %s", timeLimit)
+	testJobProcessor(t, timeout.studentFile, timeout.expectedOutput, timeLimit)
+}
 
 func Test50Jobs(t *testing.T) {
 	testBatchJobProcessor(t, 50)
@@ -71,26 +91,6 @@ func testBatchJobProcessor(t *testing.T, numJobs int) {
 			fmt.Printf("Job %d finished\n", i)
 		})
 	}
-}
-
-func TestCorrect(t *testing.T) {
-	setupTest()
-	correct := testCases["correct"]
-	testJobProcessor(t, correct.studentFile, correct.expectedOutput, defaultTimeout)
-}
-
-func TestIncorrect(t *testing.T) {
-	setupTest()
-	incorrect := testCases["incorrect"]
-	testJobProcessor(t, incorrect.studentFile, incorrect.expectedOutput, defaultTimeout)
-}
-
-func TestTimeout(t *testing.T) {
-	setupTest()
-	timeLimit := time.Second * 10
-	timeout := testCases["timeout"]
-	timeout.expectedOutput = fmt.Sprintf("Maximum timeout reached for job, job ran for %s", timeLimit)
-	testJobProcessor(t, timeout.studentFile, timeout.expectedOutput, timeLimit)
 }
 
 func testJobProcessor(t *testing.T, studentCodePath string, correctOutput string, timeout time.Duration) {

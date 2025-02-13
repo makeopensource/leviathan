@@ -126,7 +126,7 @@ func (man *RemoteClientManager) increaseJobCount(id string) {
 	mac.ActiveJobs++
 }
 
-func (man *RemoteClientManager) decreaseJobCount(id string) {
+func (man *RemoteClientManager) DecreaseJobCount(id string) {
 	man.mu.Lock()
 	defer man.mu.Unlock()
 

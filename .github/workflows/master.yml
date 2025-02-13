@@ -15,10 +15,38 @@ on:
       - 'src/**'
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    needs: setup
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: 1.23
+
+      - name: Install Dependencies
+        run: go mod tidy
+
+      - name: Run client manager tests
+        working-directory: src/service/docker
+        run: go test -v
+
+      - name: Run client manager tests
+        working-directory: src/service/tests
+        # tests meant for CI
+        run: |
+          CI=true go test -v 
+  
+
   build-docker:
     runs-on: ubuntu-latest
     permissions:
       packages: write # to be able to publish docker images
+    needs:
+      - test
     steps:
       - uses: actions/checkout@v3
         with:

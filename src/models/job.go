@@ -4,6 +4,7 @@ import (
 	"connectrpc.com/connect"
 	v1 "github.com/makeopensource/leviathan/generated/jobs/v1"
 	"gorm.io/gorm"
+	"time"
 )
 
 type JobStatus string
@@ -27,6 +28,7 @@ type Job struct {
 	StudentSubmissionFile     []byte
 	LabData                   LabModel `gorm:"-"`
 	OutputFilePath            string
+	JobTimeout                time.Duration
 }
 
 // LogStreamWriter implements io.Writer interface,

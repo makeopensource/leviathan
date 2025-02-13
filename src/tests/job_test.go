@@ -3,85 +3,85 @@ package tests
 import (
 	"fmt"
 	"github.com/makeopensource/leviathan/models"
-	"github.com/makeopensource/leviathan/service/docker"
-	"github.com/makeopensource/leviathan/service/jobs"
 	"github.com/makeopensource/leviathan/utils"
-	log2 "log"
+	"golang.org/x/exp/maps"
 	"math/rand"
 	"path/filepath"
 	"strings"
-	"sync"
 	"testing"
+	"time"
 )
 
 const (
-	expectedIncorrectOutput = `{"addition": {"passed": true, "message": ""}, "subtraction": {"passed": true, "message": ""}, "multiplication": {"passed": false, "message": "Multiplication failed. Expected 42, got 48"}, "division": {"passed": false, "message": "Division failed. Expected 4, got 3.3333333333333335"}}`
-
-	expectedCorrectOutput = `{"addition": {"passed": true, "message": ""}, "subtraction": {"passed": true, "message": ""}, "multiplication": {"passed": true, "message": ""}, "division": {"passed": true, "message": ""}}`
-
 	makeFilePath   = "../../example/python/simple-addition/makefile"
 	graderFilePath = "../../example/python/simple-addition/grader.py"
-	dockerFilePath = "../../example/python/simple-addition/ex-Dockerfile"
-	imageName      = "arithmetic-python"
 )
 
 var (
-	dkService  *docker.DkService
-	jobService *jobs.JobService
+	defaultTimeout = time.Second * 10
+	testCases      = map[string]struct {
+		studentFile    string
+		expectedOutput string
+	}{
+		"correct": {
+			studentFile:    "../../example/python/simple-addition/student_correct.py",
+			expectedOutput: `{"addition": {"passed": true, "message": ""}, "subtraction": {"passed": true, "message": ""}, "multiplication": {"passed": true, "message": ""}, "division": {"passed": true, "message": ""}}`,
+		},
+		"incorrect": {
+			studentFile:    "../../example/python/simple-addition/student_incorrect.py",
+			expectedOutput: `{"addition": {"passed": true, "message": ""}, "subtraction": {"passed": true, "message": ""}, "multiplication": {"passed": false, "message": "Multiplication failed. Expected 42, got 48"}, "division": {"passed": false, "message": "Division failed. Expected 4, got 3.3333333333333335"}}`,
+		},
+		"timeout": {
+			studentFile:    "../../example/python/simple-addition/student_timeout.py",
+			expectedOutput: "Maximum timeout reached for job, job ran for 10s",
+		},
+	}
 )
 
-func TestJobProcessor(t *testing.T) {
+func TestBatchJobProcessor(t *testing.T) {
 	setupTest()
 
 	numJobs := 100
-	var wg sync.WaitGroup
-	wg.Add(numJobs)
+
+	testValues := maps.Values(testCases)
 
 	for i := 0; i < numJobs; i++ {
-		go func(jobID int) {
-			defer wg.Done()
+		// Randomly choose from test cases
+		testCaseIndex := rand.Intn(len(testValues))
+		testCase := testValues[testCaseIndex]
 
-			// Randomly choose correct or incorrect
-			useCorrect := rand.Intn(2) == 0 // 0 or 1
-
-			studentFile := "../../example/python/simple-addition/student_incorrect.py"
-			expectedOutput := expectedIncorrectOutput
-
-			if useCorrect {
-				studentFile = "../../example/python/simple-addition/student_correct.py"
-				expectedOutput = expectedCorrectOutput
-			}
-
-			// You can still include the jobID if you need it:
-			// fmt.Printf("Job %d: Using %s\n", jobID, studentFile)
-
-			testJobProcessor(t, studentFile, expectedOutput)
-
-			fmt.Printf("Job %d finished\n", jobID)
-		}(i)
+		// Run the test for each job directly in the main test goroutine
+		t.Run(fmt.Sprintf("Job_%d", i), func(t *testing.T) {
+			// Create subtests for better reporting
+			// Enable parallel execution for this subtest
+			t.Parallel()
+			testJobProcessor(t, testCase.studentFile, testCase.expectedOutput, defaultTimeout)
+			fmt.Printf("Job %d finished\n", i)
+		})
 	}
-
-	wg.Wait()
 }
 
-func initServices() {
-	fmt.Println("Starting tests")
-	// utils for services
-	db := utils.InitDB()
-	fCache := utils.NewLabFilesCache(db)
-	clientList := docker.InitDockerClients()
-
-	dkService = docker.NewDockerService(clientList)
-	jobService = jobs.NewJobService(db, fCache, dkService) // depends on docker service
+func TestCorrect(t *testing.T) {
+	setupTest()
+	correct := testCases["correct"]
+	testJobProcessor(t, correct.studentFile, correct.expectedOutput, defaultTimeout)
 }
 
-func setupTest() {
-	utils.InitConfig()
-	initServices()
-	buildImage()
+func TestIncorrect(t *testing.T) {
+	setupTest()
+	incorrect := testCases["incorrect"]
+	testJobProcessor(t, incorrect.studentFile, incorrect.expectedOutput, defaultTimeout)
 }
 
-func testJobProcessor(t *testing.T, studentCodePath string, correctOutput string) {
+func TestTimeout(t *testing.T) {
+	setupTest()
+	timeLimit := time.Second * 10
+	timeout := testCases["timeout"]
+	timeout.expectedOutput = fmt.Sprintf("Maximum timeout reached for job, job ran for %s", timeLimit)
+	testJobProcessor(t, timeout.studentFile, timeout.expectedOutput, timeLimit)
+}
+
+func testJobProcessor(t *testing.T, studentCodePath string, correctOutput string, timeout time.Duration) {
 	graderBytes, err := utils.ReadFileBytes(graderFilePath)
 	if err != nil {
 		t.Fatalf("Error reading grader.py: %v", err)
@@ -107,11 +107,12 @@ func testJobProcessor(t *testing.T, studentCodePath string, correctOutput string
 			MakeFilename:   filepath.Base(makeFilePath),
 			MakeFile:       makefileBytes,
 		},
+		JobTimeout: timeout,
 	}
 
 	jobId, err := jobService.NewJob(newJob)
 	if err != nil {
-		t.Fatalf("Error creating job: %v", err)
+		t.Fatal("Error creating job: ", err)
 	}
 
 	jobInfo, err := jobService.WaitForJob(jobId)
@@ -123,17 +124,6 @@ func testJobProcessor(t *testing.T, studentCodePath string, correctOutput string
 	expected := strings.TrimSpace(correctOutput)
 
 	if returned != expected {
-		t.Error("Expected correct output, got", correctOutput, "instead got", jobInfo.StatusMessage)
-	}
-}
-
-func buildImage() {
-	bytes, err := utils.ReadFileBytes(dockerFilePath)
-	if err != nil {
-		log2.Fatal("Unable to read Dockerfile " + dockerFilePath)
-	}
-	err = dkService.NewImageReq(filepath.Base(dockerFilePath), bytes, imageName)
-	if err != nil {
-		log2.Fatal("Unable to build Dockerfile " + dockerFilePath)
+		t.Fatal("Expected correct output, got: '", correctOutput, "' instead got: ", jobInfo.StatusMessage)
 	}
 }

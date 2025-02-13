@@ -3,6 +3,7 @@ package jobs
 import (
 	"context"
 	"fmt"
+	cond "github.com/docker/docker/api/types/container"
 	cont "github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/makeopensource/leviathan/models"
@@ -48,17 +49,16 @@ func (q *JobQueue) messageProcessors(workerId int) {
 }
 
 func (q *JobQueue) runJob(msg *models.Job) {
-	q.jobInProgress(msg)
+	q.setJobInProgress(msg)
 
-	client, contId, jobTar := q.setupLikeKing(msg)
+	client, contId, jobTar := q.setupJob(msg)
 	if client == nil || contId == "" {
 		return
 	}
-	defer func() {
-		q.cleanUpLikeChampion(msg, client, jobTar)
-	}()
 
-	var statusChannel = make(chan int)
+	defer func() {
+		q.cleanupJob(msg, client, jobTar)
+	}()
 
 	err := client.StartContainer(contId)
 	if err != nil {
@@ -66,61 +66,19 @@ func (q *JobQueue) runJob(msg *models.Job) {
 		return
 	}
 
-	go func() {
-		outPutFile, err := os.OpenFile(msg.OutputFilePath, os.O_RDWR|os.O_CREATE, 660)
-		if err != nil {
-			q.bigProblem("Unable to open output file", msg, err)
-			return
-		}
-
-		defer func() {
-			statusChannel <- 0
-			err := outPutFile.Close()
-			if err != nil {
-				log.Error().Err(err).Msg("Error while closing output file")
-			}
-		}()
-
-		logs, err := client.TailContainerLogs(context.Background(), contId)
-		if err != nil {
-			q.bigProblem("Unable to tail job container", msg, err)
-			return
-		}
-
-		_, err = stdcopy.StdCopy(outPutFile, outPutFile, logs)
-		if err != nil {
-			q.bigProblem("unable to write to output file", msg, err)
-			return
-		}
-	}()
-
-	// enforce timelimit
-	jobLimit := 5 * time.Minute
-	time.AfterFunc(jobLimit, func() {
-		defer func() {
-			statusChannel <- 1
-		}()
-		err := client.StopContainer(contId)
-		if err != nil {
-			log.Error().Err(err).Msgf("Unable to stop job container")
-			return
-		}
-	})
-
+	statusCh, errCh := client.Client.ContainerWait(context.Background(), contId, cond.WaitConditionNotRunning)
 	select {
-	case firstValue := <-statusChannel:
-		log.Debug().Msgf("Job finished with status: %d", firstValue)
-
-		switch firstValue {
-		case 0:
-			q.verifyLogs(msg.OutputFilePath, msg)
-			break
-		case 1:
-			q.bigProblem("Maximum timeout reached for job", msg, nil)
-			break
-		default:
-			q.bigProblem(fmt.Sprintf("Unknown job status: %d", firstValue), msg, nil)
-		}
+	case state := <-statusCh:
+		log.Info().Any("state", state).Msgf("Job: %s completed", msg.JobId)
+		q.writeLogs(client, msg)
+		q.verifyLogs(msg.OutputFilePath, msg)
+		return
+	case err := <-errCh:
+		q.bigProblem("error occurred while waiting for job process", msg, err)
+		return
+	case <-time.After(msg.JobTimeout):
+		q.bigProblem(fmt.Sprintf("Maximum timeout reached for job, job ran for %s", msg.JobTimeout), msg, nil)
+		return
 	}
 }
 
@@ -128,9 +86,36 @@ func (q *JobQueue) AddJob(mes *models.Job) {
 	q.jobChannel <- mes
 }
 
-// setupLikeKing Set up job like king, yes!
+func (q *JobQueue) writeLogs(client *docker.DkClient, msg *models.Job) {
+	outPutFile, err := os.OpenFile(msg.OutputFilePath, os.O_RDWR|os.O_CREATE, 660)
+	if err != nil {
+		q.bigProblem("Unable to open output file", msg, err)
+		return
+	}
+
+	defer func() {
+		err := outPutFile.Close()
+		if err != nil {
+			log.Error().Err(err).Msg("Error while closing output file")
+		}
+	}()
+
+	logs, err := client.TailContainerLogs(context.Background(), msg.ContainerId)
+	if err != nil {
+		q.bigProblem("Unable to tail job container", msg, err)
+		return
+	}
+
+	_, err = stdcopy.StdCopy(outPutFile, outPutFile, logs)
+	if err != nil {
+		q.bigProblem("unable to write to output file", msg, err)
+		return
+	}
+}
+
+// setupJob Set up job like king, yes!
 // returns nil client if an error occurred while setup
-func (q *JobQueue) setupLikeKing(msg *models.Job) (*docker.DkClient, string, string) {
+func (q *JobQueue) setupJob(msg *models.Job) (*docker.DkClient, string, string) {
 	jobTar, err := utils.ArchiveJobData(map[string][]byte{
 		msg.LabData.GraderFilename:    msg.LabData.GraderFile,
 		msg.LabData.MakeFilename:      msg.LabData.MakeFile,
@@ -201,8 +186,10 @@ func (q *JobQueue) greatSuccess(job *models.Job, jobResult string) {
 	job.StatusMessage = jobResult
 }
 
-func (q *JobQueue) cleanUpLikeChampion(msg *models.Job, client *docker.DkClient, tar string) {
-	q.updateDataVeryNice(msg)
+// cleanupJob clean up job
+// sets job to success, removes the container and associated tmp job data
+func (q *JobQueue) cleanupJob(msg *models.Job, client *docker.DkClient, tar string) {
+	q.updateJobVeryNice(msg)
 
 	err := client.RemoveContainer(msg.ContainerId, true, true)
 	if err != nil {
@@ -217,14 +204,14 @@ func (q *JobQueue) cleanUpLikeChampion(msg *models.Job, client *docker.DkClient,
 }
 
 // Job is in progress, success soon!
-func (q *JobQueue) jobInProgress(msg *models.Job) {
+func (q *JobQueue) setJobInProgress(msg *models.Job) {
 	msg.Status = models.Running
-	q.updateDataVeryNice(msg)
+	q.updateJobVeryNice(msg)
 
 }
 
-// updateDataVeryNice Database updated, fresh like new wife!
-func (q *JobQueue) updateDataVeryNice(msg *models.Job) {
+// updateJobVeryNice Database updated, fresh like new wife!
+func (q *JobQueue) updateJobVeryNice(msg *models.Job) {
 	res := q.db.Save(msg)
 	if res.Error != nil {
 		log.Error().Err(res.Error).Msgf("An error occured while saving job to db")
@@ -234,6 +221,11 @@ func (q *JobQueue) updateDataVeryNice(msg *models.Job) {
 }
 
 func (q *JobQueue) verifyLogs(file string, msg *models.Job) {
+	if msg.Status == models.Failed {
+		log.Warn().Msgf("Job %s failed skipping parsing log file", msg.JobId)
+		return
+	}
+
 	outputFile, err := os.Open(file)
 	if err != nil {
 		q.bigProblem("Unable to open log file", msg, err, file)

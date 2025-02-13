@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"github.com/makeopensource/leviathan/models"
 	"github.com/makeopensource/leviathan/utils"
+	"github.com/rs/zerolog/log"
 	"golang.org/x/exp/maps"
 	"math/rand"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -38,10 +40,20 @@ var (
 	}
 )
 
-func TestBatchJobProcessor(t *testing.T) {
-	setupTest()
+func Test50Jobs(t *testing.T) {
+	testBatchJobProcessor(t, 50)
+}
 
-	numJobs := 100
+func Test100Jobs(t *testing.T) {
+	testBatchJobProcessor(t, 100)
+}
+
+func Test500Jobs(t *testing.T) {
+	testBatchJobProcessor(t, 500)
+}
+
+func testBatchJobProcessor(t *testing.T, numJobs int) {
+	setupTest()
 
 	testValues := maps.Values(testCases)
 
@@ -125,5 +137,12 @@ func testJobProcessor(t *testing.T, studentCodePath string, correctOutput string
 
 	if returned != expected {
 		t.Fatal("Expected correct output, got: '", correctOutput, "' instead got: ", jobInfo.StatusMessage)
+	} else {
+		// delete output file if correct
+		err := os.Remove(jobInfo.OutputFilePath)
+		if err != nil {
+			log.Warn().Msgf("Error while removing file: %v", err)
+			return
+		}
 	}
 }

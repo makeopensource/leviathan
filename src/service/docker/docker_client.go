@@ -39,16 +39,13 @@ func NewSSHClient(connectionString string) (*DkClient, error) {
 		},
 	}
 
-	var clientOpts []client.Opt
-
-	clientOpts = append(clientOpts,
+	newClient, err := client.NewClientWithOpts(
 		client.WithHTTPClient(httpClient),
 		client.WithHost(helper.Host),
 		client.WithDialContext(helper.Dialer),
 		client.WithAPIVersionNegotiation(),
 	)
 
-	newClient, err := client.NewClientWithOpts(clientOpts...)
 	if err != nil {
 		log.Error().Err(err).Msgf("failed create remote docker web_gen with connectionString %s", connectionString)
 		return nil, fmt.Errorf("unable to connect to docker web_gen")
@@ -59,7 +56,10 @@ func NewSSHClient(connectionString string) (*DkClient, error) {
 
 // NewLocalClient create a new web_gen based locally
 func NewLocalClient() (*DkClient, error) {
-	cli, err := client.NewClientWithOpts(client.FromEnv)
+	cli, err := client.NewClientWithOpts(
+		client.FromEnv,
+		client.WithAPIVersionNegotiation(),
+	)
 	if err != nil {
 		log.Error().Err(err).Msgf("failed create local docker client")
 		return nil, fmt.Errorf("unable to create docker client")

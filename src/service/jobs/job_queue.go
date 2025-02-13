@@ -116,19 +116,19 @@ func (q *JobQueue) writeLogs(client *docker.DkClient, msg *models.Job) {
 // setupJob Set up job like king, yes!
 // returns nil client if an error occurred while setup
 func (q *JobQueue) setupJob(msg *models.Job) (*docker.DkClient, string, string) {
-	jobTar, err := utils.ArchiveJobData(map[string][]byte{
+	jobDir, err := utils.CreateTmpJobDir(map[string][]byte{
 		msg.LabData.GraderFilename:    msg.LabData.GraderFile,
 		msg.LabData.MakeFilename:      msg.LabData.MakeFile,
 		msg.StudentSubmissionFileName: msg.StudentSubmissionFile,
 	})
 	if err != nil {
-		q.bigProblem("Failed to convert job data to tar", msg, err, jobTar)
+		q.bigProblem("Failed to convert job data to tar", msg, err, jobDir)
 		return nil, "", ""
 	}
 
 	machine, err := q.dkSrv.ClientManager.GetClientById(msg.MachineId)
 	if err != nil {
-		q.bigProblem("Failed to get machine info", msg, err, jobTar)
+		q.bigProblem("Failed to get machine info", msg, err, jobDir)
 		return nil, "", ""
 	}
 
@@ -139,26 +139,26 @@ func (q *JobQueue) setupJob(msg *models.Job) (*docker.DkClient, string, string) 
 		//PidsLimit: 50 todo
 	}
 
-	contId, err := machine.CreateNewContainer(msg.JobId, msg.ImageTag, resources, jobTar)
+	contId, err := machine.CreateNewContainer(msg.JobId, msg.ImageTag, resources)
 	if err != nil {
-		q.bigProblem("Unable to create job container", msg, err, jobTar)
+		q.bigProblem("Unable to create job container", msg, err, jobDir)
 		return nil, "", ""
 	}
 
-	//err = machine.CopyToContainer(contId, jobTar)
-	//if err != nil {
-	//	q.bigProblem("Unable to copy files to job container", msg, err, jobTar)
-	//	return nil, ""
-	//}
+	err = machine.CopyToContainer(contId, jobDir)
+	if err != nil {
+		q.bigProblem("Unable to copy files to job container", msg, err, jobDir)
+		return nil, "", ""
+	}
 
 	msg.ContainerId = contId
 	res := q.db.Save(msg)
 	if res.Error != nil {
-		q.bigProblem("Unable to update job in db", msg, res.Error, jobTar)
+		q.bigProblem("Unable to update job in db", msg, res.Error, jobDir)
 		return nil, "", ""
 	}
 
-	return machine, contId, jobTar
+	return machine, contId, filepath.Dir(jobDir) // get the dir above autolab subdir
 }
 
 // bigProblem job failed, Not good!
@@ -188,7 +188,7 @@ func (q *JobQueue) greatSuccess(job *models.Job, jobResult string) {
 
 // cleanupJob clean up job
 // sets job to success, removes the container and associated tmp job data
-func (q *JobQueue) cleanupJob(msg *models.Job, client *docker.DkClient, tar string) {
+func (q *JobQueue) cleanupJob(msg *models.Job, client *docker.DkClient, submissionTmpFolder string) {
 	q.updateJobVeryNice(msg)
 
 	err := client.RemoveContainer(msg.ContainerId, true, true)
@@ -198,9 +198,9 @@ func (q *JobQueue) cleanupJob(msg *models.Job, client *docker.DkClient, tar stri
 
 	q.dkSrv.ClientManager.DecreaseJobCount(msg.MachineId)
 
-	err = os.RemoveAll(filepath.Dir(tar))
+	err = os.RemoveAll(submissionTmpFolder)
 	if err != nil {
-		log.Error().Err(err).Msgf("Unable to remove tmp job directory %s", filepath.Dir(tar))
+		log.Error().Err(err).Msgf("Unable to remove tmp job directory %s", filepath.Dir(submissionTmpFolder))
 		return
 	}
 }

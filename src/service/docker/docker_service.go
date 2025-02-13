@@ -8,6 +8,7 @@ import (
 	dktypes "github.com/makeopensource/leviathan/generated/docker_rpc/v1"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
+	"os"
 )
 
 type DkService struct {
@@ -93,6 +94,13 @@ func (service *DkService) NewImageReq(filename string, contents []byte, imageTag
 		return err
 	}
 
+	defer func() {
+		err := os.Remove(fullpath)
+		if err != nil {
+			log.Warn().Err(err).Msgf("Failed while removing file %s", fullpath)
+		}
+	}()
+
 	for _, item := range service.ClientManager.Clients {
 		err := item.Client.BuildImageFromDockerfile(fullpath, imageTag)
 		if err != nil {
@@ -102,7 +110,7 @@ func (service *DkService) NewImageReq(filename string, contents []byte, imageTag
 				return fmt.Errorf("failed to get server info")
 			}
 			log.Error().Err(err).Msgf("Error building image for %s", info.Name)
-			return fmt.Errorf("failed to create image for a web_gen")
+			return fmt.Errorf("failed to create image for client")
 		}
 	}
 
@@ -158,7 +166,7 @@ func (service *DkService) CreateContainerReq(machineId string, jobId string, ima
 		NanoCPUs: 2 * 1000000000,
 	}
 
-	containerID, err := machine.CreateNewContainer(jobId, imageTag, resources, "")
+	containerID, err := machine.CreateNewContainer(jobId, imageTag, resources)
 	if err != nil {
 		log.Error().Err(err).Msgf("Failed to create container for job %s", jobId)
 		return "", err

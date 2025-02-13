@@ -160,8 +160,8 @@ func (c *DkClient) ListContainers(machineId string) ([]*dktypes.ContainerMetaDat
 const containerDirectory = "/home/autolab/"
 
 // CreateNewContainer creates a new container from given image
-func (c *DkClient) CreateNewContainer(jobUuid string, image string, machineLimits container.Resources, hostMount string) (string, error) {
-	runCommand := fmt.Sprintf("cd /home/autolab && tar -xf %s && make grade", "grader.tar.gz")
+func (c *DkClient) CreateNewContainer(jobUuid string, image string, machineLimits container.Resources) (string, error) {
+	runCommand := fmt.Sprintf("cd /home/autolab && make grade")
 
 	config := &container.Config{
 		Image: image,
@@ -171,18 +171,10 @@ func (c *DkClient) CreateNewContainer(jobUuid string, image string, machineLimit
 		Cmd: []string{"sh", "-c", runCommand},
 	}
 
-	//contMount := strings.ReplaceAll("/", "\\", filepath.Dir(containerDirectory))
-	var mounts []string
-	if hostMount != "" {
-		mounts = []string{
-			fmt.Sprintf("%s:%s", filepath.Dir(hostMount), containerDirectory),
-		}
-	}
-
 	hostConfig := &container.HostConfig{
 		Resources:  machineLimits,
 		AutoRemove: false,
-		Binds:      mounts,
+		//Binds:      mounts,
 	}
 	networkingConfig := &network.NetworkingConfig{}
 
@@ -244,24 +236,23 @@ func (c *DkClient) RemoveContainer(containerID string, force bool, removeVolumes
 	return nil
 }
 
-// CopyToContainer copies a specific file directly into the container
-func (c *DkClient) CopyToContainer(containerID string, tarPath string) error {
+// CopyToContainer copies a specific dir directly into the container
+// stolen from https://github.com/testcontainers/testcontainers-go/blob/f09b3af2cb985a17bd2b2eaaa5d384882ded8e28/docker.go#L633
+func (c *DkClient) CopyToContainer(containerID string, submissionDirPath string) error {
 	log.Debug().Msgf("Copying files to container %s", containerDirectory)
 
-	tarStream, err := os.Open(tarPath)
+	jobBytes, err := utils.TarDir(submissionDirPath, 660)
 	if err != nil {
-		return err
+		log.Error().Err(err).Msgf("failed to convert files to tar")
+		return fmt.Errorf("failed to convert files to tar")
 	}
 
-	err = c.Client.CopyToContainer(
-		context.Background(),
-		containerID,
-		containerDirectory,
-		tarStream,
-		container.CopyToContainerOptions{AllowOverwriteDirWithFile: true},
-	)
+	// create the directory under its parent
+	parent := filepath.Dir("/home/")
+
+	err = c.Client.CopyToContainer(context.Background(), containerID, parent, jobBytes, container.CopyToContainerOptions{})
 	if err != nil {
-		log.Error().Err(err).Msgf("failed to copy to Docker container")
+		log.Error().Err(err).Msgf("failed to copy to container")
 		return fmt.Errorf("failed to copy submission to container")
 	}
 

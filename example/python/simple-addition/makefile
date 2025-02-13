@@ -6,5 +6,16 @@ grade:
 	$(PYTHON) $(GRADER_SCRIPT) student.py
 
 all:
-	$(PYTHON) $(GRADER_SCRIPT) student_incorrect.py
+	make incorrect
+	make correct
+	make timeout
+
+correct:
 	$(PYTHON) $(GRADER_SCRIPT) student_correct.py
+
+incorrect:
+	$(PYTHON) $(GRADER_SCRIPT) student_incorrect.py
+
+
+timeout:
+	$(PYTHON) $(GRADER_SCRIPT) student_timeout.py

@@ -1,7 +1,8 @@
 FROM python:3-alpine3.10
 
-WORKDIR /home/autolab
+WORKDIR /home/
 
 RUN apk add build-base
 
+# used for testing starts a container infinetly
 #CMD ["/bin/sh", "-c", "while true; do sleep 1; done"]

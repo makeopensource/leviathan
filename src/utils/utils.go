@@ -2,10 +2,11 @@ package utils
 
 import (
 	"archive/tar"
+	"bytes"
+	"compress/gzip"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/docker/docker/pkg/archive"
 	"github.com/rs/zerolog/log"
 	"io"
 	"os"
@@ -27,61 +28,112 @@ func DecodeID(combinedId string) (string, string, error) {
 	return strs[0], strs[1], nil
 }
 
-// ArchiveJobData creates a tar.gz archive from the provided file map.3
-func ArchiveJobData(files map[string][]byte) (string, error) {
+// CreateTmpJobDir sets up a throwaway dir to store submission files
+// you might be wondering why the '/autolab' subdir, well TarDir untars it under its parent dir,
+// so in container this will unpack with autolab as the submission folder
+// why not modify TarDir I tried and, this was easier than modifying whatever is going in that function
+func CreateTmpJobDir(files map[string][]byte) (string, error) {
 	tmpFolder, err := os.MkdirTemp(SubmissionTarFolder.GetStr(), "submission_*")
-	tmpFile, err := os.Create(fmt.Sprintf("%s/%s", tmpFolder, "grader.tar.gz"))
 	if err != nil {
-		return "", fmt.Errorf("creating temp file: %w", err)
+		return "", err
 	}
-	defer func(tmpFile *os.File) {
-		err := tmpFile.Close()
-		if err != nil {
-			log.Error().Err(err).Msg("while closing temp file")
-		}
-	}(tmpFile)
-
-	//gz := gzip.NewWriter(tmpFile)
-	tw := tar.NewWriter(tmpFile)
+	tmpFolder = fmt.Sprintf("%s/autolab", tmpFolder)
+	err = os.MkdirAll(tmpFolder, os.ModePerm)
+	if err != nil {
+		return "", err
+	}
 
 	for name, content := range files {
-		header := &tar.Header{
-			Name: name,
-			Mode: DefaultFilePerm,
-			Size: int64(len(content)),
-		}
-		if err := tw.WriteHeader(header); err != nil {
-			return "", fmt.Errorf("writing header: %w", err)
-		}
-		if _, err := tw.Write(content); err != nil {
-			return "", fmt.Errorf("writing content: %w", err)
+		err := os.WriteFile(fmt.Sprintf("%s/%s", tmpFolder, name), content, DefaultFilePerm)
+		if err != nil {
+			return "", err
 		}
 	}
 
-	if err := tw.Close(); err != nil {
-		return "", fmt.Errorf("closing tar writer: %w", err)
-	}
-	//if err := gz.Close(); err != nil {
-	//	return "", fmt.Errorf("closing gzip writer: %w", err)
-	//}
-
-	return filepath.Abs(tmpFile.Name())
+	return tmpFolder, nil
 }
 
-func ArchiveFiles(filePath string) (io.ReadCloser, error) {
-	_, err := os.Stat(filePath)
+// TarDir
+// stolen from https://github.com/testcontainers/testcontainers-go/blob/f09b3af2cb985a17bd2b2eaaa5d384882ded8e28/docker.go#L633
+func TarDir(src string, fileMode int64) (*bytes.Buffer, error) {
+	// always pass src as absolute path
+	abs, err := filepath.Abs(src)
 	if err != nil {
-		log.Error().Err(err).Msgf("failed to stat path %s", filePath)
-		return nil, err
+		return &bytes.Buffer{}, fmt.Errorf("error getting absolute path: %w", err)
+	}
+	src = abs
+
+	buffer := &bytes.Buffer{}
+
+	// tar > gzip > buffer
+	zr := gzip.NewWriter(buffer)
+	tw := tar.NewWriter(zr)
+
+	_, baseDir := filepath.Split(src)
+	// keep the path relative to the parent directory
+	index := strings.LastIndex(src, baseDir)
+
+	// walk through every file in the folder
+	err = filepath.Walk(src, func(file string, fi os.FileInfo, errFn error) error {
+		if errFn != nil {
+			return fmt.Errorf("error traversing the file system: %w", errFn)
+		}
+
+		// if a symlink, skip file
+		if fi.Mode().Type() == os.ModeSymlink {
+			log.Warn().Str("file", file).Msg("Skipping skipping symlink")
+			return nil
+		}
+
+		// generate tar header
+		header, err := tar.FileInfoHeader(fi, file)
+		if err != nil {
+			return fmt.Errorf("error getting file info header: %w", err)
+		}
+
+		// see https://pkg.go.dev/archive/tar#FileInfoHeader:
+		// Since fs.FileInfo's Name method only returns the base name of the file it describes,
+		// it may be necessary to modify Header.Name to provide the full path name of the file.
+		header.Name = filepath.ToSlash(file[index:])
+		header.Mode = fileMode
+
+		// write header
+		if err := tw.WriteHeader(header); err != nil {
+			return fmt.Errorf("error writing header: %w", err)
+		}
+
+		// if not a dir, write file content
+		if !fi.IsDir() {
+			data, err := os.Open(file)
+			if err != nil {
+				return fmt.Errorf("error opening file: %w", err)
+			}
+			defer func(data *os.File) {
+				err := data.Close()
+				if err != nil {
+					log.Error().Err(err).Msg("while closing file")
+				}
+			}(data)
+			if _, err := io.Copy(tw, data); err != nil {
+				return fmt.Errorf("error compressing file: %w", err)
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return buffer, err
 	}
 
-	archiveData, err := archive.Tar(filePath, archive.Gzip)
-	if err != nil {
-		log.Error().Err(err).Msgf("failed to archive %s", filePath)
-		return nil, err
+	// produce tar
+	if err := tw.Close(); err != nil {
+		return buffer, fmt.Errorf("error closing tar file: %w", err)
+	}
+	// produce gzip
+	if err := zr.Close(); err != nil {
+		return buffer, fmt.Errorf("error closing gzip file: %w", err)
 	}
 
-	return archiveData, nil
+	return buffer, nil
 }
 
 func GetLastLine(file *os.File) (string, error) {

@@ -8,5 +8,5 @@ type LabModel struct {
 	GraderFilename string
 	GraderFile     []byte `gorm:"-"` // This field will be ignored by GORM
 	MakeFilename   string
-	MakeFile       []byte `gorm:"-"` // This field will be ignored by GORM
+	MakeFile       []byte `gorm:"-"`
 }

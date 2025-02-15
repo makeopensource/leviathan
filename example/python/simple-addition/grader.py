@@ -15,11 +15,9 @@ def grade_student_code(student_code_filename):
     }
 
     try:
-        # Dynamically import the student's code
-
         # Test addition
         try:
-            student_addition = add  # Assuming function name is 'add'
+            student_addition = add
             result = student_addition(5, 3)
             if result == 8:
                 results["addition"]["passed"] = True

@@ -38,10 +38,10 @@ type Job struct {
 	StudentSubmissionFileName string
 	StudentSubmissionFile     []byte   `gorm:"-"`
 	LabData                   LabModel `gorm:"-"`
-	JobLimits                 MachineLimits
-	OutputFilePath            string
-	JobTimeout                time.Duration
-	JobCtx                    context.Context `gorm:"-"`
+	//JobLimits                 MachineLimits
+	OutputFilePath string
+	JobTimeout     time.Duration
+	JobCtx         context.Context `gorm:"-"`
 }
 
 type MachineLimits struct {

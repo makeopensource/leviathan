@@ -2,6 +2,7 @@ package jobs
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	cond "github.com/docker/docker/api/types/container"
 	cont "github.com/docker/docker/api/types/container"
@@ -13,6 +14,7 @@ import (
 	"gorm.io/gorm"
 	"os"
 	"path/filepath"
+	"sync"
 	"time"
 )
 
@@ -21,6 +23,7 @@ type JobQueue struct {
 	totalJobs  uint
 	db         *gorm.DB
 	dkSrv      *docker.DkService
+	contextMap *sync.Map
 }
 
 func NewJobQueue(totalJobs uint, db *gorm.DB, dk *docker.DkService) *JobQueue {
@@ -29,6 +32,7 @@ func NewJobQueue(totalJobs uint, db *gorm.DB, dk *docker.DkService) *JobQueue {
 		totalJobs:  totalJobs,
 		db:         db,
 		dkSrv:      dk,
+		contextMap: &sync.Map{},
 	}
 
 	queue.CreateJobProcessors()
@@ -45,8 +49,46 @@ func (q *JobQueue) AddJob(mes *models.Job) {
 	q.jobChannel <- mes
 }
 
+func (q *JobQueue) NewJobContext(messageId string) context.Context {
+	ctx, cancel := context.WithCancel(context.Background())
+	wrapCancelFunc := func() {
+		cancel()
+		q.RemoveJobContext(messageId)
+	}
+
+	q.contextMap.Store(messageId, wrapCancelFunc)
+	return ctx
+}
+
+func (q *JobQueue) RemoveJobContext(messageId string) {
+	q.contextMap.Delete(messageId)
+}
+
+func (q *JobQueue) GetJobContext(messageId string) context.CancelFunc {
+	val, ok := q.contextMap.Load(messageId)
+	if !ok {
+		return nil
+	}
+	return val.(func())
+}
+
+func (q *JobQueue) CancelJob(messageId string) {
+	cancel := q.GetJobContext(messageId)
+	if cancel == nil {
+		log.Warn().Str("messageId", messageId).Msg("nil job context")
+		return
+	}
+	cancel()
+}
+
 func (q *JobQueue) messageProcessors(workerId int) {
 	for msg := range q.jobChannel {
+		if errors.Is(msg.JobCtx.Err(), context.Canceled) {
+			log.Warn().Any("job data", msg).Msgf("job: %s context was canceled", msg.JobId)
+			q.setJobAsCancelled(msg)
+			continue
+		}
+
 		log.Info().Msgf("Worker: %d is now processing job: %d", workerId, msg.ID)
 		q.runJob(msg)
 	}
@@ -56,16 +98,17 @@ func (q *JobQueue) messageProcessors(workerId int) {
 func (q *JobQueue) runJob(msg *models.Job) {
 	q.setJobInProgress(msg)
 
-	client, contId, jobTar := q.setupJob(msg)
-	if client == nil || contId == "" {
+	client, contId, jobFolderPath, err := q.setupJob(msg)
+	if err != nil {
+		// error handled by setupJob
 		return
 	}
 
 	defer func() {
-		q.cleanupJob(msg, client, jobTar)
+		q.cleanupJob(msg, client, jobFolderPath)
 	}()
 
-	err := client.StartContainer(contId)
+	err = client.StartContainer(contId)
 	if err != nil {
 		q.bigProblem("Unable to start job container", msg, err)
 		return
@@ -83,6 +126,9 @@ func (q *JobQueue) runJob(msg *models.Job) {
 		return
 	case <-time.After(msg.JobTimeout):
 		q.bigProblem(fmt.Sprintf("Maximum timeout reached for job, job ran for %s", msg.JobTimeout), msg, nil)
+		return
+	case <-msg.JobCtx.Done():
+		q.setJobAsCancelled(msg)
 		return
 	}
 }
@@ -116,50 +162,54 @@ func (q *JobQueue) writeLogs(client *docker.DkClient, msg *models.Job) {
 
 // setupJob Set up job like king, yes!
 // returns nil client if an error occurred while setup
-func (q *JobQueue) setupJob(msg *models.Job) (*docker.DkClient, string, string) {
-	jobDir, err := utils.CreateTmpJobDir(map[string][]byte{
-		msg.LabData.GraderFilename:    msg.LabData.GraderFile,
-		msg.LabData.MakeFilename:      msg.LabData.MakeFile,
-		msg.StudentSubmissionFileName: msg.StudentSubmissionFile,
-	})
+func (q *JobQueue) setupJob(msg *models.Job) (*docker.DkClient, string, string, error) {
+	jobDir, err := utils.CreateTmpJobDir(
+		msg.JobId,
+		map[string][]byte{
+			msg.LabData.GraderFilename:    msg.LabData.GraderFile,
+			msg.LabData.MakeFilename:      msg.LabData.MakeFile,
+			msg.StudentSubmissionFileName: msg.StudentSubmissionFile,
+		},
+	)
 	if err != nil {
 		q.bigProblem("Failed to convert job data to tar", msg, err, jobDir)
-		return nil, "", ""
+		return nil, "", "", nil
 	}
 
 	machine, err := q.dkSrv.ClientManager.GetClientById(msg.MachineId)
 	if err != nil {
 		q.bigProblem("Failed to get machine info", msg, err, jobDir)
-		return nil, "", ""
+		return nil, "", "", nil
 	}
 
+	pidsLimit := int64(100)
 	// todo load from job message
 	resources := cont.Resources{
-		Memory:   512 * 1000000,
-		NanoCPUs: 2 * 1000000000,
-		//PidsLimit: 50 todo
+		NanoCPUs:  1 * models.CPUQuota, // 1 virtual core
+		Memory:    512 * models.MB,
+		PidsLimit: &pidsLimit,
 	}
 
 	contId, err := machine.CreateNewContainer(msg.JobId, msg.ImageTag, resources)
 	if err != nil {
 		q.bigProblem("Unable to create job container", msg, err, jobDir)
-		return nil, "", ""
+		return nil, "", "", err
 	}
 
 	err = machine.CopyToContainer(contId, jobDir)
 	if err != nil {
 		q.bigProblem("Unable to copy files to job container", msg, err, jobDir)
-		return nil, "", ""
+		return nil, "", "", err
 	}
 
 	msg.ContainerId = contId
 	res := q.db.Save(msg)
 	if res.Error != nil {
 		q.bigProblem("Unable to update job in db", msg, res.Error, jobDir)
-		return nil, "", ""
+		return nil, "", "", err
 	}
 
-	return machine, contId, filepath.Dir(jobDir) // get the dir above autolab subdir
+	return machine, contId, filepath.Dir(jobDir), nil // get the dir above autolab subdir
 }
 
 // bigProblem job failed, Not good!
@@ -175,6 +225,12 @@ func (q *JobQueue) bigProblem(publicReason string, job *models.Job, err error, j
 	// job will be saved by the cleanup function
 	job.Status = models.Failed
 	job.StatusMessage = publicReason
+}
+
+func (q *JobQueue) setJobAsCancelled(job *models.Job) {
+	job.Status = models.Canceled
+	job.StatusMessage = "Job was cancelled"
+	q.updateJobVeryNice(job)
 }
 
 // greatSuccess Very nice!

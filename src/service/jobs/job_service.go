@@ -59,6 +59,8 @@ func (job *JobService) NewJob(jobReq *models.Job) (string, error) {
 		return "", fmt.Errorf("failed to save job to db")
 	}
 
+	// job context, so that it can be cancelled
+	jobReq.JobCtx = job.queue.NewJobContext(jobReq.JobId)
 	// run in go routine in case queue is full and this gets blocked
 	go job.queue.AddJob(jobReq)
 
@@ -103,7 +105,7 @@ func (job *JobService) WaitForJob(jobUuid string) (*models.Job, error) {
 			continue
 		}
 
-		if info.Status == models.Complete || info.Status == models.Failed {
+		if info.Status == models.Complete || info.Status == models.Failed || info.Status == models.Canceled {
 			return info, nil
 		}
 	}
@@ -111,15 +113,15 @@ func (job *JobService) WaitForJob(jobUuid string) (*models.Job, error) {
 
 func (job *JobService) getJob(jobUuid string) (*models.Job, error) {
 	var jobInfo *models.Job
-	res := job.db.Find(&jobInfo, "job_id = ?", jobUuid)
+	res := job.db.First(&jobInfo, "job_id = ?", jobUuid)
 	if res.Error != nil {
 		return nil, fmt.Errorf("failed to get job info from db")
 	}
 	return jobInfo, nil
 }
 
-func (job *JobService) CancelJob(jobUuid string) error {
-	return nil
+func (job *JobService) CancelJob(jobUuid string) {
+	job.queue.CancelJob(jobUuid)
 }
 
 // setupLogFile store grader output

@@ -64,7 +64,7 @@ func (q *JobQueue) RemoveJobContext(messageId string) {
 	q.contextMap.Delete(messageId)
 }
 
-func (q *JobQueue) GetJobContext(messageId string) context.CancelFunc {
+func (q *JobQueue) GetJobCancelFunc(messageId string) context.CancelFunc {
 	val, ok := q.contextMap.Load(messageId)
 	if !ok {
 		return nil
@@ -73,7 +73,7 @@ func (q *JobQueue) GetJobContext(messageId string) context.CancelFunc {
 }
 
 func (q *JobQueue) CancelJob(messageId string) {
-	cancel := q.GetJobContext(messageId)
+	cancel := q.GetJobCancelFunc(messageId)
 	if cancel == nil {
 		log.Warn().Str("messageId", messageId).Msg("nil job context")
 		return

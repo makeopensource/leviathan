@@ -1,4 +1,4 @@
-package tests
+package docker
 
 import (
 	"github.com/docker/docker/api/types/container"
@@ -8,16 +8,16 @@ import (
 )
 
 func TestCopyToContainer(t *testing.T) {
-	setupTest()
+	SetupTest()
 
-	machine, err := dkService.ClientManager.GetClientById(dkService.ClientManager.GetLeastJobCountMachineId())
+	machine, err := DkTestService.ClientManager.GetClientById(DkTestService.ClientManager.GetLeastJobCountMachineId())
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
 
 	ifg := uuid.New()
 
-	contId, err := machine.CreateNewContainer(ifg.String(), imageName, container.Resources{})
+	contId, err := machine.CreateNewContainer(ifg.String(), ImageName, container.Resources{})
 	if err != nil {
 		t.Fatalf("%v", err)
 	}

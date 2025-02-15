@@ -1,4 +1,4 @@
-package tests
+package jobs
 
 import (
 	"fmt"
@@ -43,25 +43,26 @@ var (
 )
 
 func TestCorrect(t *testing.T) {
-	setupTest()
+	SetupTest()
 	correct := testCases["correct"]
 	testJobProcessor(t, correct.studentFile, correct.expectedOutput, defaultTimeout)
 }
 
 func TestIncorrect(t *testing.T) {
-	setupTest()
+	SetupTest()
 	incorrect := testCases["incorrect"]
 	testJobProcessor(t, incorrect.studentFile, incorrect.expectedOutput, defaultTimeout)
 }
 
+// TODO
 func TestForkBomb(t *testing.T) {
-	setupTest()
+	SetupTest()
 	forkBomb := testCases["forkb"]
 	testJobProcessor(t, forkBomb.studentFile, forkBomb.expectedOutput, defaultTimeout)
 }
 
 func TestTimeout(t *testing.T) {
-	setupTest()
+	SetupTest()
 	timeLimit := time.Second * 10
 	timeout := testCases["timeout"]
 	timeout.expectedOutput = fmt.Sprintf("Maximum timeout reached for job, job ran for %s", timeLimit)
@@ -69,7 +70,7 @@ func TestTimeout(t *testing.T) {
 }
 
 func TestCancel(t *testing.T) {
-	setupTest()
+	SetupTest()
 	timeLimit := time.Second * 10
 	timeout := testCases["timeout"]
 	timeout.expectedOutput = fmt.Sprintf("Job was cancelled")
@@ -78,10 +79,17 @@ func TestCancel(t *testing.T) {
 
 	// cancel the job after 3 seconds
 	time.AfterFunc(3*time.Second, func() {
-		jobService.CancelJob(jobId)
+		JobTestService.CancelJob(jobId)
 	})
 
 	testJob(t, jobId, timeout.expectedOutput)
+
+	// verify cancel function was removed from context map
+	value := JobTestService.queue.GetJobCancelFunc(jobId)
+	if value != nil {
+		t.Fatalf("Job was cancelled, but the cancel func was not nil")
+	}
+
 }
 
 func testJobProcessor(t *testing.T, studentCodePath string, correctOutput string, timeout time.Duration) {
@@ -106,7 +114,7 @@ func setupJobProcess(studentCodePath string, timeout time.Duration) string {
 	}
 
 	newJob := &models.Job{
-		ImageTag:                  imageName,
+		ImageTag:                  ImageName,
 		StudentSubmissionFileName: "student.py",
 		StudentSubmissionFile:     studentBytes,
 		LabData: models.LabModel{
@@ -118,7 +126,7 @@ func setupJobProcess(studentCodePath string, timeout time.Duration) string {
 		JobTimeout: timeout,
 	}
 
-	jobId, err := jobService.NewJob(newJob)
+	jobId, err := JobTestService.NewJob(newJob)
 	if err != nil {
 		log.Fatal().Err(err).Msgf("Error creating job")
 	}
@@ -127,7 +135,7 @@ func setupJobProcess(studentCodePath string, timeout time.Duration) string {
 }
 
 func testJob(t *testing.T, jobId string, correctOutput string) {
-	jobInfo, err := jobService.WaitForJob(jobId)
+	jobInfo, err := JobTestService.WaitForJob(jobId)
 	if err != nil {
 		t.Fatalf("Error waiting for job: %v", err)
 	}

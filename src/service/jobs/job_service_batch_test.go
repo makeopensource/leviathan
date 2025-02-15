@@ -1,4 +1,4 @@
-package tests
+package jobs
 
 import (
 	"fmt"
@@ -34,7 +34,7 @@ func Test2000Jobs(t *testing.T) {
 }
 
 func testBatchJobProcessor(t *testing.T, numJobs int) {
-	setupTest()
+	SetupTest()
 
 	testValues := maps.Values(testCases)
 

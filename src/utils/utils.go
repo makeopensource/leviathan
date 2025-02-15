@@ -29,11 +29,11 @@ func DecodeID(combinedId string) (string, string, error) {
 }
 
 // CreateTmpJobDir sets up a throwaway dir to store submission files
-// you might be wondering why the '/autolab' subdir, well TarDir untars it under its parent dir,
-// so in container this will unpack with autolab as the submission folder
+// you might be wondering why the '/autolab' subdir, TarDir untars it under its parent dir,
+// so in container this will unpack with 'autolab' as the parent folder
 // why not modify TarDir I tried and, this was easier than modifying whatever is going in that function
-func CreateTmpJobDir(files map[string][]byte) (string, error) {
-	tmpFolder, err := os.MkdirTemp(SubmissionTarFolder.GetStr(), "submission_*")
+func CreateTmpJobDir(uuid string, files map[string][]byte) (string, error) {
+	tmpFolder, err := os.MkdirTemp(SubmissionTarFolder.GetStr(), uuid)
 	if err != nil {
 		return "", err
 	}

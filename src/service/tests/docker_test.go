@@ -22,7 +22,7 @@ func TestCopyToContainer(t *testing.T) {
 		t.Fatalf("%v", err)
 	}
 
-	dir, err := utils.CreateTmpJobDir(map[string][]byte{
+	dir, err := utils.CreateTmpJobDir(ifg.String(), map[string][]byte{
 		"test.txt": []byte("test test"),
 	})
 	if err != nil {

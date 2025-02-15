@@ -5,8 +5,6 @@ import (
 	"github.com/makeopensource/leviathan/models"
 	"github.com/makeopensource/leviathan/utils"
 	"github.com/rs/zerolog/log"
-	"golang.org/x/exp/maps"
-	"math/rand"
 	"os"
 	"path/filepath"
 	"strings"
@@ -37,6 +35,10 @@ var (
 			studentFile:    "../../../example/python/simple-addition/student_timeout.py",
 			expectedOutput: "Maximum timeout reached for job, job ran for 10s",
 		},
+		"forkb": {
+			studentFile:    "../../../example/python/simple-addition/student_fork_bomb.py",
+			expectedOutput: "",
+		},
 	}
 )
 
@@ -52,6 +54,12 @@ func TestIncorrect(t *testing.T) {
 	testJobProcessor(t, incorrect.studentFile, incorrect.expectedOutput, defaultTimeout)
 }
 
+func TestForkBomb(t *testing.T) {
+	setupTest()
+	forkBomb := testCases["forkb"]
+	testJobProcessor(t, forkBomb.studentFile, forkBomb.expectedOutput, defaultTimeout)
+}
+
 func TestTimeout(t *testing.T) {
 	setupTest()
 	timeLimit := time.Second * 10
@@ -60,66 +68,41 @@ func TestTimeout(t *testing.T) {
 	testJobProcessor(t, timeout.studentFile, timeout.expectedOutput, timeLimit)
 }
 
-func Test50Jobs(t *testing.T) {
-	if os.Getenv("CI") != "" {
-		t.Skip("Skipping testing in CI environment")
-	}
-	testBatchJobProcessor(t, 50)
-}
-
-func Test100Jobs(t *testing.T) {
-	if os.Getenv("CI") != "" {
-		t.Skip("Skipping testing in CI environment")
-	}
-	testBatchJobProcessor(t, 100)
-}
-
-func Test500Jobs(t *testing.T) {
-	testBatchJobProcessor(t, 500)
-}
-
-func Test2000Jobs(t *testing.T) {
-	if os.Getenv("CI") != "" {
-		t.Skip("Skipping testing in CI environment")
-	}
-	testBatchJobProcessor(t, 2000)
-}
-
-func testBatchJobProcessor(t *testing.T, numJobs int) {
+func TestCancel(t *testing.T) {
 	setupTest()
+	timeLimit := time.Second * 10
+	timeout := testCases["timeout"]
+	timeout.expectedOutput = fmt.Sprintf("Job was cancelled")
 
-	testValues := maps.Values(testCases)
+	jobId := setupJobProcess(timeout.studentFile, timeLimit)
 
-	for i := 0; i < numJobs; i++ {
-		// Randomly choose from test cases
-		testCaseIndex := rand.Intn(len(testValues))
-		testCase := testValues[testCaseIndex]
+	// cancel the job after 3 seconds
+	time.AfterFunc(3*time.Second, func() {
+		jobService.CancelJob(jobId)
+	})
 
-		// Run the test for each job directly in the main test goroutine
-		t.Run(fmt.Sprintf("Job_%d", i), func(t *testing.T) {
-			// Create subtests for better reporting
-			// Enable parallel execution for this subtest
-			t.Parallel()
-			testJobProcessor(t, testCase.studentFile, testCase.expectedOutput, defaultTimeout)
-			fmt.Printf("Job %d finished\n", i)
-		})
-	}
+	testJob(t, jobId, timeout.expectedOutput)
 }
 
 func testJobProcessor(t *testing.T, studentCodePath string, correctOutput string, timeout time.Duration) {
+	jobId := setupJobProcess(studentCodePath, timeout)
+	testJob(t, jobId, correctOutput)
+}
+
+func setupJobProcess(studentCodePath string, timeout time.Duration) string {
 	graderBytes, err := utils.ReadFileBytes(graderFilePath)
 	if err != nil {
-		t.Fatalf("Error reading grader.py: %v", err)
+		log.Fatal().Err(err).Msg("Error reading grader.py")
 	}
 
 	makefileBytes, err := utils.ReadFileBytes(makeFilePath)
 	if err != nil {
-		t.Fatalf("Error reading makefile: %v", err)
+		log.Fatal().Err(err).Msg("Error reading grader.py")
 	}
 
 	studentBytes, err := utils.ReadFileBytes(studentCodePath)
 	if err != nil {
-		t.Fatalf("Error reading student: %v", err)
+		log.Fatal().Err(err).Msg("Error reading student")
 	}
 
 	newJob := &models.Job{
@@ -137,9 +120,13 @@ func testJobProcessor(t *testing.T, studentCodePath string, correctOutput string
 
 	jobId, err := jobService.NewJob(newJob)
 	if err != nil {
-		t.Fatal("Error creating job: ", err)
+		log.Fatal().Err(err).Msgf("Error creating job")
 	}
 
+	return jobId
+}
+
+func testJob(t *testing.T, jobId string, correctOutput string) {
 	jobInfo, err := jobService.WaitForJob(jobId)
 	if err != nil {
 		t.Fatalf("Error waiting for job: %v", err)

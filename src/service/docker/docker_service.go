@@ -7,7 +7,6 @@ import (
 	cont "github.com/docker/docker/api/types/container"
 	"github.com/makeopensource/leviathan/common"
 	dktypes "github.com/makeopensource/leviathan/generated/docker_rpc/v1"
-	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
 	"os"
 )
@@ -34,7 +33,7 @@ func (service *DkService) StartContainerReq(combinedId string) error {
 	err = machine.StartContainer(containerId)
 	if err != nil {
 		log.Error().Err(err).Msgf("Failed to stop container at machine: %s with id", containerId)
-		return errors.New("Failed to start container")
+		return fmt.Errorf("failed to start container")
 	}
 	return nil
 }
@@ -53,7 +52,7 @@ func (service *DkService) StopContainerReq(combinedId string) error {
 	err = machine.StopContainer(containerId)
 	if err != nil {
 		log.Error().Err(err).Msgf("Failed to stop container at machine: %s with id", containerId)
-		return errors.New("Failed to stop container")
+		return fmt.Errorf("failed to stop container")
 	}
 	return nil
 }
@@ -147,13 +146,13 @@ func (service *DkService) StreamContainerLogs(combinedId string, responseStream 
 
 func (service *DkService) CreateContainerReq(machineId string, jobId string, imageTag string) (string, error) {
 	if machineId == "" {
-		return "", errors.New("machineId is empty or missing")
+		return "", fmt.Errorf("machineId is empty or missing")
 	}
 	if jobId == "" {
-		return "", errors.New("jobID is empty or missing")
+		return "", fmt.Errorf("jobID is empty or missing")
 	}
 	if imageTag == "" {
-		return "", errors.New("imageTag is empty or missing")
+		return "", fmt.Errorf("imageTag is empty or missing")
 	}
 
 	machine, err := service.ClientManager.GetClientById(machineId)

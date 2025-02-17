@@ -3,7 +3,7 @@ package docker
 import (
 	"github.com/docker/docker/api/types/container"
 	"github.com/google/uuid"
-	"github.com/makeopensource/leviathan/utils"
+	"github.com/makeopensource/leviathan/common"
 	"testing"
 )
 
@@ -22,7 +22,7 @@ func TestCopyToContainer(t *testing.T) {
 		t.Fatalf("%v", err)
 	}
 
-	dir, err := utils.CreateTmpJobDir(ifg.String(), map[string][]byte{
+	dir, err := common.CreateTmpJobDir(ifg.String(), map[string][]byte{
 		"test.txt": []byte("test test"),
 	})
 	if err != nil {

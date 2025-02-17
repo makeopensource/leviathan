@@ -10,8 +10,8 @@ import (
 	"github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/client"
+	"github.com/makeopensource/leviathan/common"
 	dktypes "github.com/makeopensource/leviathan/generated/docker_rpc/v1"
-	"github.com/makeopensource/leviathan/utils"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/rs/zerolog/log"
 	"io"
@@ -144,7 +144,7 @@ func (c *DkClient) ListContainers(machineId string) ([]*dktypes.ContainerMetaDat
 	var containerInfoList []*dktypes.ContainerMetaData
 	for _, item := range containerInfos {
 		info := dktypes.ContainerMetaData{
-			Id:             utils.EncodeID(machineId, item.ID),
+			Id:             common.EncodeID(machineId, item.ID),
 			ContainerNames: item.Names,
 			Image:          item.Image,
 			Status:         item.Status,
@@ -241,7 +241,7 @@ func (c *DkClient) RemoveContainer(containerID string, force bool, removeVolumes
 func (c *DkClient) CopyToContainer(containerID string, submissionDirPath string) error {
 	//log.Debug().Msgf("Copying files to container %s", containerDirectory)
 
-	jobBytes, err := utils.TarDir(submissionDirPath, 660)
+	jobBytes, err := common.TarDir(submissionDirPath, 660)
 	if err != nil {
 		log.Error().Err(err).Msgf("failed to convert files to tar")
 		return fmt.Errorf("failed to convert files to tar")

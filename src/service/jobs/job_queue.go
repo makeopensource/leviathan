@@ -7,9 +7,9 @@ import (
 	cond "github.com/docker/docker/api/types/container"
 	cont "github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/pkg/stdcopy"
+	"github.com/makeopensource/leviathan/common"
 	"github.com/makeopensource/leviathan/models"
 	"github.com/makeopensource/leviathan/service/docker"
-	"github.com/makeopensource/leviathan/utils"
 	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
 	"os"
@@ -53,14 +53,15 @@ func (q *JobQueue) NewJobContext(messageId string) context.Context {
 	ctx, cancel := context.WithCancel(context.Background())
 	wrapCancelFunc := func() {
 		cancel()
-		q.RemoveJobContext(messageId)
+		q.removeJobContext(messageId)
 	}
 
 	q.contextMap.Store(messageId, wrapCancelFunc)
 	return ctx
 }
 
-func (q *JobQueue) RemoveJobContext(messageId string) {
+// removeJobContext automatically called by cancel, see NewJobContext
+func (q *JobQueue) removeJobContext(messageId string) {
 	q.contextMap.Delete(messageId)
 }
 
@@ -163,7 +164,7 @@ func (q *JobQueue) writeLogs(client *docker.DkClient, msg *models.Job) {
 // setupJob Set up job like king, yes!
 // returns nil client if an error occurred while setup
 func (q *JobQueue) setupJob(msg *models.Job) (*docker.DkClient, string, string, error) {
-	jobDir, err := utils.CreateTmpJobDir(
+	jobDir, err := common.CreateTmpJobDir(
 		msg.JobId,
 		map[string][]byte{
 			msg.LabData.GraderFilename:    msg.LabData.GraderFile,
@@ -230,7 +231,6 @@ func (q *JobQueue) bigProblem(publicReason string, job *models.Job, err error, j
 func (q *JobQueue) setJobAsCancelled(job *models.Job) {
 	job.Status = models.Canceled
 	job.StatusMessage = "Job was cancelled"
-	q.updateJobVeryNice(job)
 }
 
 // greatSuccess Very nice!
@@ -246,6 +246,8 @@ func (q *JobQueue) greatSuccess(job *models.Job, jobResult string) {
 // cleanupJob clean up job
 // sets job to success, removes the container and associated tmp job data
 func (q *JobQueue) cleanupJob(msg *models.Job, client *docker.DkClient, submissionTmpFolder string) {
+	log.Debug().Msgf("Cleaning up job: %s", msg.JobId)
+
 	q.updateJobVeryNice(msg)
 
 	err := client.RemoveContainer(msg.ContainerId, true, true)
@@ -297,13 +299,13 @@ func (q *JobQueue) verifyLogs(file string, msg *models.Job) {
 		}
 	}(outputFile)
 
-	line, err := utils.GetLastLine(outputFile)
+	line, err := common.GetLastLine(outputFile)
 	if err != nil {
 		q.bigProblem("unable to get logs", msg, err)
 		return
 	}
 
-	if !utils.IsValidJSON(line) {
+	if !common.IsValidJSON(line) {
 		q.bigProblem("unable to parse log output", msg, err)
 		return
 	}

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/docker/docker/api/types/system"
 	"github.com/docker/docker/client"
-	"github.com/makeopensource/leviathan/utils"
+	"github.com/makeopensource/leviathan/common"
 	"github.com/rs/zerolog/log"
 	"sync"
 )
@@ -22,7 +22,7 @@ type RemoteClientManager struct {
 
 func InitDockerClients() *RemoteClientManager {
 	// contains clients loaded from config
-	untestedClientList := utils.GetClientList()
+	untestedClientList := common.GetClientList()
 	// contains final connected list
 	clientList := map[string]*MachineStatus{}
 
@@ -46,7 +46,7 @@ func InitDockerClients() *RemoteClientManager {
 		}
 	}
 
-	if utils.EnableLocalDocker.GetBool() {
+	if common.EnableLocalDocker.GetBool() {
 		localClient, err := NewLocalClient()
 		if err != nil {
 			log.Error().Err(err).Msg("Failed to setup local docker client")

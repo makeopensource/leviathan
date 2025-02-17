@@ -1,7 +1,7 @@
 package docker
 
 import (
-	"github.com/makeopensource/leviathan/utils"
+	"github.com/makeopensource/leviathan/common"
 	log2 "log"
 	"path/filepath"
 )
@@ -16,7 +16,7 @@ const (
 )
 
 func SetupTest() {
-	utils.InitConfig()
+	common.InitConfig()
 	InitServices()
 	BuildImage()
 }
@@ -27,7 +27,7 @@ func InitServices() {
 }
 
 func BuildImage() {
-	bytes, err := utils.ReadFileBytes(DockerFilePath)
+	bytes, err := common.ReadFileBytes(DockerFilePath)
 	if err != nil {
 		log2.Fatal("Unable to read Dockerfile " + DockerFilePath)
 	}

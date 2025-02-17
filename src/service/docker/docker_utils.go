@@ -4,7 +4,7 @@ import (
 	"archive/tar"
 	"bytes"
 	"fmt"
-	"github.com/makeopensource/leviathan/utils"
+	"github.com/makeopensource/leviathan/common"
 	"github.com/rs/zerolog/log"
 	"io"
 	"os"
@@ -56,7 +56,7 @@ func ConvertToTar(dockerFilePath string) (*bytes.Reader, string) {
 }
 
 func SaveDockerfile(filename string, contents []byte) (string, error) {
-	tmpPath, err := os.CreateTemp(utils.DockerFilesFolder.GetStr(), fmt.Sprintf("%s_*", filename))
+	tmpPath, err := os.CreateTemp(common.DockerFilesFolder.GetStr(), fmt.Sprintf("%s_*", filename))
 	if err != nil {
 		return "", err
 	}
@@ -82,7 +82,7 @@ func SaveDockerfile(filename string, contents []byte) (string, error) {
 
 // ParseCombinedID decode combined id which should contain the machine id and container id
 func ParseCombinedID(combinedId string) (string, string, error) {
-	machineId, containerId, err := utils.DecodeID(combinedId)
+	machineId, containerId, err := common.DecodeID(combinedId)
 	if err != nil {
 		log.Error().Err(err).Str("ID", combinedId).Msg("Could not decode ID")
 		return "", "", err

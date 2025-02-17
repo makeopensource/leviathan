@@ -3,6 +3,7 @@ package v1
 import (
 	"connectrpc.com/connect"
 	"context"
+	"fmt"
 	v1 "github.com/makeopensource/leviathan/generated/jobs/v1"
 	"github.com/makeopensource/leviathan/models"
 	"github.com/makeopensource/leviathan/service/jobs"
@@ -40,7 +41,7 @@ func (job *JobServer) NewJob(ctx context.Context, req *connect.Request[v1.NewJob
 }
 
 func (job *JobServer) StreamJobLogs(ctx context.Context, req *connect.Request[v1.JobLogRequest], responseStream *connect.ServerStream[v1.JobLogsResponse]) error {
-	err := job.Service.StreamJobLogs(ctx, req.Msg.GetJobId(), responseStream)
+	_, _, err := job.Service.ListenToJobLogs(ctx, req.Msg.GetJobId())
 	if err != nil {
 		return err
 	}
@@ -49,6 +50,11 @@ func (job *JobServer) StreamJobLogs(ctx context.Context, req *connect.Request[v1
 }
 
 func (job *JobServer) CancelJob(ctx context.Context, req *connect.Request[v1.CancelJobRequest]) (*connect.Response[v1.CancelJobResponse], error) {
-	res := connect.NewResponse(&v1.CancelJobResponse{})
-	return res, nil
+	msgId := req.Msg.GetJobId()
+	if msgId == "" {
+		return nil, fmt.Errorf("job Id is empty")
+	}
+
+	job.Service.CancelJob(msgId)
+	return connect.NewResponse(&v1.CancelJobResponse{}), nil
 }

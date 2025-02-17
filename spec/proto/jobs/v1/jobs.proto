@@ -33,8 +33,7 @@ message JobLogsResponse {
 }
 
 message CancelJobRequest {
-  // You can add filters here if needed
+  string jobId = 1;
 }
 
-message CancelJobResponse {
-}
+message CancelJobResponse {}

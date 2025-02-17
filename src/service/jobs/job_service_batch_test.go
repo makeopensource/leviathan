@@ -26,6 +26,13 @@ func Test500Jobs(t *testing.T) {
 	testBatchJobProcessor(t, 500)
 }
 
+func Test10000Jobs(t *testing.T) {
+	if os.Getenv("CI") != "" {
+		t.Skip("Skipping testing in CI environment")
+	}
+	testBatchJobProcessor(t, 10000)
+}
+
 func Test2000Jobs(t *testing.T) {
 	if os.Getenv("CI") != "" {
 		t.Skip("Skipping testing in CI environment")

@@ -239,7 +239,7 @@ func (c *DkClient) RemoveContainer(containerID string, force bool, removeVolumes
 // CopyToContainer copies a specific dir directly into the container
 // stolen from https://github.com/testcontainers/testcontainers-go/blob/f09b3af2cb985a17bd2b2eaaa5d384882ded8e28/docker.go#L633
 func (c *DkClient) CopyToContainer(containerID string, submissionDirPath string) error {
-	log.Debug().Msgf("Copying files to container %s", containerDirectory)
+	//log.Debug().Msgf("Copying files to container %s", containerDirectory)
 
 	jobBytes, err := utils.TarDir(submissionDirPath, 660)
 	if err != nil {

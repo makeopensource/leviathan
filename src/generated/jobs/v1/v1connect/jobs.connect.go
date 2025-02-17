@@ -35,9 +35,9 @@ const (
 const (
 	// JobServiceNewJobProcedure is the fully-qualified name of the JobService's NewJob RPC.
 	JobServiceNewJobProcedure = "/jobs.v1.JobService/NewJob"
-	// JobServiceStreamJobLogsProcedure is the fully-qualified name of the JobService's GetJobLogsChannel
+	// JobServiceStreamJobLogsProcedure is the fully-qualified name of the JobService's StreamJobLogs
 	// RPC.
-	JobServiceStreamJobLogsProcedure = "/jobs.v1.JobService/GetJobLogsChannel"
+	JobServiceStreamJobLogsProcedure = "/jobs.v1.JobService/StreamJobLogs"
 	// JobServiceCancelJobProcedure is the fully-qualified name of the JobService's CancelJob RPC.
 	JobServiceCancelJobProcedure = "/jobs.v1.JobService/CancelJob"
 )
@@ -69,7 +69,7 @@ func NewJobServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...
 		streamJobLogs: connect.NewClient[v1.JobLogRequest, v1.JobLogsResponse](
 			httpClient,
 			baseURL+JobServiceStreamJobLogsProcedure,
-			connect.WithSchema(jobServiceMethods.ByName("GetJobLogsChannel")),
+			connect.WithSchema(jobServiceMethods.ByName("StreamJobLogs")),
 			connect.WithClientOptions(opts...),
 		),
 		cancelJob: connect.NewClient[v1.CancelJobRequest, v1.CancelJobResponse](
@@ -93,7 +93,7 @@ func (c *jobServiceClient) NewJob(ctx context.Context, req *connect.Request[v1.N
 	return c.newJob.CallUnary(ctx, req)
 }
 
-// StreamJobLogs calls jobs.v1.JobService.GetJobLogsChannel.
+// StreamJobLogs calls jobs.v1.JobService.StreamJobLogs.
 func (c *jobServiceClient) StreamJobLogs(ctx context.Context, req *connect.Request[v1.JobLogRequest]) (*connect.ServerStreamForClient[v1.JobLogsResponse], error) {
 	return c.streamJobLogs.CallServerStream(ctx, req)
 }
@@ -126,7 +126,7 @@ func NewJobServiceHandler(svc JobServiceHandler, opts ...connect.HandlerOption) 
 	jobServiceStreamJobLogsHandler := connect.NewServerStreamHandler(
 		JobServiceStreamJobLogsProcedure,
 		svc.StreamJobLogs,
-		connect.WithSchema(jobServiceMethods.ByName("GetJobLogsChannel")),
+		connect.WithSchema(jobServiceMethods.ByName("StreamJobLogs")),
 		connect.WithHandlerOptions(opts...),
 	)
 	jobServiceCancelJobHandler := connect.NewUnaryHandler(
@@ -157,7 +157,7 @@ func (UnimplementedJobServiceHandler) NewJob(context.Context, *connect.Request[v
 }
 
 func (UnimplementedJobServiceHandler) StreamJobLogs(context.Context, *connect.Request[v1.JobLogRequest], *connect.ServerStream[v1.JobLogsResponse]) error {
-	return connect.NewError(connect.CodeUnimplemented, errors.New("jobs.v1.JobService.GetJobLogsChannel is not implemented"))
+	return connect.NewError(connect.CodeUnimplemented, errors.New("jobs.v1.JobService.StreamJobLogs is not implemented"))
 }
 
 func (UnimplementedJobServiceHandler) CancelJob(context.Context, *connect.Request[v1.CancelJobRequest]) (*connect.Response[v1.CancelJobResponse], error) {

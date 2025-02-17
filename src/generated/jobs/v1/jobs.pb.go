@@ -387,10 +387,10 @@ var file_jobs_v1_jobs_proto_depIdxs = []int32{
 	6, // 1: jobs.v1.NewJobRequest.graderFile:type_name -> types.v1.FileUpload
 	6, // 2: jobs.v1.NewJobRequest.studentSubmission:type_name -> types.v1.FileUpload
 	0, // 3: jobs.v1.JobService.NewJob:input_type -> jobs.v1.NewJobRequest
-	2, // 4: jobs.v1.JobService.GetJobLogsChannel:input_type -> jobs.v1.JobLogRequest
+	2, // 4: jobs.v1.JobService.StreamJobLogs:input_type -> jobs.v1.JobLogRequest
 	4, // 5: jobs.v1.JobService.CancelJob:input_type -> jobs.v1.CancelJobRequest
 	1, // 6: jobs.v1.JobService.NewJob:output_type -> jobs.v1.NewJobResponse
-	3, // 7: jobs.v1.JobService.GetJobLogsChannel:output_type -> jobs.v1.JobLogsResponse
+	3, // 7: jobs.v1.JobService.StreamJobLogs:output_type -> jobs.v1.JobLogsResponse
 	5, // 8: jobs.v1.JobService.CancelJob:output_type -> jobs.v1.CancelJobResponse
 	6, // [6:9] is the sub-list for method output_type
 	3, // [3:6] is the sub-list for method input_type

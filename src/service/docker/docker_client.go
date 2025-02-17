@@ -78,7 +78,7 @@ func (c *DkClient) BuildImageFromDockerfile(dockerfilePath string, tagName strin
 		return err
 	}
 
-	dockerfileTar, dockerfile := ConvertToTar(dockerfilePath)
+	dockerfileTar, dockerfile := common.TarFile(dockerfilePath)
 	// Build the Docker image
 	resp, err := c.Client.ImageBuild(
 		context.Background(),

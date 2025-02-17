@@ -16,18 +16,6 @@ import (
 
 const DefaultFilePerm = 0o775
 
-func EncodeID(id1 string, id2 string) string {
-	return id1 + "#" + id2
-}
-
-func DecodeID(combinedId string) (string, string, error) {
-	strs := strings.Split(combinedId, "#")
-	if len(strs) != 2 {
-		return "", "", errors.New("could not decode ID")
-	}
-	return strs[0], strs[1], nil
-}
-
 // CreateTmpJobDir sets up a throwaway dir to store submission files
 // you might be wondering why the '/autolab' subdir, TarDir untars it under its parent dir,
 // so in container this will unpack with 'autolab' as the parent folder
@@ -51,6 +39,35 @@ func CreateTmpJobDir(uuid string, files map[string][]byte) (string, error) {
 	}
 
 	return tmpFolder, nil
+}
+
+// ReadFileBytes reads a file at the given filepath and returns its content as a byte slice.
+// It handles errors and returns an error if the file cannot be read.
+func ReadFileBytes(filepath string) ([]byte, error) {
+	// Check if the file exists
+	if _, err := os.Stat(filepath); os.IsNotExist(err) {
+		return nil, fmt.Errorf("file not found: %s", filepath)
+	}
+
+	// Open the file for reading
+	file, err := os.Open(filepath)
+	if err != nil {
+		return nil, fmt.Errorf("error opening file: %w", err) // Wrap the error
+	}
+	defer func(file *os.File) {
+		err := file.Close()
+		if err != nil {
+			log.Error().Err(err).Msgf("error closing file: %s", filepath)
+		}
+	}(file) // Important: Close the file when done
+
+	// Read all bytes from the file
+	fileBytes, err := io.ReadAll(file)
+	if err != nil {
+		return nil, fmt.Errorf("error reading file: %w", err) // Wrap the error
+	}
+
+	return fileBytes, nil
 }
 
 // TarDir
@@ -136,6 +153,76 @@ func TarDir(src string, fileMode int64) (*bytes.Buffer, error) {
 	return buffer, nil
 }
 
+// TarFile make input tar file from file path
+// stolen from https://stackoverflow.com/a/46518557/23258902
+// should not be used in CopyToContainer, which requires different file headers
+func TarFile(filePath string) (*bytes.Reader, string) {
+	dockerFile := filepath.Base(filePath)
+	log.Debug().Msgf("file: %s: from path %s", dockerFile, filePath)
+
+	buf := new(bytes.Buffer)
+	tw := tar.NewWriter(buf)
+	defer func(tw *tar.Writer) {
+		err := tw.Close()
+		if err != nil {
+			log.Error().Err(err).Msg("Error closing tar writer")
+		}
+	}(tw)
+
+	fileReader, err := os.Open(filePath)
+	if err != nil {
+		log.Error().Err(err).Msgf("unable to open Dockerfile")
+		return nil, ""
+	}
+	readFile, err := io.ReadAll(fileReader)
+	if err != nil {
+		log.Error().Err(err).Msgf("unable to read dockerfile")
+		return nil, ""
+	}
+
+	tarHeader := &tar.Header{
+		Name: dockerFile,
+		Size: int64(len(readFile)),
+	}
+	err = tw.WriteHeader(tarHeader)
+	if err != nil {
+		log.Error().Err(err).Msgf("unable to write tar header")
+		return nil, ""
+	}
+	_, err = tw.Write(readFile)
+	if err != nil {
+		log.Error().Err(err).Msgf("unable to write tar body")
+		return nil, ""
+	}
+
+	return bytes.NewReader(buf.Bytes()), dockerFile
+}
+
+func SaveDockerfile(filename string, contents []byte) (string, error) {
+	tmpPath, err := os.CreateTemp(DockerFilesFolder.GetStr(), fmt.Sprintf("%s_*", filename))
+	if err != nil {
+		return "", err
+	}
+
+	_, err = tmpPath.Write(contents)
+	if err != nil {
+		return "", err
+	}
+	defer func(tmpPath *os.File) {
+		err := tmpPath.Close()
+		if err != nil {
+			log.Error().Err(err).Msg("Error closing temp file")
+		}
+	}(tmpPath)
+
+	abs, err := filepath.Abs(tmpPath.Name())
+	if err != nil {
+		return "", err
+	}
+
+	return abs, nil
+}
+
 func GetLastLine(file *os.File) (string, error) {
 	stat, err := file.Stat()
 	if err != nil {
@@ -181,31 +268,25 @@ func IsValidJSON(s string) bool {
 	return json.Unmarshal([]byte(s), &js) == nil
 }
 
-// ReadFileBytes reads a file at the given filepath and returns its content as a byte slice.
-// It handles errors and returns an error if the file cannot be read.
-func ReadFileBytes(filepath string) ([]byte, error) {
-	// Check if the file exists
-	if _, err := os.Stat(filepath); os.IsNotExist(err) {
-		return nil, fmt.Errorf("file not found: %s", filepath)
-	}
-
-	// Open the file for reading
-	file, err := os.Open(filepath)
+// ParseCombinedID decode combined id which should contain the machine id and container id
+func ParseCombinedID(combinedId string) (string, string, error) {
+	machineId, containerId, err := DecodeID(combinedId)
 	if err != nil {
-		return nil, fmt.Errorf("error opening file: %w", err) // Wrap the error
-	}
-	defer func(file *os.File) {
-		err := file.Close()
-		if err != nil {
-			log.Error().Err(err).Msgf("error closing file: %s", filepath)
-		}
-	}(file) // Important: Close the file when done
-
-	// Read all bytes from the file
-	fileBytes, err := io.ReadAll(file)
-	if err != nil {
-		return nil, fmt.Errorf("error reading file: %w", err) // Wrap the error
+		log.Error().Err(err).Str("ID", combinedId).Msg("Could not decode ID")
+		return "", "", err
 	}
 
-	return fileBytes, nil
+	return containerId, machineId, nil
+}
+
+func EncodeID(id1 string, id2 string) string {
+	return id1 + "#" + id2
+}
+
+func DecodeID(combinedId string) (string, string, error) {
+	strs := strings.Split(combinedId, "#")
+	if len(strs) != 2 {
+		return "", "", errors.New("could not decode ID")
+	}
+	return strs[0], strs[1], nil
 }

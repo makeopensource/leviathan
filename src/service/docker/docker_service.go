@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	cont "github.com/docker/docker/api/types/container"
+	"github.com/makeopensource/leviathan/common"
 	dktypes "github.com/makeopensource/leviathan/generated/docker_rpc/v1"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
@@ -20,7 +21,7 @@ func NewDockerService(clientList *RemoteClientManager) *DkService {
 }
 
 func (service *DkService) StartContainerReq(combinedId string) error {
-	containerId, machineId, err := ParseCombinedID(combinedId)
+	containerId, machineId, err := common.ParseCombinedID(combinedId)
 	if err != nil {
 		return err
 	}
@@ -39,7 +40,7 @@ func (service *DkService) StartContainerReq(combinedId string) error {
 }
 
 func (service *DkService) StopContainerReq(combinedId string) error {
-	containerId, machineId, err := ParseCombinedID(combinedId)
+	containerId, machineId, err := common.ParseCombinedID(combinedId)
 	if err != nil {
 		return err
 	}
@@ -89,7 +90,7 @@ func (service *DkService) NewImageReq(filename string, contents []byte, imageTag
 		return fmt.Errorf("imagetag is missing")
 	}
 
-	fullpath, err := SaveDockerfile(filename, contents)
+	fullpath, err := common.SaveDockerfile(filename, contents)
 	if err != nil {
 		return err
 	}

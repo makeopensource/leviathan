@@ -1,9 +1,8 @@
 package models
 
 import (
-	"connectrpc.com/connect"
 	"context"
-	v1 "github.com/makeopensource/leviathan/generated/jobs/v1"
+	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
 	"time"
 )
@@ -44,6 +43,18 @@ type Job struct {
 	JobCtx         context.Context `gorm:"-"`
 }
 
+// AfterUpdate adds hooks for job streaming, updates a go channel everytime a job is updated
+// the consumer is responsible if it wants to use the job
+func (j *Job) AfterUpdate(tx *gorm.DB) (err error) {
+	ch := tx.Statement.Context.Value("broadcast").(*BroadcastChannel)
+	if ch == nil {
+		log.Warn().Msg("database broadcast channel is nil")
+		return
+	}
+	go ch.Broadcast(j)
+	return
+}
+
 type MachineLimits struct {
 	PidsLimit int64
 	// NanoCPU will be multiplied by CPUQuota
@@ -52,16 +63,13 @@ type MachineLimits struct {
 	Memory uint64
 }
 
-// LogStreamWriter implements io.Writer interface,
+// LogChannelWriter implements io.Writer interface,
 // to send docker output to a grpc stream
-type LogStreamWriter struct {
-	Stream *connect.ServerStream[v1.JobLogsResponse]
+type LogChannelWriter struct {
+	Channel chan string
 }
 
-func (w *LogStreamWriter) Write(p []byte) (n int, err error) {
-	err = w.Stream.Send(&v1.JobLogsResponse{Logs: string(p)})
-	if err != nil {
-		return 0, err
-	}
+func (w *LogChannelWriter) Write(p []byte) (n int, err error) {
+	w.Channel <- string(p)
 	return len(p), nil
 }

@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="DataSourceManagerImpl" format="xml" multifile-model="true">
-    <data-source source="LOCAL" name="leviathan" uuid="336985b6-3b01-4dad-a038-f4aeca5b75ea">
+    <data-source source="LOCAL" name="leviathan" uuid="6e217b45-290a-4b9f-94b3-2fd68b9f8c86">
       <driver-ref>sqlite.xerial</driver-ref>
       <synchronize>true</synchronize>
       <jdbc-driver>org.sqlite.JDBC</jdbc-driver>
-      <jdbc-url>jdbc:sqlite:D:\Dev\Go\leviathan\src\tests\appdata\config\leviathan.db</jdbc-url>
+      <jdbc-url>jdbc:sqlite:D:\Dev\Go\leviathan\src\service\jobs\appdata\config\leviathan.db</jdbc-url>
       <jdbc-additional-properties>
         <property name="com.intellij.clouds.kubernetes.db.enabled" value="false" />
       </jdbc-additional-properties>

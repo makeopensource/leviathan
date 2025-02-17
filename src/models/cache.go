@@ -1,9 +1,8 @@
-package utils
+package models
 
 import (
 	"fmt"
 	"github.com/hashicorp/golang-lru/v2"
-	"github.com/makeopensource/leviathan/models"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
 	"gorm.io/gorm"
@@ -12,7 +11,7 @@ import (
 // cache to store grader files
 
 type LabFilesCache struct {
-	cache *lru.Cache[string, *models.LabModel]
+	cache *lru.Cache[string, *LabModel]
 	db    *gorm.DB
 }
 
@@ -22,7 +21,7 @@ func NewLabFilesCache(db *gorm.DB) *LabFilesCache {
 		cacheSize = 35 // default cache size
 	}
 
-	cache, err := lru.New[string, *models.LabModel](cacheSize)
+	cache, err := lru.New[string, *LabModel](cacheSize)
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to initialize Lab Files Cache")
 	}
@@ -33,13 +32,13 @@ func NewLabFilesCache(db *gorm.DB) *LabFilesCache {
 	}
 }
 
-func (lf *LabFilesCache) GetFromCache(labname string) (*models.LabModel, error) {
+func (lf *LabFilesCache) GetFromCache(labname string) (*LabModel, error) {
 	if value, found := lf.cache.Get(labname); found {
 		return value, nil
 	}
 
 	// cache miss, get data from database and load it up
-	var labModel models.LabModel
+	var labModel LabModel
 	res := lf.db.Where("labname = ?", labname).First(&labModel)
 	if res.Error != nil {
 		log.Error().Err(res.Error).Msg("Failed to get Lab Model from DB")
@@ -50,7 +49,7 @@ func (lf *LabFilesCache) GetFromCache(labname string) (*models.LabModel, error) 
 	return &labModel, nil
 }
 
-func (lf *LabFilesCache) AddToCache(labname string, entry *models.LabModel) {
+func (lf *LabFilesCache) AddToCache(labname string, entry *LabModel) {
 	lf.cache.Add(labname, entry)
 }
 

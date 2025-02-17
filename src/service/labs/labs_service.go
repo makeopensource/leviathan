@@ -3,7 +3,6 @@ package labs
 import (
 	"fmt"
 	"github.com/makeopensource/leviathan/models"
-	"github.com/makeopensource/leviathan/utils"
 	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
 	"os"
@@ -16,10 +15,10 @@ const (
 
 type LabService struct {
 	db            *gorm.DB
-	labFilesCache *utils.LabFilesCache
+	labFilesCache *models.LabFilesCache
 }
 
-func NewLabService(db *gorm.DB, cache *utils.LabFilesCache) *LabService {
+func NewLabService(db *gorm.DB, cache *models.LabFilesCache) *LabService {
 	return &LabService{db: db, labFilesCache: cache}
 }
 

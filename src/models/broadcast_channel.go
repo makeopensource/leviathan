@@ -1,6 +1,7 @@
 package models
 
 import (
+	"context"
 	"github.com/rs/zerolog/log"
 )
 
@@ -8,10 +9,11 @@ type BroadcastChannel struct {
 	subscribers Map[string, chan *Job]
 }
 
-func NewBroadcastChannel() *BroadcastChannel {
-	return &BroadcastChannel{
+func NewBroadcastChannel() (*BroadcastChannel, context.Context) {
+	bc := &BroadcastChannel{
 		subscribers: Map[string, chan *Job]{},
 	}
+	return bc, context.WithValue(context.Background(), "broadcast", bc)
 }
 
 func (c *BroadcastChannel) Broadcast(v *Job) {

@@ -8,7 +8,7 @@ import (
 
 func TestMultipleJobIDs(t *testing.T) {
 	// Create a new BroadcastChannel
-	bc := NewBroadcastChannel()
+	bc, _ := NewBroadcastChannel()
 
 	// Job IDs
 	jobId1 := "job1"
@@ -52,7 +52,7 @@ func TestMultipleJobIDs(t *testing.T) {
 }
 
 func TestBroadcastChannel_Unsubscribe(t *testing.T) {
-	bc := NewBroadcastChannel()
+	bc, _ := NewBroadcastChannel()
 	jobID := "job-123"
 
 	// Subscribe and then unsubscribe

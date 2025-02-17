@@ -3,7 +3,6 @@ package common
 import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	"github.com/spf13/viper"
 	"gopkg.in/natefinch/lumberjack.v2"
 	"os"
 )
@@ -18,8 +17,12 @@ var (
 )
 
 func FileConsoleLogger() zerolog.Logger {
-	logFile := viper.GetString("log_file")
-	return baseLogger.Output(zerolog.MultiLevelWriter(GetFileLogger(logFile), consoleWriter))
+	return baseLogger.Output(
+		zerolog.MultiLevelWriter(
+			GetFileLogger(LogDir.GetStr()),
+			consoleWriter,
+		),
+	)
 }
 
 func ConsoleLogger() zerolog.Logger {

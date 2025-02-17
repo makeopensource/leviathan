@@ -10,6 +10,10 @@ import (
 )
 
 func InitConfig() {
+	defer func() {
+		log.Logger = FileConsoleLogger()
+	}()
+
 	baseDir := getBaseDir()
 	configDir := getConfigDir(baseDir)
 

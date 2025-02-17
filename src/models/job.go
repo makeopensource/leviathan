@@ -11,11 +11,12 @@ type JobStatus string
 
 // job status enum
 const (
-	Queued   JobStatus = "queued"
-	Running  JobStatus = "running"
-	Complete JobStatus = "complete"
-	Failed   JobStatus = "failed"
-	Canceled JobStatus = "canceled"
+	Queued    JobStatus = "queued"
+	Preparing JobStatus = "preparing"
+	Running   JobStatus = "running"
+	Complete  JobStatus = "complete"
+	Failed    JobStatus = "failed"
+	Canceled  JobStatus = "canceled"
 )
 
 // general resource units for docker
@@ -46,12 +47,14 @@ type Job struct {
 // AfterUpdate adds hooks for job streaming, updates a go channel everytime a job is updated
 // the consumer is responsible if it wants to use the job
 func (j *Job) AfterUpdate(tx *gorm.DB) (err error) {
-	ch := tx.Statement.Context.Value("broadcast").(*BroadcastChannel)
+	ch := tx.Statement.Context.Value("broadcast")
 	if ch == nil {
 		log.Warn().Msg("database broadcast channel is nil")
 		return
 	}
-	go ch.Broadcast(j)
+	// always cast after checking if the value exists,
+	// prevent null ptr deref
+	go ch.(*BroadcastChannel).Broadcast(j)
 	return
 }
 
@@ -70,6 +73,8 @@ type LogChannelWriter struct {
 }
 
 func (w *LogChannelWriter) Write(p []byte) (n int, err error) {
-	w.Channel <- string(p)
+	go func() {
+		w.Channel <- string(p)
+	}()
 	return len(p), nil
 }

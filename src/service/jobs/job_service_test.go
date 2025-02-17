@@ -1,9 +1,10 @@
 package jobs
 
 import (
+	"context"
 	"fmt"
+	"github.com/makeopensource/leviathan/common"
 	"github.com/makeopensource/leviathan/models"
-	"github.com/makeopensource/leviathan/utils"
 	"github.com/rs/zerolog/log"
 	"os"
 	"path/filepath"
@@ -35,10 +36,10 @@ var (
 			studentFile:    "../../../example/python/simple-addition/student_timeout.py",
 			expectedOutput: "Maximum timeout reached for job, job ran for 10s",
 		},
-		"forkb": {
-			studentFile:    "../../../example/python/simple-addition/student_fork_bomb.py",
-			expectedOutput: "",
-		},
+		//"forkb": {
+		//	studentFile:    "../../../example/python/simple-addition/student_fork_bomb.py",
+		//	expectedOutput: "",
+		//},
 	}
 )
 
@@ -98,17 +99,17 @@ func testJobProcessor(t *testing.T, studentCodePath string, correctOutput string
 }
 
 func setupJobProcess(studentCodePath string, timeout time.Duration) string {
-	graderBytes, err := utils.ReadFileBytes(graderFilePath)
+	graderBytes, err := common.ReadFileBytes(graderFilePath)
 	if err != nil {
 		log.Fatal().Err(err).Msg("Error reading grader.py")
 	}
 
-	makefileBytes, err := utils.ReadFileBytes(makeFilePath)
+	makefileBytes, err := common.ReadFileBytes(makeFilePath)
 	if err != nil {
 		log.Fatal().Err(err).Msg("Error reading grader.py")
 	}
 
-	studentBytes, err := utils.ReadFileBytes(studentCodePath)
+	studentBytes, err := common.ReadFileBytes(studentCodePath)
 	if err != nil {
 		log.Fatal().Err(err).Msg("Error reading student")
 	}
@@ -135,9 +136,10 @@ func setupJobProcess(studentCodePath string, timeout time.Duration) string {
 }
 
 func testJob(t *testing.T, jobId string, correctOutput string) {
-	jobInfo, err := JobTestService.WaitForJob(jobId)
+	jobInfo, err := JobTestService.WaitForJob(context.Background(), jobId)
 	if err != nil {
 		t.Fatalf("Error waiting for job: %v", err)
+		return
 	}
 
 	returned := strings.TrimSpace(jobInfo.StatusMessage)

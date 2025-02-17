@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/makeopensource/leviathan/api"
-	"github.com/makeopensource/leviathan/utils"
+	"github.com/makeopensource/leviathan/common"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/net/http2"
@@ -14,7 +14,7 @@ import (
 
 func main() {
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
-	utils.InitConfig()
+	common.InitConfig()
 
 	mux := api.SetupEndpoints()
 

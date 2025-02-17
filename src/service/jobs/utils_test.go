@@ -1,8 +1,9 @@
 package jobs
 
 import (
+	"github.com/makeopensource/leviathan/common"
+	"github.com/makeopensource/leviathan/models"
 	"github.com/makeopensource/leviathan/service/docker"
-	"github.com/makeopensource/leviathan/utils"
 	log2 "log"
 	"path/filepath"
 )
@@ -18,23 +19,24 @@ const (
 )
 
 func SetupTest() {
-	utils.InitConfig()
+	common.InitConfig()
 	InitServices()
 	BuildImage()
 }
 
 func InitServices() {
-	// utils for services
-	db := utils.InitDB()
-	fCache := utils.NewLabFilesCache(db)
+	// common for services
+	db := common.InitDB()
+	bc := models.NewBroadcastChannel()
+	fCache := models.NewLabFilesCache(db)
 	clientList := docker.InitDockerClients()
 
 	DkTestService = docker.NewDockerService(clientList)
-	JobTestService = NewJobService(db, fCache, DkTestService) // depends on docker service
+	JobTestService = NewJobService(db, fCache, bc, DkTestService) // depends on docker service
 }
 
 func BuildImage() {
-	bytes, err := utils.ReadFileBytes(DockerFilePath)
+	bytes, err := common.ReadFileBytes(DockerFilePath)
 	if err != nil {
 		log2.Fatal("Unable to read Dockerfile " + DockerFilePath)
 	}

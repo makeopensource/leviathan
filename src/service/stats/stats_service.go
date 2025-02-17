@@ -1,7 +1,7 @@
 package stats
 
 import (
-	"github.com/makeopensource/leviathan/utils"
+	"github.com/makeopensource/leviathan/models"
 	"gorm.io/gorm"
 )
 
@@ -9,10 +9,10 @@ import (
 
 type StatService struct {
 	db            *gorm.DB
-	labFilesCache *utils.LabFilesCache
+	labFilesCache *models.LabFilesCache
 }
 
-func NewStatsService(db *gorm.DB, labFilesCache *utils.LabFilesCache) *StatService {
+func NewStatsService(db *gorm.DB, labFilesCache *models.LabFilesCache) *StatService {
 	return &StatService{
 		db:            db,
 		labFilesCache: labFilesCache,

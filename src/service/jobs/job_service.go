@@ -66,6 +66,10 @@ func (job *JobService) NewJob(jobReq *models.Job) (string, error) {
 	return jobId.String(), nil
 }
 
+func (job *JobService) CancelJob(jobUuid string) {
+	job.queue.CancelJob(jobUuid)
+}
+
 // WaitForJob is similar to GetJobStatus but is blocking and runs until job is complete or errors
 func (job *JobService) WaitForJob(ctx context.Context, jobUuid string) (*models.Job, error) {
 	jobInfoCh, _ := job.SubToJob(jobUuid)
@@ -217,10 +221,6 @@ func (job *JobService) getJob(jobUuid string) (*models.Job, error) {
 		return nil, fmt.Errorf("failed to get job info from db")
 	}
 	return jobInfo, nil
-}
-
-func (job *JobService) CancelJob(jobUuid string) {
-	job.queue.CancelJob(jobUuid)
 }
 
 // setupLogFile store grader output

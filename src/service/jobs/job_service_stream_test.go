@@ -46,7 +46,7 @@ func TestBroadcastJobs(t *testing.T) {
 				JobTestService.db.Model(job).Save(job)
 			})
 
-			jobCh := JobTestService.SubscribeToJob(job.JobId)
+			jobCh, _ := JobTestService.SubToJob(job.JobId)
 
 			for {
 				select {

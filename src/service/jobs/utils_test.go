@@ -27,7 +27,10 @@ func SetupTest() {
 func InitServices() {
 	// common for services
 	db := common.InitDB()
-	bc := models.NewBroadcastChannel()
+	bc, ctx := models.NewBroadcastChannel()
+	// inject broadcast channel to database
+	db = db.WithContext(ctx)
+
 	fCache := models.NewLabFilesCache(db)
 	clientList := docker.InitDockerClients()
 

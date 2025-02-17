@@ -14,7 +14,6 @@ import (
 	"gorm.io/gorm"
 	"os"
 	"path/filepath"
-	"sync"
 	"time"
 )
 
@@ -23,7 +22,7 @@ type JobQueue struct {
 	totalJobs  uint
 	db         *gorm.DB
 	dkSrv      *docker.DkService
-	contextMap *sync.Map
+	contextMap *models.Map[string, func()]
 }
 
 func NewJobQueue(totalJobs uint, db *gorm.DB, dk *docker.DkService) *JobQueue {
@@ -32,7 +31,7 @@ func NewJobQueue(totalJobs uint, db *gorm.DB, dk *docker.DkService) *JobQueue {
 		totalJobs:  totalJobs,
 		db:         db,
 		dkSrv:      dk,
-		contextMap: &sync.Map{},
+		contextMap: &models.Map[string, func()]{},
 	}
 
 	queue.CreateJobProcessors()
@@ -41,7 +40,7 @@ func NewJobQueue(totalJobs uint, db *gorm.DB, dk *docker.DkService) *JobQueue {
 
 func (q *JobQueue) CreateJobProcessors() {
 	for i := 1; i < int(q.totalJobs); i++ {
-		go q.messageProcessors(i)
+		go q.worker(i)
 	}
 }
 
@@ -53,16 +52,11 @@ func (q *JobQueue) NewJobContext(messageId string) context.Context {
 	ctx, cancel := context.WithCancel(context.Background())
 	wrapCancelFunc := func() {
 		cancel()
-		q.removeJobContext(messageId)
+		q.contextMap.Delete(messageId)
 	}
 
 	q.contextMap.Store(messageId, wrapCancelFunc)
 	return ctx
-}
-
-// removeJobContext automatically called by cancel, see NewJobContext
-func (q *JobQueue) removeJobContext(messageId string) {
-	q.contextMap.Delete(messageId)
 }
 
 func (q *JobQueue) GetJobCancelFunc(messageId string) context.CancelFunc {
@@ -70,7 +64,7 @@ func (q *JobQueue) GetJobCancelFunc(messageId string) context.CancelFunc {
 	if !ok {
 		return nil
 	}
-	return val.(func())
+	return val
 }
 
 func (q *JobQueue) CancelJob(messageId string) {
@@ -82,10 +76,10 @@ func (q *JobQueue) CancelJob(messageId string) {
 	cancel()
 }
 
-func (q *JobQueue) messageProcessors(workerId int) {
+func (q *JobQueue) worker(workerId int) {
 	for msg := range q.jobChannel {
 		if errors.Is(msg.JobCtx.Err(), context.Canceled) {
-			log.Warn().Any("job data", msg).Msgf("job: %s context was canceled", msg.JobId)
+			log.Warn().Msgf("job: %s context was canceled", msg.JobId)
 			q.setJobAsCancelled(msg)
 			continue
 		}
@@ -97,17 +91,16 @@ func (q *JobQueue) messageProcessors(workerId int) {
 
 // runJob should ALWAYS BE BLOCKING, as it prevents the worker from moving on to a new job
 func (q *JobQueue) runJob(msg *models.Job) {
-	q.setJobInProgress(msg)
+	q.setJobInSetup(msg)
 
 	client, contId, jobFolderPath, err := q.setupJob(msg)
 	if err != nil {
 		// error handled by setupJob
 		return
 	}
+	defer q.cleanupJob(msg, client, jobFolderPath)
 
-	defer func() {
-		q.cleanupJob(msg, client, jobFolderPath)
-	}()
+	q.setJobInProgress(msg)
 
 	err = client.StartContainer(contId)
 	if err != nil {
@@ -268,7 +261,12 @@ func (q *JobQueue) cleanupJob(msg *models.Job, client *docker.DkClient, submissi
 func (q *JobQueue) setJobInProgress(msg *models.Job) {
 	msg.Status = models.Running
 	q.updateJobVeryNice(msg)
+}
 
+// job is being setup standby
+func (q *JobQueue) setJobInSetup(msg *models.Job) {
+	msg.Status = models.Preparing
+	q.updateJobVeryNice(msg)
 }
 
 // updateJobVeryNice Database updated, fresh like new wife!

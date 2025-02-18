@@ -174,6 +174,13 @@ func TarFile(filePath string) (*bytes.Reader, string) {
 		log.Error().Err(err).Msgf("unable to open Dockerfile")
 		return nil, ""
 	}
+	defer func(fileReader *os.File) {
+		err := fileReader.Close()
+		if err != nil {
+			log.Warn().Err(err).Msg("Error while closing docker file")
+		}
+	}(fileReader)
+
 	readFile, err := io.ReadAll(fileReader)
 	if err != nil {
 		log.Error().Err(err).Msgf("unable to read dockerfile")

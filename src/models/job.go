@@ -29,19 +29,19 @@ const (
 
 type Job struct {
 	gorm.Model
-	JobId                     string `gorm:"uniqueIndex"`
-	MachineId                 string
-	ContainerId               string
-	ImageTag                  string
-	Status                    JobStatus
-	StatusMessage             string
-	StudentSubmissionFileName string
-	StudentSubmissionFile     []byte   `gorm:"-"`
-	LabData                   LabModel `gorm:"-"`
+	JobId         string `gorm:"uniqueIndex"`
+	MachineId     string
+	ContainerId   string
+	Status        JobStatus
+	StatusMessage string
+	LabData       LabModel `gorm:"-"`
 	//JobLimits                 MachineLimits
+	// OutputFilePath text file contain the container std out
 	OutputFilePath string
-	JobTimeout     time.Duration
-	JobCtx         context.Context `gorm:"-"`
+	// TmpJobFolderPath holds the path to the tmp dir all files related to the job except the final output
+	TmpJobFolderPath string
+	JobTimeout       time.Duration
+	JobCtx           context.Context `gorm:"-"`
 }
 
 // AfterUpdate adds hooks for job streaming, updates a go channel everytime a job is updated

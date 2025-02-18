@@ -12,12 +12,13 @@ service JobService {
   rpc CancelJob(CancelJobRequest) returns (CancelJobResponse) {}
 }
 
-// todo figure out request/response
 message NewJobRequest {
-  string  imageTag = 4;
   types.v1.FileUpload makeFile = 1;
   types.v1.FileUpload graderFile = 2;
   types.v1.FileUpload studentSubmission = 3;
+  types.v1.FileUpload dockerFile = 4;
+  string imageName = 5;
+  uint64 jobTimeoutInSeconds = 6;
 }
 
 message NewJobResponse {

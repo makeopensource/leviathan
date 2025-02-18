@@ -12,19 +12,12 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file jobs/v1/jobs.proto.
  */
 export const file_jobs_v1_jobs: GenFile = /*@__PURE__*/
-  fileDesc("ChJqb2JzL3YxL2pvYnMucHJvdG8SB2pvYnMudjEipAEKDU5ld0pvYlJlcXVlc3QSEAoIaW1hZ2VUYWcYBCABKAkSJgoIbWFrZUZpbGUYASABKAsyFC50eXBlcy52MS5GaWxlVXBsb2FkEigKCmdyYWRlckZpbGUYAiABKAsyFC50eXBlcy52MS5GaWxlVXBsb2FkEi8KEXN0dWRlbnRTdWJtaXNzaW9uGAMgASgLMhQudHlwZXMudjEuRmlsZVVwbG9hZCIfCg5OZXdKb2JSZXNwb25zZRINCgVqb2JJZBgBIAEoCSIeCg1Kb2JMb2dSZXF1ZXN0Eg0KBWpvYklkGAEgASgJIh8KD0pvYkxvZ3NSZXNwb25zZRIMCgRsb2dzGAEgASgJIiEKEENhbmNlbEpvYlJlcXVlc3QSDQoFam9iSWQYASABKAkiEwoRQ2FuY2VsSm9iUmVzcG9uc2Uy1gEKCkpvYlNlcnZpY2USOwoGTmV3Sm9iEhYuam9icy52MS5OZXdKb2JSZXF1ZXN0Ghcuam9icy52MS5OZXdKb2JSZXNwb25zZSIAEkUKDVN0cmVhbUpvYkxvZ3MSFi5qb2JzLnYxLkpvYkxvZ1JlcXVlc3QaGC5qb2JzLnYxLkpvYkxvZ3NSZXNwb25zZSIAMAESRAoJQ2FuY2VsSm9iEhkuam9icy52MS5DYW5jZWxKb2JSZXF1ZXN0Ghouam9icy52MS5DYW5jZWxKb2JSZXNwb25zZSIAQowBCgtjb20uam9icy52MUIJSm9ic1Byb3RvUAFaNWdpdGh1Yi5jb20vbWFrZW9wZW5zb3VyY2UvbGV2aWF0aGFuL2dlbmVyYXRlZC9qb2JzL3YxogIDSlhYqgIHSm9icy5WMcoCB0pvYnNcVjHiAhNKb2JzXFYxXEdQQk1ldGFkYXRh6gIISm9iczo6VjFiBnByb3RvMw", [file_types_v1_types]);
+  fileDesc("ChJqb2JzL3YxL2pvYnMucHJvdG8SB2pvYnMudjEi7AEKDU5ld0pvYlJlcXVlc3QSJgoIbWFrZUZpbGUYASABKAsyFC50eXBlcy52MS5GaWxlVXBsb2FkEigKCmdyYWRlckZpbGUYAiABKAsyFC50eXBlcy52MS5GaWxlVXBsb2FkEi8KEXN0dWRlbnRTdWJtaXNzaW9uGAMgASgLMhQudHlwZXMudjEuRmlsZVVwbG9hZBIoCgpkb2NrZXJGaWxlGAQgASgLMhQudHlwZXMudjEuRmlsZVVwbG9hZBIRCglpbWFnZU5hbWUYBSABKAkSGwoTam9iVGltZW91dEluU2Vjb25kcxgGIAEoBCIfCg5OZXdKb2JSZXNwb25zZRINCgVqb2JJZBgBIAEoCSIeCg1Kb2JMb2dSZXF1ZXN0Eg0KBWpvYklkGAEgASgJIh8KD0pvYkxvZ3NSZXNwb25zZRIMCgRsb2dzGAEgASgJIiEKEENhbmNlbEpvYlJlcXVlc3QSDQoFam9iSWQYASABKAkiEwoRQ2FuY2VsSm9iUmVzcG9uc2Uy1gEKCkpvYlNlcnZpY2USOwoGTmV3Sm9iEhYuam9icy52MS5OZXdKb2JSZXF1ZXN0Ghcuam9icy52MS5OZXdKb2JSZXNwb25zZSIAEkUKDVN0cmVhbUpvYkxvZ3MSFi5qb2JzLnYxLkpvYkxvZ1JlcXVlc3QaGC5qb2JzLnYxLkpvYkxvZ3NSZXNwb25zZSIAMAESRAoJQ2FuY2VsSm9iEhkuam9icy52MS5DYW5jZWxKb2JSZXF1ZXN0Ghouam9icy52MS5DYW5jZWxKb2JSZXNwb25zZSIAQowBCgtjb20uam9icy52MUIJSm9ic1Byb3RvUAFaNWdpdGh1Yi5jb20vbWFrZW9wZW5zb3VyY2UvbGV2aWF0aGFuL2dlbmVyYXRlZC9qb2JzL3YxogIDSlhYqgIHSm9icy5WMcoCB0pvYnNcVjHiAhNKb2JzXFYxXEdQQk1ldGFkYXRh6gIISm9iczo6VjFiBnByb3RvMw", [file_types_v1_types]);
 
 /**
- * todo figure out request/response
- *
  * @generated from message jobs.v1.NewJobRequest
  */
 export type NewJobRequest = Message<"jobs.v1.NewJobRequest"> & {
-  /**
-   * @generated from field: string imageTag = 4;
-   */
-  imageTag: string;
-
   /**
    * @generated from field: types.v1.FileUpload makeFile = 1;
    */
@@ -39,6 +32,21 @@ export type NewJobRequest = Message<"jobs.v1.NewJobRequest"> & {
    * @generated from field: types.v1.FileUpload studentSubmission = 3;
    */
   studentSubmission?: FileUpload;
+
+  /**
+   * @generated from field: types.v1.FileUpload dockerFile = 4;
+   */
+  dockerFile?: FileUpload;
+
+  /**
+   * @generated from field: string imageName = 5;
+   */
+  imageName: string;
+
+  /**
+   * @generated from field: uint64 jobTimeoutInSeconds = 6;
+   */
+  jobTimeoutInSeconds: bigint;
 };
 
 /**

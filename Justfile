@@ -2,6 +2,10 @@ set windows-shell := ["powershell.exe", "-NoLogo", "-Command"]
 
 imageName := "leviathan:dev"
 
+# default command
+list:
+    just --list
+
 dk:
 	docker build . -t {{imageName}}
 

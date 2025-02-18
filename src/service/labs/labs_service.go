@@ -49,33 +49,6 @@ func (labSrv *LabService) checkIfNameExists(labName string) error {
 func (labSrv *LabService) NewLab(lab *models.LabModel) error {
 	log.Debug().Msgf("Creating course %s", lab.LabName)
 
-	err := labSrv.checkIfNameExists(lab.LabName)
-	if err != nil {
-		return err
-	}
-
-	labFolder := getLabFolder(lab.LabName)
-	// create grader folder
-	graderFolder := fmt.Sprintf("%s/%s", labFolder, grader)
-	err = createDirectoryWithOverwrite(graderFolder, false)
-	if err != nil {
-		return fmt.Errorf("error creating grader directory")
-	}
-
-	// write grader file
-	graderFilePath := fmt.Sprintf("%s/%s", graderFolder, lab.GraderFilename)
-	err = createFileWithOverwrite(graderFilePath, lab.GraderFile, false)
-	if err != nil {
-		return fmt.Errorf("error writing grader file")
-	}
-
-	// write makefile
-	makefilePath := fmt.Sprintf("%s/%s", graderFolder, lab.MakeFilename)
-	err = createFileWithOverwrite(makefilePath, lab.MakeFile, false)
-	if err != nil {
-		return fmt.Errorf("error writing makefile")
-	}
-
 	return nil
 }
 

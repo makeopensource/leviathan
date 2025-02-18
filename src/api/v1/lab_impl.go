@@ -5,7 +5,6 @@ import (
 	"context"
 	"errors"
 	v1 "github.com/makeopensource/leviathan/generated/labs/v1"
-	"github.com/makeopensource/leviathan/models"
 	"github.com/makeopensource/leviathan/service/labs"
 )
 
@@ -26,40 +25,10 @@ func (labSrv *LabServer) NewLab(ctx context.Context, req *connect.Request[v1.Lab
 		return nil, errors.New("empty graderfile")
 	}
 
-	lab := models.LabModel{
-		LabName:        labName,
-		GraderFilename: grader.GetFilename(),
-		GraderFile:     grader.GetContent(),
-		MakeFilename:   makeFile.GetFilename(),
-		MakeFile:       makeFile.GetContent(),
-	}
-
-	err := labSrv.Service.NewLab(&lab)
-	if err != nil {
-		return nil, err
-	}
-
 	res := connect.NewResponse(&v1.NewLabResponse{})
 	return res, nil
 }
 func (labSrv *LabServer) EditLab(ctx context.Context, req *connect.Request[v1.LabRequest]) (*connect.Response[v1.EditLabResponse], error) {
-	grader := req.Msg.GetGraderFile()
-	makeFile := req.Msg.GetMakeFile()
-	labName := req.Msg.GetLabName()
-
-	lab := models.LabModel{
-		LabName:        labName,
-		GraderFilename: grader.GetFilename(),
-		GraderFile:     grader.GetContent(),
-		MakeFilename:   makeFile.GetFilename(),
-		MakeFile:       makeFile.GetContent(),
-	}
-
-	err := labSrv.Service.EditLab(&lab)
-	if err != nil {
-		return nil, err
-	}
-
 	res := connect.NewResponse(&v1.EditLabResponse{})
 	return res, nil
 

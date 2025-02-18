@@ -67,15 +67,6 @@ func (dk *DockerServer) GetContainerLogs(_ context.Context, req *connect.Request
 }
 
 func (dk *DockerServer) CreateNewImage(_ context.Context, req *connect.Request[dkrpc.NewImageRequest]) (*connect.Response[dkrpc.NewImageResponse], error) {
-	filename := req.Msg.File.GetFilename()
-	contents := req.Msg.File.GetContent()
-	imageTag := req.Msg.GetImageTag()
-
-	err := dk.Service.NewImageReq(filename, contents, imageTag)
-	if err != nil {
-		return nil, err
-	}
-
 	res := connect.NewResponse(&dkrpc.NewImageResponse{})
 	return res, nil
 }

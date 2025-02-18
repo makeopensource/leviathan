@@ -35,9 +35,8 @@ const (
 const (
 	// JobServiceNewJobProcedure is the fully-qualified name of the JobService's NewJob RPC.
 	JobServiceNewJobProcedure = "/jobs.v1.JobService/NewJob"
-	// JobServiceStreamJobLogsProcedure is the fully-qualified name of the JobService's StreamJobLogs
-	// RPC.
-	JobServiceStreamJobLogsProcedure = "/jobs.v1.JobService/StreamJobLogs"
+	// JobServiceStreamStatusProcedure is the fully-qualified name of the JobService's StreamStatus RPC.
+	JobServiceStreamStatusProcedure = "/jobs.v1.JobService/StreamStatus"
 	// JobServiceCancelJobProcedure is the fully-qualified name of the JobService's CancelJob RPC.
 	JobServiceCancelJobProcedure = "/jobs.v1.JobService/CancelJob"
 )
@@ -45,7 +44,7 @@ const (
 // JobServiceClient is a client for the jobs.v1.JobService service.
 type JobServiceClient interface {
 	NewJob(context.Context, *connect.Request[v1.NewJobRequest]) (*connect.Response[v1.NewJobResponse], error)
-	StreamJobLogs(context.Context, *connect.Request[v1.JobLogRequest]) (*connect.ServerStreamForClient[v1.JobLogsResponse], error)
+	StreamStatus(context.Context, *connect.Request[v1.JobLogRequest]) (*connect.ServerStreamForClient[v1.JobLogsResponse], error)
 	CancelJob(context.Context, *connect.Request[v1.CancelJobRequest]) (*connect.Response[v1.CancelJobResponse], error)
 }
 
@@ -66,10 +65,10 @@ func NewJobServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...
 			connect.WithSchema(jobServiceMethods.ByName("NewJob")),
 			connect.WithClientOptions(opts...),
 		),
-		streamJobLogs: connect.NewClient[v1.JobLogRequest, v1.JobLogsResponse](
+		streamStatus: connect.NewClient[v1.JobLogRequest, v1.JobLogsResponse](
 			httpClient,
-			baseURL+JobServiceStreamJobLogsProcedure,
-			connect.WithSchema(jobServiceMethods.ByName("StreamJobLogs")),
+			baseURL+JobServiceStreamStatusProcedure,
+			connect.WithSchema(jobServiceMethods.ByName("StreamStatus")),
 			connect.WithClientOptions(opts...),
 		),
 		cancelJob: connect.NewClient[v1.CancelJobRequest, v1.CancelJobResponse](
@@ -83,9 +82,9 @@ func NewJobServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...
 
 // jobServiceClient implements JobServiceClient.
 type jobServiceClient struct {
-	newJob        *connect.Client[v1.NewJobRequest, v1.NewJobResponse]
-	streamJobLogs *connect.Client[v1.JobLogRequest, v1.JobLogsResponse]
-	cancelJob     *connect.Client[v1.CancelJobRequest, v1.CancelJobResponse]
+	newJob       *connect.Client[v1.NewJobRequest, v1.NewJobResponse]
+	streamStatus *connect.Client[v1.JobLogRequest, v1.JobLogsResponse]
+	cancelJob    *connect.Client[v1.CancelJobRequest, v1.CancelJobResponse]
 }
 
 // NewJob calls jobs.v1.JobService.NewJob.
@@ -93,9 +92,9 @@ func (c *jobServiceClient) NewJob(ctx context.Context, req *connect.Request[v1.N
 	return c.newJob.CallUnary(ctx, req)
 }
 
-// StreamJobLogs calls jobs.v1.JobService.StreamJobLogs.
-func (c *jobServiceClient) StreamJobLogs(ctx context.Context, req *connect.Request[v1.JobLogRequest]) (*connect.ServerStreamForClient[v1.JobLogsResponse], error) {
-	return c.streamJobLogs.CallServerStream(ctx, req)
+// StreamStatus calls jobs.v1.JobService.StreamStatus.
+func (c *jobServiceClient) StreamStatus(ctx context.Context, req *connect.Request[v1.JobLogRequest]) (*connect.ServerStreamForClient[v1.JobLogsResponse], error) {
+	return c.streamStatus.CallServerStream(ctx, req)
 }
 
 // CancelJob calls jobs.v1.JobService.CancelJob.
@@ -106,7 +105,7 @@ func (c *jobServiceClient) CancelJob(ctx context.Context, req *connect.Request[v
 // JobServiceHandler is an implementation of the jobs.v1.JobService service.
 type JobServiceHandler interface {
 	NewJob(context.Context, *connect.Request[v1.NewJobRequest]) (*connect.Response[v1.NewJobResponse], error)
-	StreamJobLogs(context.Context, *connect.Request[v1.JobLogRequest], *connect.ServerStream[v1.JobLogsResponse]) error
+	StreamStatus(context.Context, *connect.Request[v1.JobLogRequest], *connect.ServerStream[v1.JobLogsResponse]) error
 	CancelJob(context.Context, *connect.Request[v1.CancelJobRequest]) (*connect.Response[v1.CancelJobResponse], error)
 }
 
@@ -123,10 +122,10 @@ func NewJobServiceHandler(svc JobServiceHandler, opts ...connect.HandlerOption) 
 		connect.WithSchema(jobServiceMethods.ByName("NewJob")),
 		connect.WithHandlerOptions(opts...),
 	)
-	jobServiceStreamJobLogsHandler := connect.NewServerStreamHandler(
-		JobServiceStreamJobLogsProcedure,
-		svc.StreamJobLogs,
-		connect.WithSchema(jobServiceMethods.ByName("StreamJobLogs")),
+	jobServiceStreamStatusHandler := connect.NewServerStreamHandler(
+		JobServiceStreamStatusProcedure,
+		svc.StreamStatus,
+		connect.WithSchema(jobServiceMethods.ByName("StreamStatus")),
 		connect.WithHandlerOptions(opts...),
 	)
 	jobServiceCancelJobHandler := connect.NewUnaryHandler(
@@ -139,8 +138,8 @@ func NewJobServiceHandler(svc JobServiceHandler, opts ...connect.HandlerOption) 
 		switch r.URL.Path {
 		case JobServiceNewJobProcedure:
 			jobServiceNewJobHandler.ServeHTTP(w, r)
-		case JobServiceStreamJobLogsProcedure:
-			jobServiceStreamJobLogsHandler.ServeHTTP(w, r)
+		case JobServiceStreamStatusProcedure:
+			jobServiceStreamStatusHandler.ServeHTTP(w, r)
 		case JobServiceCancelJobProcedure:
 			jobServiceCancelJobHandler.ServeHTTP(w, r)
 		default:
@@ -156,8 +155,8 @@ func (UnimplementedJobServiceHandler) NewJob(context.Context, *connect.Request[v
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("jobs.v1.JobService.NewJob is not implemented"))
 }
 
-func (UnimplementedJobServiceHandler) StreamJobLogs(context.Context, *connect.Request[v1.JobLogRequest], *connect.ServerStream[v1.JobLogsResponse]) error {
-	return connect.NewError(connect.CodeUnimplemented, errors.New("jobs.v1.JobService.StreamJobLogs is not implemented"))
+func (UnimplementedJobServiceHandler) StreamStatus(context.Context, *connect.Request[v1.JobLogRequest], *connect.ServerStream[v1.JobLogsResponse]) error {
+	return connect.NewError(connect.CodeUnimplemented, errors.New("jobs.v1.JobService.StreamStatus is not implemented"))
 }
 
 func (UnimplementedJobServiceHandler) CancelJob(context.Context, *connect.Request[v1.CancelJobRequest]) (*connect.Response[v1.CancelJobResponse], error) {

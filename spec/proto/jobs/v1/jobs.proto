@@ -8,7 +8,7 @@ import "types/v1/types.proto";
 
 service JobService {
   rpc NewJob(NewJobRequest) returns (NewJobResponse) {}
-  rpc StreamJobLogs(JobLogRequest) returns (stream JobLogsResponse) {}
+  rpc StreamStatus(JobLogRequest) returns (stream JobLogsResponse) {}
   rpc CancelJob(CancelJobRequest) returns (CancelJobResponse) {}
 }
 
@@ -25,16 +25,30 @@ message NewJobResponse {
   string jobId = 1;
 }
 
-message JobLogRequest {
-  string jobId = 1;
-}
-
-message JobLogsResponse {
-  string logs = 1;
-}
 
 message CancelJobRequest {
   string jobId = 1;
 }
 
 message CancelJobResponse {}
+
+
+message JobLogRequest {
+  string jobId = 1;
+}
+
+message JobLogsResponse {
+  JobStatus jobInfo = 1;
+  string logs = 2;
+}
+
+message JobStatus {
+  string job_id = 1;
+  string machine_id = 2;
+  string container_id = 3;
+  string status = 4;
+  string status_message = 5;
+  string output_file_path = 6;
+  string tmp_job_folder_path = 7;
+  int64 job_timeout = 8;
+}

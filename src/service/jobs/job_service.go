@@ -7,6 +7,7 @@ import (
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/google/uuid"
 	"github.com/makeopensource/leviathan/common"
+	v1 "github.com/makeopensource/leviathan/generated/types/v1"
 	"github.com/makeopensource/leviathan/models"
 	"github.com/makeopensource/leviathan/service/docker"
 	"github.com/rs/zerolog/log"
@@ -34,34 +35,50 @@ func NewJobService(db *gorm.DB, cache *models.LabFilesCache, bc *models.Broadcas
 	}
 }
 
-func (job *JobService) NewJob(jobReq *models.Job) (string, error) {
+func (job *JobService) NewJob(newJob *models.Job, makefile *v1.FileUpload, grader *v1.FileUpload, student *v1.FileUpload, dockerfile *v1.FileUpload) (string, error) {
+	mId := job.dockerSrv.ClientManager.GetLeastJobCountMachineId()
+	if mId == "" {
+		return "", fmt.Errorf("failed to assign machine")
+	}
+
 	jobId, err := uuid.NewUUID()
 	if err != nil {
 		log.Error().Err(err).Msgf("Failed to generate job ID")
 		return "", fmt.Errorf("failed to generate job ID")
 	}
 
-	tmp := job.dockerSrv.ClientManager.GetLeastJobCountMachineId()
-	if tmp == "" {
-		return "", fmt.Errorf("failed to assign machine")
+	jobDir, err := common.CreateTmpJobDir(
+		jobId.String(),
+		map[string][]byte{
+			grader.Filename:     grader.Content,
+			makefile.Filename:   makefile.Content,
+			student.Filename:    student.Content,
+			dockerfile.Filename: dockerfile.Content,
+		},
+	)
+	if err != nil {
+		log.Error().Err(err).Msgf("Failed to create job dir")
+		return "", fmt.Errorf("failed to create job dir")
 	}
 
-	jobReq.JobId = jobId.String()
-	jobReq.MachineId = tmp
-	jobReq.Status = models.Queued
+	// setup job metadata
+	newJob.JobId = jobId.String()
+	newJob.MachineId = mId
+	newJob.Status = models.Queued
+	newJob.OutputFilePath = job.setupLogFile(newJob.JobId)
+	newJob.TmpJobFolderPath = jobDir
+	newJob.LabData.DockerFilePath = fmt.Sprintf("%s/%s", newJob.TmpJobFolderPath, dockerfile.Filename)
+	// job context, so that it can be cancelled
+	newJob.JobCtx = job.queue.NewJobContext(newJob.JobId)
 
-	job.setupLogFile(jobReq)
-
-	res := job.db.Create(jobReq)
+	res := job.db.Create(newJob)
 	if res.Error != nil {
 		log.Error().Err(res.Error).Msgf("Failed to save job to db")
 		return "", fmt.Errorf("failed to save job to db")
 	}
 
-	// job context, so that it can be cancelled
-	jobReq.JobCtx = job.queue.NewJobContext(jobReq.JobId)
 	// run in go routine in case queue is full and this gets blocked
-	go job.queue.AddJob(jobReq)
+	go job.queue.AddJob(newJob)
 
 	return jobId.String(), nil
 }
@@ -226,12 +243,12 @@ func (job *JobService) getJob(jobUuid string) (*models.Job, error) {
 // setupLogFile store grader output
 // this is blocking operation make sure to
 // stream logs in a go routine
-func (job *JobService) setupLogFile(msg *models.Job) *os.File {
-	outputFile := fmt.Sprintf("%s/%s.txt", common.OutputFolder.GetStr(), msg.JobId)
+func (job *JobService) setupLogFile(jobId string) string {
+	outputFile := fmt.Sprintf("%s/%s.txt", common.OutputFolder.GetStr(), jobId)
 	outFile, err := os.Create(outputFile)
 	if err != nil {
 		log.Error().Err(err).Msgf("Error while creating file")
-		return nil
+		return ""
 	}
 	defer func() {
 		err := outFile.Close()
@@ -243,9 +260,8 @@ func (job *JobService) setupLogFile(msg *models.Job) *os.File {
 	full, err := filepath.Abs(outputFile)
 	if err != nil {
 		log.Error().Err(err).Msgf("Error while getting absolute path")
-		return nil
+		return ""
 	}
 
-	msg.OutputFilePath = full
-	return outFile
+	return full
 }

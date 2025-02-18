@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/makeopensource/leviathan/common"
+	v1 "github.com/makeopensource/leviathan/generated/types/v1"
 	"github.com/makeopensource/leviathan/models"
 	"github.com/rs/zerolog/log"
 	"os"
@@ -114,20 +115,36 @@ func setupJobProcess(studentCodePath string, timeout time.Duration) string {
 		log.Fatal().Err(err).Msg("Error reading student")
 	}
 
+	dockerBytes, err := common.ReadFileBytes(DockerFilePath)
+	if err != nil {
+		log.Fatal().Err(err).Msg("Error reading docker file")
+	}
+
 	newJob := &models.Job{
-		ImageTag:                  ImageName,
-		StudentSubmissionFileName: "student.py",
-		StudentSubmissionFile:     studentBytes,
-		LabData: models.LabModel{
-			GraderFilename: filepath.Base(graderFilePath),
-			GraderFile:     graderBytes,
-			MakeFilename:   filepath.Base(makeFilePath),
-			MakeFile:       makefileBytes,
-		},
+		LabData:    models.LabModel{ImageTag: ImageName},
 		JobTimeout: timeout,
 	}
 
-	jobId, err := JobTestService.NewJob(newJob)
+	jobId, err := JobTestService.NewJob(
+		newJob,
+		&v1.FileUpload{
+			Filename: filepath.Base(makeFilePath),
+			Content:  makefileBytes,
+		},
+		&v1.FileUpload{
+			Filename: filepath.Base(graderFilePath),
+			Content:  graderBytes,
+		},
+		&v1.FileUpload{
+			Filename: "student.py",
+			Content:  studentBytes,
+		},
+		&v1.FileUpload{
+			Filename: filepath.Base(DockerFilePath),
+			Content:  dockerBytes,
+		},
+	)
+
 	if err != nil {
 		log.Fatal().Err(err).Msgf("Error creating job")
 	}

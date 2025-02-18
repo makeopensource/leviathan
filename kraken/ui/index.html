@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leviathan</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #1a1a1a;
+            color: #ffffff;
+        }
+
+        h1 {
+            color: #ffffff;
+        }
+
+        .upload-container {
+            border: 2px dashed #444;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+            background-color: #2d2d2d;
+            transition: border-color 0.3s ease;
+        }
+
+        .upload-container.drag-over {
+            border-color: #4CAF50;
+            background-color: #2d2d2d99;
+        }
+
+        .file-input {
+            margin: 10px 0;
+        }
+
+        .upload-button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 20px;
+            transition: background-color 0.3s ease;
+        }
+
+        .upload-button:hover {
+            background-color: #45a049;
+        }
+
+        .file-label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #e0e0e0;
+        }
+
+        input[type="file"] {
+            background-color: #333;
+            color: #fff;
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid #444;
+        }
+
+        input[type="file"]::-webkit-file-upload-button {
+            background-color: #444;
+            color: #fff;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+
+        input[type="file"]::-webkit-file-upload-button:hover {
+            background-color: #555;
+        }
+    </style>
+</head>
+<body>
+<h1>Leviathan test</h1>
+<form action="/submit" method="POST" enctype="multipart/form-data">
+<div class="upload-container" id="dropZone">
+    <!-- Dockerfile input -->
+    <div class="file-input">
+        <label class="file-label" for="dockerfile">Dockerfile:</label>
+        <input type="file" id="dockerfile" name="dockerfile" required>
+    </div>
+
+    <!-- Makefile input -->
+    <div class="file-input">
+        <label class="file-label" for="makefile">Makefile:</label>
+        <input type="file" id="makefile" name="makefile" required>
+    </div>
+
+    <!-- Grader input -->
+    <div class="file-input">
+        <label class="file-label" for="grader">Grader:</label>
+        <input type="file" id="grader" name="grader" required>
+    </div>
+
+    <!-- Student input -->
+    <div class="file-input">
+        <label class="file-label" for="student">Student:</label>
+        <input type="file" id="student" name="student" required>
+    </div>
+
+    <!-- Image Tag input -->
+    <div class="file-input">
+        <label class="file-label" for="imageTag">Image Tag:</label>
+        <input type="text" id="imageTag" name="imageTag" required>
+    </div>
+
+    <!-- Timeout input -->
+    <div class="file-input">
+        <label class="file-label" for="timeoutInSeconds">Timeout (in seconds):</label>
+        <input type="number" id="timeoutInSeconds" name="timeoutInSeconds" required>
+    </div>
+
+    <!-- Submit button -->
+    <button class="upload-button" id="uploadButton" type="submit">Upload Files</button>
+</div>
+</form>
+<script type="module">
+    const dropZone = document.getElementById('dropZone');
+    const fileInputs = {
+        makefile: document.getElementById('makefile'),
+        grader: document.getElementById('grader'),
+        student: document.getElementById('student')
+    };
+
+    // Prevent default drag behaviors
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, preventDefaults, false);
+        document.body.addEventListener(eventName, preventDefaults, false);
+    });
+
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+
+    // Highlight drop zone when item is dragged over it
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropZone.addEventListener(eventName, highlight, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, unhighlight, false);
+    });
+
+    function highlight(e) {
+        dropZone.classList.add('drag-over');
+    }
+
+    function unhighlight(e) {
+        dropZone.classList.remove('drag-over');
+    }
+
+    // Handle dropped files
+    dropZone.addEventListener('drop', handleDrop, false);
+
+    function handleDrop(e) {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+
+        // Try to automatically assign files based on their names
+        [...files].forEach(file => {
+            if (file.name.toLowerCase().includes('makefile')) {
+                fileInputs.makefile.files = new DataTransfer().files;
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(file);
+                fileInputs.makefile.files = dataTransfer.files;
+            } else if (file.name.toLowerCase().includes('grader')) {
+                fileInputs.grader.files = new DataTransfer().files;
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(file);
+                fileInputs.grader.files = dataTransfer.files;
+            } else if (file.name.toLowerCase().includes('student')) {
+                fileInputs.student.files = new DataTransfer().files;
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(file);
+                fileInputs.student.files = dataTransfer.files;
+            }
+        });
+    }
+</script>
+</body>
+</html>

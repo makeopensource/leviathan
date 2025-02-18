@@ -1,0 +1,29 @@
+{
+  "name": "frontend",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "start": "ts-node index.ts",
+    "build": "parcel build ui/index.html --dist-dir dist",
+    "clean": "rimraf dist .parcel-cache node_modules"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/makeopensource/leviathan"
+  },
+  "private": true,
+  "dependencies": {
+    "express": "^4.21.2",
+    "leviathan-node-sdk": "https://gitpkg.vercel.app/makeopensource/leviathan/spec/leviathan_node?dev",
+    "multer": "^1.4.5-lts.1"
+  },
+  "devDependencies": {
+    "ts-node": "^10.9.2",
+    "@types/express": "^5.0.0",
+    "@types/multer": "^1.4.12",
+    "@types/node": "^22.13.4",
+    "parcel": "^2.13.3",
+    "rimraf": "^6.0.1",
+    "typescript": "^5.7.3"
+  }
+}

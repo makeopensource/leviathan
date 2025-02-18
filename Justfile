@@ -6,6 +6,14 @@ imageName := "leviathan:dev"
 list:
     just --list
 
+# build kraken
+krd:
+	docker build -f kraken/Dockerfile ./kraken -t kraken:dev
+
+krn:
+    just krd
+    docker run --rm --network=host kraken:dev
+
 dk:
 	docker build . -t {{imageName}}
 
@@ -23,7 +31,7 @@ dev:
 
 bdrn:
     just dk
-    docker run --rm -v /var/run/docker.sock:/var/run/docker.sock {{imageName}}
+    docker run --rm --network=host -v /var/run/docker.sock:/var/run/docker.sock {{imageName}}
 
 dkrn:
 	docker compose up

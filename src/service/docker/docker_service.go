@@ -8,7 +8,6 @@ import (
 	"github.com/makeopensource/leviathan/common"
 	dktypes "github.com/makeopensource/leviathan/generated/docker_rpc/v1"
 	"github.com/rs/zerolog/log"
-	"os"
 )
 
 type DkService struct {
@@ -80,29 +79,9 @@ func (service *DkService) ListImagesReq() []*dktypes.DockerImage {
 	return result
 }
 
-func (service *DkService) NewImageReq(filename string, contents []byte, imageTag string) error {
-	if len(filename) == 0 {
-		return fmt.Errorf("filename is missing")
-	} else if len(contents) == 0 {
-		return fmt.Errorf("file contents are missing")
-	} else if len(imageTag) == 0 {
-		return fmt.Errorf("imagetag is missing")
-	}
-
-	fullpath, err := common.SaveDockerfile(filename, contents)
-	if err != nil {
-		return err
-	}
-
-	defer func() {
-		err := os.Remove(fullpath)
-		if err != nil {
-			log.Warn().Err(err).Msgf("Failed while removing file %s", fullpath)
-		}
-	}()
-
+func (service *DkService) NewImageReq(dockerfilePath string, imageTag string) error {
 	for _, item := range service.ClientManager.Clients {
-		err := item.Client.BuildImageFromDockerfile(fullpath, imageTag)
+		err := item.Client.BuildImageFromDockerfile(dockerfilePath, imageTag)
 		if err != nil {
 			info, err := item.Client.Client.Info(context.Background())
 			if err != nil {

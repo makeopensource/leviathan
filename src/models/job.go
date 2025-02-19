@@ -9,7 +9,8 @@ import (
 
 type JobStatus string
 
-// Done indicate the job has been tried by the queue, and processed
+// Done indicate the job has been tried by the queue, and processed.
+// i.e: the JobStatus is either Failed, Complete, Canceled
 func (js JobStatus) Done() bool {
 	if js == Failed || js == Complete || js == Canceled {
 		return true

@@ -24,7 +24,7 @@ func (c *BroadcastChannel) Broadcast(v *Job) {
 	}
 
 	ch <- v
-	if v.Status == Canceled || v.Status == Complete || v.Status == Failed {
+	if v.Status.Done() {
 		// job is done running, no more updates
 		close(ch)
 	}

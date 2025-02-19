@@ -17,7 +17,7 @@ func TestCopyToContainer(t *testing.T) {
 
 	ifg := uuid.New()
 
-	contId, err := machine.CreateNewContainer(ifg.String(), ImageName, container.Resources{})
+	contId, err := machine.CreateNewContainer(ifg.String(), ImageName, "", container.Resources{})
 	if err != nil {
 		t.Fatalf("%v", err)
 	}

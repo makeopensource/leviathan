@@ -41,6 +41,7 @@ type Job struct {
 	JobId         string `gorm:"uniqueIndex"`
 	MachineId     string
 	ContainerId   string
+	JobEntryCmd   string
 	Status        JobStatus
 	StatusMessage string
 	LabData       LabModel `gorm:"-"`

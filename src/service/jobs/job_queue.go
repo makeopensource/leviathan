@@ -193,7 +193,7 @@ func (q *JobQueue) setupJob(msg *models.Job) (*docker.DkClient, string, error, s
 		PidsLimit: &pidsLimit,
 	}
 
-	contId, err := machine.CreateNewContainer(msg.JobId, msg.LabData.ImageTag, resources)
+	contId, err := machine.CreateNewContainer(msg.JobId, msg.LabData.ImageTag, msg.JobEntryCmd, resources)
 	if err != nil {
 		return nil, "", err, "Unable to create job container"
 	}

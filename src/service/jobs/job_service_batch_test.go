@@ -8,6 +8,15 @@ import (
 	"testing"
 )
 
+var (
+	testFuncs = map[string]func(*testing.T){
+		"correct":   TestCorrect,
+		"incorrect": TestIncorrect,
+		"cancel":    TestCancel,
+		"timeout":   TestTimeout,
+	}
+)
+
 func Test50Jobs(t *testing.T) {
 	if os.Getenv("CI") != "" {
 		t.Skip("Skipping testing in CI environment")
@@ -49,7 +58,7 @@ func Test10000Jobs(t *testing.T) {
 func testBatchJobProcessor(t *testing.T, numJobs int) {
 	SetupTest()
 
-	testValues := maps.Values(testCases)
+	testValues := maps.Values(testFuncs)
 
 	for i := 0; i < numJobs; i++ {
 		// Randomly choose from test cases
@@ -61,7 +70,7 @@ func testBatchJobProcessor(t *testing.T, numJobs int) {
 			// Create subtests for better reporting
 			// Enable parallel execution for this subtest
 			t.Parallel()
-			testJobProcessor(t, testCase.studentFile, testCase.expectedOutput, defaultTimeout, testCase.correctStatus)
+			testCase(t)
 			fmt.Printf("Job %d finished\n", i)
 		})
 	}

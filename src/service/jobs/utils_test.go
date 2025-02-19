@@ -4,11 +4,13 @@ import (
 	"github.com/makeopensource/leviathan/common"
 	"github.com/makeopensource/leviathan/models"
 	"github.com/makeopensource/leviathan/service/docker"
+	"sync"
 )
 
 var (
 	DkTestService  *docker.DkService
 	JobTestService *JobService
+	setupOnce      sync.Once
 )
 
 const (
@@ -17,8 +19,10 @@ const (
 )
 
 func SetupTest() {
-	common.InitConfig()
-	InitServices()
+	setupOnce.Do(func() {
+		common.InitConfig()
+		InitServices()
+	})
 }
 
 func InitServices() {

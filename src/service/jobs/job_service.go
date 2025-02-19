@@ -3,7 +3,6 @@ package jobs
 import (
 	"connectrpc.com/connect"
 	"context"
-	"errors"
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/makeopensource/leviathan/common"
@@ -115,13 +114,13 @@ func (job *JobService) WaitForJob(ctx context.Context, jobUuid string) (*models.
 // WaitForJobAndLogs this is an experimental function, it is not working
 // todo logs return empty
 func (job *JobService) WaitForJobAndLogs(ctx context.Context, jobUuid string) (*models.Job, string, error) {
-	jobInd, content, err := job.checkJob(jobUuid)
+	jobInf, complete, content, err := job.checkJob(jobUuid)
 	if err != nil {
 		return nil, "", err
 	}
-	if jobInd != nil {
+	if complete {
 		// job was returned, indicating job is complete
-		return jobInd, content, nil
+		return jobInf, content, nil
 	}
 
 	jobInfoCh, err := job.SubToJob(jobUuid)
@@ -134,7 +133,7 @@ func (job *JobService) WaitForJobAndLogs(ctx context.Context, jobUuid string) (*
 
 	logContext, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	logsCh, err := job.ListenToJobLogs(logContext, jobUuid)
+	logsCh := job.ListenToJobLogs(logContext, jobInf)
 	if err != nil {
 		return nil, "", err
 	}
@@ -169,12 +168,12 @@ func (job *JobService) WaitForJobAndLogs(ctx context.Context, jobUuid string) (*
 }
 
 func (job *JobService) StreamJobAndLogs(ctx context.Context, jobUuid string, stream *connect.ServerStream[v2.JobLogsResponse]) error {
-	jobInd, flogs, err := job.checkJob(jobUuid)
+	jobInfo, complete, flogs, err := job.checkJob(jobUuid)
 	if err != nil {
 		return err
 	}
-	if jobInd != nil {
-		err := sendJobToStream(stream, jobInd, flogs)
+	if complete {
+		err := sendJobToStream(stream, jobInfo, flogs)
 		if err != nil {
 			return err
 		}
@@ -191,13 +190,15 @@ func (job *JobService) StreamJobAndLogs(ctx context.Context, jobUuid string, str
 	}()
 
 	logContext, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	logsCh, err := job.ListenToJobLogs(logContext, jobUuid)
+	defer func() {
+		cancel()
+		log.Debug().Msg("log context done")
+	}()
+	logsCh := job.ListenToJobLogs(logContext, jobInfo)
 	if err != nil {
 		return err
 	}
 
-	var jobInfo *models.Job
 	var logs string
 	var jobOk = false
 
@@ -212,6 +213,8 @@ func (job *JobService) StreamJobAndLogs(ctx context.Context, jobUuid string, str
 			if err != nil {
 				return err
 			}
+			// job done
+			return nil
 		}
 
 		select {
@@ -242,10 +245,10 @@ func (job *JobService) StreamJobAndLogs(ctx context.Context, jobUuid string, str
 	}
 }
 
-func (job *JobService) checkJob(jobUuid string) (*models.Job, string, error) {
+func (job *JobService) checkJob(jobUuid string) (*models.Job, bool, string, error) {
 	jobInf, err := job.getJob(jobUuid)
 	if err != nil {
-		return nil, "", fmt.Errorf("failed to get job info")
+		return nil, false, "", fmt.Errorf("failed to get job info")
 	}
 	if jobInf.Status.Done() {
 		log.Debug().Msgf("Job %s is done", jobUuid)
@@ -253,12 +256,12 @@ func (job *JobService) checkJob(jobUuid string) (*models.Job, string, error) {
 		content, err := os.ReadFile(jobInf.OutputLogFilePath)
 		if err != nil {
 			log.Warn().Err(err).Msgf("Failed to read job log file at %s", jobInf.OutputLogFilePath)
-			return nil, "", fmt.Errorf("failed to read log file")
+			return nil, false, "", fmt.Errorf("failed to read log file")
 		}
 
-		return jobInf, string(content), nil
+		return jobInf, true, string(content), nil
 	} else {
-		return nil, "", nil
+		return jobInf, false, "", nil
 	}
 }
 
@@ -282,32 +285,26 @@ func sendJobToStream(stream *connect.ServerStream[v2.JobLogsResponse], jobInfo *
 	return nil
 }
 
-func (job *JobService) ListenToJobLogs(ctx context.Context, jobUuid string) (chan string, error) {
-	jobInfo, err := job.getJob(jobUuid)
-	if err != nil {
-		return nil, err
-	}
-
+func (job *JobService) ListenToJobLogs(ctx context.Context, jobInfo *models.Job) chan string {
 	logChannel := make(chan string, 50)
 	go func() {
-		prev := ""
 		// keep reading until ctx is done
 		for {
 			// Read all the content of the file
 			content := readLogFile(jobInfo)
-			if prev != content {
-				logChannel <- content
-			}
+			logChannel <- content
 
-			if errors.Is(ctx.Err(), context.Canceled) {
-				break
+			// err if context was cancelled, i.e. connection closed
+			if ctx.Err() != nil {
+				log.Debug().Msgf("Stopping listening for logs: %s", jobInfo.JobId)
+				return
 			}
 
 			time.Sleep(1 * time.Second)
 		}
 	}()
 
-	return logChannel, err
+	return logChannel
 }
 
 func readLogFile(jobInfo *models.Job) string {

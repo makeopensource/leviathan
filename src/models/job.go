@@ -9,6 +9,14 @@ import (
 
 type JobStatus string
 
+// Done indicate the job has been tried by the queue, and processed
+func (js JobStatus) Done() bool {
+	if js == Failed || js == Complete || js == Canceled {
+		return true
+	}
+	return false
+}
+
 // job status enum
 const (
 	Queued    JobStatus = "queued"
@@ -36,8 +44,8 @@ type Job struct {
 	StatusMessage string
 	LabData       LabModel `gorm:"-"`
 	//JobLimits                 MachineLimits
-	// OutputFilePath text file contain the container std out
-	OutputFilePath string
+	// OutputLogFilePath text file contain the container std out
+	OutputLogFilePath string
 	// TmpJobFolderPath holds the path to the tmp dir all files related to the job except the final output
 	TmpJobFolderPath string
 	JobTimeout       time.Duration
@@ -73,8 +81,6 @@ type LogChannelWriter struct {
 }
 
 func (w *LogChannelWriter) Write(p []byte) (n int, err error) {
-	go func() {
-		w.Channel <- string(p)
-	}()
+	w.Channel <- string(p)
 	return len(p), nil
 }

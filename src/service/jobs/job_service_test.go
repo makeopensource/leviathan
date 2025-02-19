@@ -7,7 +7,7 @@ import (
 	v1 "github.com/makeopensource/leviathan/generated/types/v1"
 	"github.com/makeopensource/leviathan/models"
 	"github.com/rs/zerolog/log"
-	"os"
+	"github.com/stretchr/testify/assert"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -24,18 +24,22 @@ var (
 	testCases      = map[string]struct {
 		studentFile    string
 		expectedOutput string
+		correctStatus  models.JobStatus
 	}{
 		"correct": {
 			studentFile:    "../../../example/python/simple-addition/student_correct.py",
 			expectedOutput: `{"addition": {"passed": true, "message": ""}, "subtraction": {"passed": true, "message": ""}, "multiplication": {"passed": true, "message": ""}, "division": {"passed": true, "message": ""}}`,
+			correctStatus:  models.Complete,
 		},
 		"incorrect": {
 			studentFile:    "../../../example/python/simple-addition/student_incorrect.py",
 			expectedOutput: `{"addition": {"passed": true, "message": ""}, "subtraction": {"passed": true, "message": ""}, "multiplication": {"passed": false, "message": "Multiplication failed. Expected 42, got 48"}, "division": {"passed": false, "message": "Division failed. Expected 4, got 3.3333333333333335"}}`,
+			correctStatus:  models.Complete,
 		},
 		"timeout": {
 			studentFile:    "../../../example/python/simple-addition/student_timeout.py",
 			expectedOutput: "Maximum timeout reached for job, job ran for 10s",
+			correctStatus:  models.Failed,
 		},
 		//"forkb": {
 		//	studentFile:    "../../../example/python/simple-addition/student_fork_bomb.py",
@@ -47,20 +51,20 @@ var (
 func TestCorrect(t *testing.T) {
 	SetupTest()
 	correct := testCases["correct"]
-	testJobProcessor(t, correct.studentFile, correct.expectedOutput, defaultTimeout)
+	testJobProcessor(t, correct.studentFile, correct.expectedOutput, defaultTimeout, correct.correctStatus)
 }
 
 func TestIncorrect(t *testing.T) {
 	SetupTest()
 	incorrect := testCases["incorrect"]
-	testJobProcessor(t, incorrect.studentFile, incorrect.expectedOutput, defaultTimeout)
+	testJobProcessor(t, incorrect.studentFile, incorrect.expectedOutput, defaultTimeout, incorrect.correctStatus)
 }
 
 // TODO
 func TestForkBomb(t *testing.T) {
 	SetupTest()
 	forkBomb := testCases["forkb"]
-	testJobProcessor(t, forkBomb.studentFile, forkBomb.expectedOutput, defaultTimeout)
+	testJobProcessor(t, forkBomb.studentFile, forkBomb.expectedOutput, defaultTimeout, forkBomb.correctStatus)
 }
 
 func TestTimeout(t *testing.T) {
@@ -68,7 +72,7 @@ func TestTimeout(t *testing.T) {
 	timeLimit := time.Second * 10
 	timeout := testCases["timeout"]
 	timeout.expectedOutput = fmt.Sprintf("Maximum timeout reached for job, job ran for %s", timeLimit)
-	testJobProcessor(t, timeout.studentFile, timeout.expectedOutput, timeLimit)
+	testJobProcessor(t, timeout.studentFile, timeout.expectedOutput, timeLimit, timeout.correctStatus)
 }
 
 func TestCancel(t *testing.T) {
@@ -84,7 +88,7 @@ func TestCancel(t *testing.T) {
 		JobTestService.CancelJob(jobId)
 	})
 
-	testJob(t, jobId, timeout.expectedOutput)
+	testJob(t, jobId, timeout.expectedOutput, models.Canceled)
 
 	// verify cancel function was removed from context map
 	value := JobTestService.queue.GetJobCancelFunc(jobId)
@@ -94,9 +98,9 @@ func TestCancel(t *testing.T) {
 
 }
 
-func testJobProcessor(t *testing.T, studentCodePath string, correctOutput string, timeout time.Duration) {
+func testJobProcessor(t *testing.T, studentCodePath string, correctOutput string, timeout time.Duration, status models.JobStatus) {
 	jobId := setupJobProcess(studentCodePath, timeout)
-	testJob(t, jobId, correctOutput)
+	testJob(t, jobId, correctOutput, status)
 }
 
 func setupJobProcess(studentCodePath string, timeout time.Duration) string {
@@ -152,24 +156,18 @@ func setupJobProcess(studentCodePath string, timeout time.Duration) string {
 	return jobId
 }
 
-func testJob(t *testing.T, jobId string, correctOutput string) {
-	jobInfo, err := JobTestService.WaitForJob(context.Background(), jobId)
+func testJob(t *testing.T, jobId string, correctOutput string, correctStatus models.JobStatus) {
+	jobInfo, logs, err := JobTestService.WaitForJobAndLogs(context.Background(), jobId)
 	if err != nil {
 		t.Fatalf("Error waiting for job: %v", err)
 		return
 	}
 
+	log.Debug().Msgf("Job ID: %s, Logs: %s", jobId, logs)
+
 	returned := strings.TrimSpace(jobInfo.StatusMessage)
 	expected := strings.TrimSpace(correctOutput)
 
-	if returned != expected {
-		t.Fatal("Expected correct output, got: '", correctOutput, "' instead got: ", jobInfo.StatusMessage)
-	} else {
-		// delete output file if correct
-		err := os.Remove(jobInfo.OutputFilePath)
-		if err != nil {
-			log.Warn().Msgf("Error while removing file: %v", err)
-			return
-		}
-	}
+	assert.Equal(t, expected, returned)
+	assert.Equal(t, correctStatus, jobInfo.Status)
 }

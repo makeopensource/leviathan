@@ -1,20 +1,21 @@
 package jobs
 
 import (
+	"connectrpc.com/connect"
 	"context"
 	"errors"
 	"fmt"
-	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/google/uuid"
 	"github.com/makeopensource/leviathan/common"
+	v2 "github.com/makeopensource/leviathan/generated/jobs/v1"
 	v1 "github.com/makeopensource/leviathan/generated/types/v1"
 	"github.com/makeopensource/leviathan/models"
 	"github.com/makeopensource/leviathan/service/docker"
 	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
-	"io"
 	"os"
 	"path/filepath"
+	"time"
 )
 
 type JobService struct {
@@ -65,7 +66,7 @@ func (job *JobService) NewJob(newJob *models.Job, makefile *v1.FileUpload, grade
 	newJob.JobId = jobId.String()
 	newJob.MachineId = mId
 	newJob.Status = models.Queued
-	newJob.OutputFilePath = job.setupLogFile(newJob.JobId)
+	newJob.OutputLogFilePath = job.setupLogFile(newJob.JobId)
 	newJob.TmpJobFolderPath = jobDir
 	newJob.LabData.DockerFilePath = fmt.Sprintf("%s/%s", newJob.TmpJobFolderPath, dockerfile.Filename)
 	// job context, so that it can be cancelled
@@ -114,6 +115,15 @@ func (job *JobService) WaitForJob(ctx context.Context, jobUuid string) (*models.
 // WaitForJobAndLogs this is an experimental function, it is not working
 // todo logs return empty
 func (job *JobService) WaitForJobAndLogs(ctx context.Context, jobUuid string) (*models.Job, string, error) {
+	jobInd, content, err := job.checkJob(jobUuid)
+	if err != nil {
+		return nil, "", err
+	}
+	if jobInd != nil {
+		// job was returned, indicating job is complete
+		return jobInd, content, nil
+	}
+
 	jobInfoCh, err := job.SubToJob(jobUuid)
 	if err != nil {
 		return nil, "", err
@@ -122,94 +132,191 @@ func (job *JobService) WaitForJobAndLogs(ctx context.Context, jobUuid string) (*
 		go job.UnsubToJob(jobUuid)
 	}()
 
-	var jobInfo *models.Job
-	var logs string
-
-	// First phase: Wait for job to start
-	for {
-		select {
-		case jobTmp, ok := <-jobInfoCh:
-			if !ok {
-				return jobInfo, logs, nil
-			} else {
-				jobInfo = jobTmp
-			}
-			// Once job is running, break out and start log monitoring
-			if jobInfo.Status == models.Running {
-				goto monitorWithLogs
-			}
-		case <-ctx.Done():
-			return jobInfo, logs, nil
-		}
-	}
-
-monitorWithLogs:
-	// Start log monitoring once job is active
-	logsCh, errCh, err := job.ListenToJobLogs(ctx, jobUuid)
+	logContext, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	logsCh, err := job.ListenToJobLogs(logContext, jobUuid)
 	if err != nil {
 		return nil, "", err
 	}
 
+	var jobInfo *models.Job
+	var logs string
+	// Start log monitoring once job is active
 	var jobOk = false
-	var logOk = false
 
-	// Keep listening until complete
+	// Keep listening until channel closes, indicating job is complete
 	for {
-		if jobOk && logOk {
-			return jobInfo, logs, nil
+		if jobOk {
+			// read log file one last time
+			content := readLogFile(jobInfo)
+			return jobInfo, content, nil
 		}
 
 		select {
 		case logsTmp, ok := <-logsCh:
-			logOk = !ok
-			if ok {
-				logs += logsTmp
+			if ok && logs != logsTmp {
+				logs = logsTmp
 			}
 		case jobTmp, ok := <-jobInfoCh:
 			jobOk = !ok
 			if ok {
 				jobInfo = jobTmp
 			}
-		case err = <-errCh:
-			return jobInfo, logs, err
 		case <-ctx.Done():
 			return jobInfo, logs, fmt.Errorf("context canceled")
 		}
 	}
 }
 
-func (job *JobService) ListenToJobLogs(ctx context.Context, jobUuid string) (chan string, chan error, error) {
-	jobInfo, err := job.getJob(jobUuid)
+func (job *JobService) StreamJobAndLogs(ctx context.Context, jobUuid string, stream *connect.ServerStream[v2.JobLogsResponse]) error {
+	jobInd, flogs, err := job.checkJob(jobUuid)
 	if err != nil {
-		return nil, nil, err
+		return err
 	}
-
-	machine, err := job.dockerSrv.ClientManager.GetClientById(jobInfo.MachineId)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	logs, err := machine.TailContainerLogs(ctx, jobInfo.ContainerId)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	logChannel := make(chan string)
-	errChannel := make(chan error)
-
-	streamWriter := &models.LogChannelWriter{Channel: logChannel}
-	go func() {
-		_, err = stdcopy.StdCopy(streamWriter, streamWriter, logs)
-		if err != nil && err != io.EOF && !errors.Is(err, context.Canceled) {
-			log.Error().Err(err).Msgf("failed to tail logs for container")
-			errChannel <- err
+	if jobInd != nil {
+		err := sendJobToStream(stream, jobInd, flogs)
+		if err != nil {
+			return err
 		}
+		// job was returned, indicating job is complete
+		return nil
+	}
 
-		// done reading logs
-		close(logChannel)
+	jobInfoCh, err := job.SubToJob(jobUuid)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		go job.UnsubToJob(jobUuid)
 	}()
 
-	return logChannel, errChannel, err
+	logContext, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	logsCh, err := job.ListenToJobLogs(logContext, jobUuid)
+	if err != nil {
+		return err
+	}
+
+	var jobInfo *models.Job
+	var logs string
+	var jobOk = false
+
+	// Keep listening until channel closes, indicating job is complete
+	for {
+		if jobOk {
+			content := readLogFile(jobInfo)
+			if err != nil {
+				log.Warn().Err(err).Msgf("Failed to read job log file at %s", jobInfo.OutputLogFilePath)
+			}
+			err = sendJobToStream(stream, jobInfo, content)
+			if err != nil {
+				return err
+			}
+		}
+
+		select {
+		case logsTmp, ok := <-logsCh:
+			// stream on status change
+			if ok && logsTmp != logs {
+				log.Debug().Msgf("job logs changed")
+				logs = logsTmp
+				err := sendJobToStream(stream, jobInfo, logs)
+				if err != nil {
+					return err
+				}
+			}
+		case jobTmp, ok := <-jobInfoCh:
+			jobOk = !ok
+			// stream on status change
+			if ok && jobInfo != nil && jobTmp.Status != jobInfo.Status {
+				log.Debug().Msgf("job Info changed")
+				jobInfo = jobTmp
+				err := sendJobToStream(stream, jobInfo, logs)
+				if err != nil {
+					return err
+				}
+			}
+		case <-ctx.Done():
+			return nil
+		}
+	}
+}
+
+func (job *JobService) checkJob(jobUuid string) (*models.Job, string, error) {
+	jobInf, err := job.getJob(jobUuid)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to get job info")
+	}
+	if jobInf.Status.Done() {
+		log.Debug().Msgf("Job %s is done", jobUuid)
+
+		content, err := os.ReadFile(jobInf.OutputLogFilePath)
+		if err != nil {
+			log.Warn().Err(err).Msgf("Failed to read job log file at %s", jobInf.OutputLogFilePath)
+			return nil, "", fmt.Errorf("failed to read log file")
+		}
+
+		return jobInf, string(content), nil
+	} else {
+		return nil, "", nil
+	}
+}
+
+func sendJobToStream(stream *connect.ServerStream[v2.JobLogsResponse], jobInfo *models.Job, logs string) error {
+	err := stream.Send(&v2.JobLogsResponse{
+		JobInfo: &v2.JobStatus{
+			JobId:            jobInfo.JobId,
+			MachineId:        jobInfo.MachineId,
+			ContainerId:      jobInfo.ContainerId,
+			Status:           string(jobInfo.Status),
+			StatusMessage:    jobInfo.StatusMessage,
+			OutputFilePath:   "",
+			TmpJobFolderPath: "",
+			JobTimeout:       int64(jobInfo.JobTimeout),
+		},
+		Logs: logs,
+	})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (job *JobService) ListenToJobLogs(ctx context.Context, jobUuid string) (chan string, error) {
+	jobInfo, err := job.getJob(jobUuid)
+	if err != nil {
+		return nil, err
+	}
+
+	logChannel := make(chan string, 50)
+	go func() {
+		prev := ""
+		// keep reading until ctx is done
+		for {
+			// Read all the content of the file
+			content := readLogFile(jobInfo)
+			if prev != content {
+				logChannel <- content
+			}
+
+			if errors.Is(ctx.Err(), context.Canceled) {
+				break
+			}
+
+			time.Sleep(1 * time.Second)
+		}
+	}()
+
+	return logChannel, err
+}
+
+func readLogFile(jobInfo *models.Job) string {
+	content, err := os.ReadFile(jobInfo.OutputLogFilePath)
+	if err != nil {
+		log.Warn().Err(err).Msgf("Failed to read job log file at %s", jobInfo.OutputLogFilePath)
+		return ""
+	}
+	return string(content)
 }
 
 func (job *JobService) SubToJob(jobUuid string) (chan *models.Job, error) {

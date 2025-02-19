@@ -14,7 +14,7 @@ func InitServices() (*docker.DkService, *labs.LabService, *jobs.JobService, *sta
 	db := common.InitDB()
 	bc, ctx := models.NewBroadcastChannel()
 	// inject broadcast channel to database
-	db.WithContext(ctx)
+	db = db.WithContext(ctx)
 
 	fCache := models.NewLabFilesCache(db)
 	clientList := docker.InitDockerClients()

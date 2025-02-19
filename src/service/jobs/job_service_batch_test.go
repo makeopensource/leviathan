@@ -25,12 +25,11 @@ func Test100Jobs(t *testing.T) {
 func Test500Jobs(t *testing.T) {
 	testBatchJobProcessor(t, 500)
 }
-
-func Test10000Jobs(t *testing.T) {
+func Test1000Jobs(t *testing.T) {
 	if os.Getenv("CI") != "" {
 		t.Skip("Skipping testing in CI environment")
 	}
-	testBatchJobProcessor(t, 10000)
+	testBatchJobProcessor(t, 1000)
 }
 
 func Test2000Jobs(t *testing.T) {
@@ -38,6 +37,13 @@ func Test2000Jobs(t *testing.T) {
 		t.Skip("Skipping testing in CI environment")
 	}
 	testBatchJobProcessor(t, 2000)
+}
+
+func Test10000Jobs(t *testing.T) {
+	if os.Getenv("CI") != "" {
+		t.Skip("Skipping testing in CI environment")
+	}
+	testBatchJobProcessor(t, 10000)
 }
 
 func testBatchJobProcessor(t *testing.T, numJobs int) {
@@ -55,7 +61,7 @@ func testBatchJobProcessor(t *testing.T, numJobs int) {
 			// Create subtests for better reporting
 			// Enable parallel execution for this subtest
 			t.Parallel()
-			testJobProcessor(t, testCase.studentFile, testCase.expectedOutput, defaultTimeout)
+			testJobProcessor(t, testCase.studentFile, testCase.expectedOutput, defaultTimeout, testCase.correctStatus)
 			fmt.Printf("Job %d finished\n", i)
 		})
 	}

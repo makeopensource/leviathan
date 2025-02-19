@@ -19,6 +19,7 @@ message NewJobRequest {
   types.v1.FileUpload dockerFile = 4;
   string imageName = 5;
   uint64 jobTimeoutInSeconds = 6;
+  string entryCmd = 7;
 }
 
 message NewJobResponse {

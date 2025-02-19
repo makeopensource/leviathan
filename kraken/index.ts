@@ -6,8 +6,11 @@ import path from "node:path";
 
 import {WebSocketServer} from 'ws';
 
+const leviUrl = process.env.LEVIATHAN_URL || 'http://localhost:9221';
+console.log(`Leviathan url set to ${leviUrl}`)
+
 const transport = createConnectTransport({
-    baseUrl: "http://localhost:9221",
+    baseUrl: leviUrl,
     httpVersion: "2"
 });
 const jobService = createClient(JobService, transport)

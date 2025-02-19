@@ -12,6 +12,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 const DefaultFilePerm = 0o775
@@ -113,6 +114,10 @@ func TarDir(src string, fileMode int64) (*bytes.Buffer, error) {
 		// it may be necessary to modify Header.Name to provide the full path name of the file.
 		header.Name = filepath.ToSlash(file[index:])
 		header.Mode = fileMode
+		now := time.Now()
+		header.ModTime = now
+		header.ChangeTime = now
+		header.AccessTime = now
 
 		// write header
 		if err := tw.WriteHeader(header); err != nil {

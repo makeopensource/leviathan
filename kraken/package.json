@@ -15,15 +15,17 @@
   "dependencies": {
     "express": "^4.21.2",
     "leviathan-node-sdk": "https://gitpkg.vercel.app/makeopensource/leviathan/spec/leviathan_node?dev",
-    "multer": "^1.4.5-lts.1"
+    "multer": "^1.4.5-lts.1",
+    "ws": "^8.18.0"
   },
   "devDependencies": {
-    "ts-node": "^10.9.2",
     "@types/express": "^5.0.0",
     "@types/multer": "^1.4.12",
     "@types/node": "^22.13.4",
+    "@types/ws": "^8.5.14",
     "parcel": "^2.13.3",
     "rimraf": "^6.0.1",
+    "ts-node": "^10.9.2",
     "typescript": "^5.7.3"
   }
 }

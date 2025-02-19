@@ -1,9 +1,10 @@
 import express, {Request, Response} from 'express';
 import multer from 'multer';
 
-import {createClient, createConnectTransport, JobService, NewJobRequest} from "leviathan-node-sdk"
+import {createClient, createConnectTransport, JobLogRequest, JobService, NewJobRequest} from "leviathan-node-sdk"
 import path from "node:path";
 
+import {WebSocketServer} from 'ws';
 
 const transport = createConnectTransport({
     baseUrl: "http://localhost:9221",
@@ -16,7 +17,6 @@ const upload = multer();
 const port = 3000;
 
 app.use(express.static(path.join(__dirname, 'ui')));
-
 // Define the endpoint
 app.post('/submit',
     upload.fields([
@@ -63,12 +63,51 @@ app.post('/submit',
             }
 
             const jobRes = await jobService.newJob(job)
-            res.status(200).json({jobId: jobRes.jobId});
+            res.status(200).redirect(`/results.html?jobid=${jobRes.jobId}`);
         } catch (error: any) {
             res.status(400).json({error: error.message});
         }
     });
 
-app.listen(port, () => {
-    console.log(`Server running at http://localhost:${port}`);
+const server = app.listen(port, () => {
+    console.log(`Server is running on port ${port}`);
 });
+
+const wss = new WebSocketServer({server, path: "/ws"});
+
+wss.on('connection', async (ws, req) => {
+    const url = new URL(req.url!, `ws://${req.headers.host}`); // Important: Construct a full URL
+    const searchParams = new URLSearchParams(url.search);
+    const jobId = searchParams.get('jobid') as string;
+    console.log("Job ID:", jobId);
+
+    if (!jobId) {
+        ws.close(400, "Invalid job ID");
+        return;
+    }
+
+    const dataStream = jobService.streamStatus(<JobLogRequest>{jobId: jobId})
+
+    for await (const chunk of dataStream) {
+        if (!chunk.jobInfo) {
+            console.warn("Empty job state")
+            continue
+        }
+
+        const {jobTimeout, $unknown, $typeName, ...rest} = chunk.jobInfo!
+
+        console.log("Job", rest);
+        console.log(chunk.logs)
+
+        ws.send(JSON.stringify({
+            logs: chunk.logs,
+            jobStatus: rest,
+        }));
+    }
+
+    console.log("Job ID:", jobId, "done streaming");
+});
+
+wss.on('close', () => {
+
+})

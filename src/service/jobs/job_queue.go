@@ -14,6 +14,7 @@ import (
 	"gorm.io/gorm"
 	"os"
 	"path/filepath"
+	"sync"
 	"time"
 )
 
@@ -93,9 +94,10 @@ func (q *JobQueue) worker(workerId int) {
 func (q *JobQueue) runJob(msg *models.Job) {
 	q.setJobInSetup(msg)
 
-	client, contId, err := q.setupJob(msg)
+	client, contId, err, reason := q.setupJob(msg)
 	if err != nil {
-		// error handled by setupJob
+		q.bigProblem(reason, msg, err)
+		q.cleanupJob(msg, nil)
 		return
 	}
 	defer q.cleanupJob(msg, client)
@@ -108,12 +110,22 @@ func (q *JobQueue) runJob(msg *models.Job) {
 		return
 	}
 
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+
+	// start writing to log file so that
+	// we can stream changes to the log file to the user
+	go func() {
+		defer wg.Done()
+		q.writeLogs(client, msg)
+	}()
+
 	statusCh, errCh := client.Client.ContainerWait(context.Background(), contId, cond.WaitConditionNotRunning)
 	select {
 	case state := <-statusCh:
+		wg.Wait() // for logs to complete writing
 		log.Info().Any("state", state).Msgf("Job: %s completed", msg.JobId)
-		q.writeLogs(client, msg)
-		q.verifyLogs(msg.OutputFilePath, msg)
+		q.verifyLogs(msg.OutputLogFilePath, msg)
 		return
 	case err := <-errCh:
 		q.bigProblem("error occurred while waiting for job process", msg, err)
@@ -128,7 +140,7 @@ func (q *JobQueue) runJob(msg *models.Job) {
 }
 
 func (q *JobQueue) writeLogs(client *docker.DkClient, msg *models.Job) {
-	outPutFile, err := os.OpenFile(msg.OutputFilePath, os.O_RDWR|os.O_CREATE, 660)
+	outPutFile, err := os.OpenFile(msg.OutputLogFilePath, os.O_RDWR|os.O_CREATE, 660)
 	if err != nil {
 		q.bigProblem("Unable to open output file", msg, err)
 		return
@@ -156,17 +168,15 @@ func (q *JobQueue) writeLogs(client *docker.DkClient, msg *models.Job) {
 
 // setupJob Set up job like king, yes!
 // returns nil client if an error occurred while setup
-func (q *JobQueue) setupJob(msg *models.Job) (*docker.DkClient, string, error) {
+func (q *JobQueue) setupJob(msg *models.Job) (*docker.DkClient, string, error, string) {
 	machine, err := q.dkSrv.ClientManager.GetClientById(msg.MachineId)
 	if err != nil {
-		q.bigProblem("Failed to get machine info", msg, err)
-		return nil, "", nil
+		return nil, "", nil, "Failed to get machine info"
 	}
 
 	err = machine.BuildImageFromDockerfile(msg.LabData.DockerFilePath, msg.LabData.ImageTag)
 	if err != nil {
-		q.bigProblem("Failed to create image", msg, err)
-		return nil, "", err
+		return nil, "", err, "Failed to create image"
 	}
 
 	pidsLimit := int64(100)
@@ -179,24 +189,21 @@ func (q *JobQueue) setupJob(msg *models.Job) (*docker.DkClient, string, error) {
 
 	contId, err := machine.CreateNewContainer(msg.JobId, msg.LabData.ImageTag, resources)
 	if err != nil {
-		q.bigProblem("Unable to create job container", msg, err)
-		return nil, "", err
+		return nil, "", err, "Unable to create job container"
 	}
 
 	err = machine.CopyToContainer(contId, msg.TmpJobFolderPath)
 	if err != nil {
-		q.bigProblem("Unable to copy files to job container", msg, err)
-		return nil, "", err
+		return nil, "", err, "Unable to copy files to job container"
 	}
 
 	msg.ContainerId = contId
 	res := q.db.Save(msg)
 	if res.Error != nil {
-		q.bigProblem("Unable to update job in db", msg, res.Error)
-		return nil, "", err
+		return nil, "", err, "Unable to update job in db"
 	}
 
-	return machine, contId, nil // get the dir above autolab subdir
+	return machine, contId, nil, ""
 }
 
 // bigProblem job failed, Not good!
@@ -236,15 +243,17 @@ func (q *JobQueue) cleanupJob(msg *models.Job, client *docker.DkClient) {
 
 	q.updateJobVeryNice(msg)
 
-	err := client.RemoveContainer(msg.ContainerId, true, true)
-	if err != nil {
-		log.Error().Err(err).Msgf("Unable to remove container %s", msg.ContainerId)
+	if client != nil {
+		err := client.RemoveContainer(msg.ContainerId, true, true)
+		if err != nil {
+			log.Error().Err(err).Msgf("Unable to remove container %s", msg.ContainerId)
+		}
 	}
 
 	q.dkSrv.ClientManager.DecreaseJobCount(msg.MachineId)
 
 	tmpFold := filepath.Dir(msg.TmpJobFolderPath) // get the dir above autolab subdir
-	err = os.RemoveAll(tmpFold)
+	err := os.RemoveAll(tmpFold)
 	if err != nil {
 		log.Error().Err(err).Msgf("Unable to remove tmp job directory %s", tmpFold)
 		return

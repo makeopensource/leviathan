@@ -33,6 +33,10 @@ func (job *JobServer) NewJob(ctx context.Context, req *connect.Request[v1.NewJob
 		}
 	}
 
+	if tag == "" {
+		return nil, fmt.Errorf("docker image tag is empty")
+	}
+
 	newJob := models.Job{
 		LabData:    models.LabModel{ImageTag: tag},
 		JobTimeout: time.Second * time.Duration(req.Msg.JobTimeoutInSeconds),
@@ -47,12 +51,11 @@ func (job *JobServer) NewJob(ctx context.Context, req *connect.Request[v1.NewJob
 	return res, nil
 }
 
-func (job *JobServer) StreamJobLogs(ctx context.Context, req *connect.Request[v1.JobLogRequest], responseStream *connect.ServerStream[v1.JobLogsResponse]) error {
-	_, _, err := job.Service.ListenToJobLogs(ctx, req.Msg.GetJobId())
+func (job *JobServer) StreamStatus(ctx context.Context, req *connect.Request[v1.JobLogRequest], stream *connect.ServerStream[v1.JobLogsResponse]) error {
+	err := job.Service.StreamJobAndLogs(ctx, req.Msg.GetJobId(), stream)
 	if err != nil {
 		return err
 	}
-
 	return nil
 }
 

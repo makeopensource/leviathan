@@ -1,17 +1,17 @@
-# Builds leviathan images on master
+# Builds leviathan images on dev
 
-name: Build master
+name: Build develop images
 on:
   push:
     branches:
-      - master
+      - dev
     paths:
       - '.github/**'
       - 'src/**'
 
   pull_request:
     branches:
-      - master
+      - dev
     paths:
       - '.github/**'
       - 'src/**'
@@ -37,11 +37,10 @@ jobs:
         run: go test -v
 
       - name: Run client manager tests
-        working-directory: src/service/tests
+        working-directory: src/service/jobs
         # tests meant for CI
         run: |
-          CI=true go test -v 
-  
+          CI=true go test -v Test100Jobs 
 
   build-docker:
     runs-on: ubuntu-latest
@@ -65,12 +64,5 @@ jobs:
         run: |
           REGISTRY="ghcr.io/${{ github.repository }}"
           VERSION="${{ steps.tagName.outputs.tag }}"
-          docker build . -t ${REGISTRY}:master
-          docker push ${REGISTRY}:master
-
-#      - name: build and push hydra
-#        working-directory: hydra
-#        run: |
-#          REGISTRY="ghcr.io/makeopensource/hydra"
-#          docker build . -t ${REGISTRY}:master
-#          docker push ${REGISTRY}:master
+          docker build . -t ${REGISTRY}:dev
+          docker push ${REGISTRY}:dev

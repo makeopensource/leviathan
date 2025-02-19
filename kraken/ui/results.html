@@ -22,7 +22,8 @@
             gap: 1.5rem;
             padding: 2rem;
             width: 100%;
-            max-width: 500px;
+            max-width: 800px;
+            height: 80vh;
         }
 
         .box {
@@ -30,19 +31,42 @@
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
             padding: 1.5rem;
-            min-height: 100px;
+            overflow-y: auto;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+            flex-grow: 1;
+            height: auto;
+        }
+
+        .box-title { /* Style for the heading */
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 1rem; /* Space between heading and content */
+        }
+
+
+        /* Optional: Style the scrollbar if needed */
+        .box::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .box::-webkit-scrollbar-track {
+            background: #444;
+        }
+
+        .box::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
         }
     </style>
 </head>
 <body>
 <div class="container">
     <div id="job" class="box">
-        <!-- Content for first box -->
-    </div>
+        <h2 class="box-title">Job State</h2>  </div>
     <div id="code" class="box">
-        <!-- Content for second box -->
-    </div>
+        <h2 class="box-title">Job Logs</h2>  </div>
 </div>
-</body>
 <script src="results.js"></script>
+</body>
 </html>

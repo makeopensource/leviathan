@@ -122,9 +122,8 @@ func (q *JobQueue) runJob(msg *models.Job) {
 
 	statusCh, errCh := client.Client.ContainerWait(context.Background(), contId, cond.WaitConditionNotRunning)
 	select {
-	case state := <-statusCh:
+	case _ = <-statusCh:
 		wg.Wait() // for logs to complete writing
-		log.Info().Any("state", state).Msgf("Job: %s completed", msg.JobId)
 		q.verifyLogs(msg.OutputLogFilePath, msg)
 		return
 	case err := <-errCh:
@@ -174,9 +173,16 @@ func (q *JobQueue) setupJob(msg *models.Job) (*docker.DkClient, string, error, s
 		return nil, "", nil, "Failed to get machine info"
 	}
 
-	err = machine.BuildImageFromDockerfile(msg.LabData.DockerFilePath, msg.LabData.ImageTag)
-	if err != nil {
-		return nil, "", err, "Failed to create image"
+	// incase dockerfile is not passed and referenced via tag name
+	if msg.LabData.DockerFilePath != "" {
+		err = machine.BuildImageFromDockerfile(msg.LabData.DockerFilePath, msg.LabData.ImageTag)
+		if err != nil {
+			return nil, "", err, "Failed to create image"
+		}
+		err = os.Remove(msg.LabData.DockerFilePath)
+		if err != nil {
+			return nil, "", err, "failed to delete dockerfile"
+		}
 	}
 
 	pidsLimit := int64(100)

@@ -89,7 +89,7 @@ func (job *JobService) CancelJob(jobUuid string) {
 
 // WaitForJob is similar to GetJobStatus but is blocking and runs until job is complete or errors
 func (job *JobService) WaitForJob(ctx context.Context, jobUuid string) (*models.Job, error) {
-	jobInfoCh, _ := job.SubToJob(jobUuid)
+	jobInfoCh := job.SubToJob(jobUuid)
 	defer func() {
 		go job.UnsubToJob(jobUuid)
 	}()
@@ -123,10 +123,7 @@ func (job *JobService) WaitForJobAndLogs(ctx context.Context, jobUuid string) (*
 		return jobInf, content, nil
 	}
 
-	jobInfoCh, err := job.SubToJob(jobUuid)
-	if err != nil {
-		return nil, "", err
-	}
+	jobInfoCh := job.SubToJob(jobUuid)
 	defer func() {
 		go job.UnsubToJob(jobUuid)
 	}()
@@ -140,10 +137,9 @@ func (job *JobService) WaitForJobAndLogs(ctx context.Context, jobUuid string) (*
 
 	var jobInfo *models.Job
 	var logs string
-	// Start log monitoring once job is active
 	var jobOk = false
 
-	// Keep listening until channel closes, indicating job is complete
+	// Keep listening until channel closes, implying job is complete
 	for {
 		if jobOk {
 			// read log file one last time
@@ -172,19 +168,19 @@ func (job *JobService) StreamJobAndLogs(ctx context.Context, jobUuid string, str
 	if err != nil {
 		return err
 	}
-	if complete {
+
+	// send initial job data
+	if jobInfo != nil {
 		err := sendJobToStream(stream, jobInfo, flogs)
 		if err != nil {
 			return err
 		}
-		// job was returned, indicating job is complete
+	}
+	if complete {
 		return nil
 	}
 
-	jobInfoCh, err := job.SubToJob(jobUuid)
-	if err != nil {
-		return err
-	}
+	jobInfoCh := job.SubToJob(jobInfo.JobId)
 	defer func() {
 		go job.UnsubToJob(jobUuid)
 	}()
@@ -245,46 +241,6 @@ func (job *JobService) StreamJobAndLogs(ctx context.Context, jobUuid string, str
 	}
 }
 
-func (job *JobService) checkJob(jobUuid string) (*models.Job, bool, string, error) {
-	jobInf, err := job.getJob(jobUuid)
-	if err != nil {
-		return nil, false, "", fmt.Errorf("failed to get job info")
-	}
-	if jobInf.Status.Done() {
-		log.Debug().Msgf("Job %s is done", jobUuid)
-
-		content, err := os.ReadFile(jobInf.OutputLogFilePath)
-		if err != nil {
-			log.Warn().Err(err).Msgf("Failed to read job log file at %s", jobInf.OutputLogFilePath)
-			return nil, false, "", fmt.Errorf("failed to read log file")
-		}
-
-		return jobInf, true, string(content), nil
-	} else {
-		return jobInf, false, "", nil
-	}
-}
-
-func sendJobToStream(stream *connect.ServerStream[v2.JobLogsResponse], jobInfo *models.Job, logs string) error {
-	err := stream.Send(&v2.JobLogsResponse{
-		JobInfo: &v2.JobStatus{
-			JobId:            jobInfo.JobId,
-			MachineId:        jobInfo.MachineId,
-			ContainerId:      jobInfo.ContainerId,
-			Status:           string(jobInfo.Status),
-			StatusMessage:    jobInfo.StatusMessage,
-			OutputFilePath:   "",
-			TmpJobFolderPath: "",
-			JobTimeout:       int64(jobInfo.JobTimeout),
-		},
-		Logs: logs,
-	})
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 func (job *JobService) ListenToJobLogs(ctx context.Context, jobInfo *models.Job) chan string {
 	logChannel := make(chan string, 50)
 	go func() {
@@ -307,35 +263,36 @@ func (job *JobService) ListenToJobLogs(ctx context.Context, jobInfo *models.Job)
 	return logChannel
 }
 
-func readLogFile(jobInfo *models.Job) string {
-	content, err := os.ReadFile(jobInfo.OutputLogFilePath)
-	if err != nil {
-		log.Warn().Err(err).Msgf("Failed to read job log file at %s", jobInfo.OutputLogFilePath)
-		return ""
-	}
-	return string(content)
-}
-
-func (job *JobService) SubToJob(jobUuid string) (chan *models.Job, error) {
+func (job *JobService) SubToJob(jobUuid string) chan *models.Job {
 	jch := job.broadcastCh.Subscribe(jobUuid)
-
-	// check job data
-	getJob, err := job.getJob(jobUuid)
-	if err != nil {
-		log.Warn().Err(err).Msgf("Failed to get job")
-		return nil, fmt.Errorf("unable to find job")
-	}
-
-	// send initial job data
-	jch <- getJob
-	return jch, nil
+	return jch
 }
 
 func (job *JobService) UnsubToJob(jobUuid string) {
 	job.broadcastCh.Unsubscribe(jobUuid)
 }
 
-func (job *JobService) getJob(jobUuid string) (*models.Job, error) {
+func (job *JobService) checkJob(jobUuid string) (*models.Job, bool, string, error) {
+	jobInf, err := job.getJobFromDB(jobUuid)
+	if err != nil {
+		return nil, false, "", fmt.Errorf("failed to get job info")
+	}
+	if jobInf.Status.Done() {
+		log.Debug().Msgf("Job %s is done", jobUuid)
+
+		content, err := os.ReadFile(jobInf.OutputLogFilePath)
+		if err != nil {
+			log.Warn().Err(err).Msgf("Failed to read job log file at %s", jobInf.OutputLogFilePath)
+			return nil, false, "", fmt.Errorf("failed to read log file")
+		}
+
+		return jobInf, true, string(content), nil
+	} else {
+		return jobInf, false, "", nil
+	}
+}
+
+func (job *JobService) getJobFromDB(jobUuid string) (*models.Job, error) {
 	var jobInfo *models.Job
 	res := job.db.First(&jobInfo, "job_id = ?", jobUuid)
 	if res.Error != nil {
@@ -368,4 +325,33 @@ func (job *JobService) setupLogFile(jobId string) string {
 	}
 
 	return full
+}
+
+func sendJobToStream(stream *connect.ServerStream[v2.JobLogsResponse], jobInfo *models.Job, logs string) error {
+	err := stream.Send(&v2.JobLogsResponse{
+		JobInfo: &v2.JobStatus{
+			JobId:            jobInfo.JobId,
+			MachineId:        jobInfo.MachineId,
+			ContainerId:      jobInfo.ContainerId,
+			Status:           string(jobInfo.Status),
+			StatusMessage:    jobInfo.StatusMessage,
+			OutputFilePath:   "",
+			TmpJobFolderPath: "",
+			JobTimeout:       int64(jobInfo.JobTimeout),
+		},
+		Logs: logs,
+	})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func readLogFile(jobInfo *models.Job) string {
+	content, err := os.ReadFile(jobInfo.OutputLogFilePath)
+	if err != nil {
+		log.Warn().Err(err).Msgf("Failed to read job log file at %s", jobInfo.OutputLogFilePath)
+		return ""
+	}
+	return string(content)
 }

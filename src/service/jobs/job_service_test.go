@@ -15,8 +15,8 @@ import (
 )
 
 const (
-	makeFilePath   = "../../../example/python/simple-addition/makefile"
-	graderFilePath = "../../../example/python/simple-addition/grader.py"
+	makeFilePath   = "../../../example/simple-addition/makefile"
+	graderFilePath = "../../../example/simple-addition/grader.py"
 )
 
 var (
@@ -27,22 +27,22 @@ var (
 		correctStatus  models.JobStatus
 	}{
 		"correct": {
-			studentFile:    "../../../example/python/simple-addition/student_correct.py",
+			studentFile:    "../../../example/simple-addition/student_correct.py",
 			expectedOutput: `{"addition": {"passed": true, "message": ""}, "subtraction": {"passed": true, "message": ""}, "multiplication": {"passed": true, "message": ""}, "division": {"passed": true, "message": ""}}`,
 			correctStatus:  models.Complete,
 		},
 		"incorrect": {
-			studentFile:    "../../../example/python/simple-addition/student_incorrect.py",
+			studentFile:    "../../../example/simple-addition/student_incorrect.py",
 			expectedOutput: `{"addition": {"passed": true, "message": ""}, "subtraction": {"passed": true, "message": ""}, "multiplication": {"passed": false, "message": "Multiplication failed. Expected 42, got 48"}, "division": {"passed": false, "message": "Division failed. Expected 4, got 3.3333333333333335"}}`,
 			correctStatus:  models.Complete,
 		},
 		"timeout": {
-			studentFile:    "../../../example/python/simple-addition/student_timeout.py",
+			studentFile:    "../../../example/simple-addition/student_timeout.py",
 			expectedOutput: "Maximum timeout reached for job, job ran for 10s",
 			correctStatus:  models.Failed,
 		},
 		//"forkb": {
-		//	studentFile:    "../../../example/python/simple-addition/student_fork_bomb.py",
+		//	studentFile:    "../../../example/simple-addition/student_fork_bomb.py",
 		//	expectedOutput: "",
 		//},
 	}

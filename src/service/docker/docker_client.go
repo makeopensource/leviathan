@@ -242,7 +242,7 @@ func (c *DkClient) RemoveContainer(containerID string, force bool, removeVolumes
 func (c *DkClient) CopyToContainer(containerID string, submissionDirPath string) error {
 	//log.Debug().Msgf("Copying files to container %s", containerDirectory)
 
-	jobBytes, err := common.TarDir(submissionDirPath, 660)
+	jobBytes, err := common.TarDir(submissionDirPath, 775)
 	if err != nil {
 		log.Error().Err(err).Msgf("failed to convert files to tar")
 		return fmt.Errorf("failed to convert files to tar")

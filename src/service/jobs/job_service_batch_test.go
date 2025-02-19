@@ -25,9 +25,6 @@ func Test50Jobs(t *testing.T) {
 }
 
 func Test100Jobs(t *testing.T) {
-	if os.Getenv("CI") != "" {
-		t.Skip("Skipping testing in CI environment")
-	}
 	testBatchJobProcessor(t, 100)
 }
 

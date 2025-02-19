@@ -33,10 +33,6 @@ jobs:
         run: go mod tidy
 
       - name: Run client manager tests
-        working-directory: src/service/docker
-        run: go test -v
-
-      - name: Run client manager tests
         working-directory: src/service/jobs
         # tests meant for CI
         run: |

@@ -74,14 +74,3 @@ type MachineLimits struct {
 	// Memory in MB
 	Memory uint64
 }
-
-// LogChannelWriter implements io.Writer interface,
-// to send docker output to a grpc stream
-type LogChannelWriter struct {
-	Channel chan string
-}
-
-func (w *LogChannelWriter) Write(p []byte) (n int, err error) {
-	w.Channel <- string(p)
-	return len(p), nil
-}

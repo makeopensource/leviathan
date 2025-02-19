@@ -157,8 +157,6 @@ func (c *DkClient) ListContainers(machineId string) ([]*dktypes.ContainerMetaDat
 	return containerInfoList, nil
 }
 
-const containerDirectory = "/home/autolab/"
-
 // CreateNewContainer creates a new container from given image
 func (c *DkClient) CreateNewContainer(jobUuid string, image string, machineLimits container.Resources) (string, error) {
 	runCommand := fmt.Sprintf("cd /home/autolab && make grade")
@@ -174,6 +172,9 @@ func (c *DkClient) CreateNewContainer(jobUuid string, image string, machineLimit
 	hostConfig := &container.HostConfig{
 		Resources:  machineLimits,
 		AutoRemove: false,
+		Binds: []string{
+			"/etc/localtime:/etc/localtime:ro", // add a time mount to fix clock skew issue in make
+		},
 		//Binds:      mounts,
 	}
 	networkingConfig := &network.NetworkingConfig{}

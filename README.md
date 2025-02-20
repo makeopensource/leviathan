@@ -37,3 +37,14 @@ You will need to fill out
 8. Leviathan will capture the stdout of the container, and attempt to parse the last line of the stdout
       * It expects a json string as the last line, the contents can be anything as long as it is valid json
       * If it is unable to parse the json, it will fail the job
+
+### Example
+
+You can see the test files [here](./example/simple-addition)
+
+> [!NOTE]
+>
+> Before submitting
+> Rename student_*.py files to student.py, since the grader expects student.py as the filename
+
+![img.png](./docs/test-example.png)

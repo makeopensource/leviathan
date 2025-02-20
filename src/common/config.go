@@ -1,6 +1,7 @@
 package common
 
 import (
+	"errors"
 	"fmt"
 	"github.com/joho/godotenv"
 	"github.com/makeopensource/leviathan/models"
@@ -8,36 +9,6 @@ import (
 	"github.com/spf13/viper"
 	"os"
 )
-
-//dbPathKey         = "db_path"
-//logDirKey = "log_dir"
-//apiKeyKey = "apikey"
-//serverPortKey = "server.port"
-//concurrentJobsKey = "concurrent_jobs"
-//
-//// folders
-//submissionFolderKey  = "folder.submission_folder"
-//dockerFilesFolderKey = "folder.docker_files_folder"
-//outputFolderKey = "folder.output_folder"
-//// docker config
-//enableLocalDockerKey = "clients.enable_local_docker"
-//type Prefs struct {
-//	Server struct {
-//		Host string `mapstructure:"host" default:"localhost"`
-//		Port int    `mapstructure:"port" default:"8080"`
-//		TLS  bool   `mapstructure:"tls"` // No default, will be false
-//	} `mapstructure:"server"`
-//	Machines []models.MachineOptions `mapstructure:"database"`
-//	Database struct {
-//		User     string `mapstructure:"user" default:"admin"`
-//		Password string `mapstructure:"password"` // No default
-//		Name     string `mapstructure:"name" default:"mydatabase"`
-//	} `mapstructure:"database"`
-//	EnablelocalDocker bool   `mapstructure:"enable_local_docker"`
-//	LogLevel          string `mapstructure:"log_level" default:"info"`
-//	// Example with nested defaults
-//	Timeout time.Duration `mapstructure:"timeout" default:"5s"` // Example with time.Duration
-//}
 
 func InitConfig() {
 	err := godotenv.Load()
@@ -67,10 +38,12 @@ func InitConfig() {
 
 	err = makeDirectories([]string{submissionFolderPath, outputFolderPath})
 
-	if err := viper.WriteConfig(); err != nil {
-		log.Fatal().Err(err).Msg("viper could not write to config file")
+	if err := viper.SafeWriteConfig(); err != nil {
+		var configFileAlreadyExistsError viper.ConfigFileAlreadyExistsError
+		if !errors.As(err, &configFileAlreadyExistsError) {
+			log.Fatal().Err(err).Msg("viper could not write to config file")
+		}
 	}
-
 	err = viper.ReadInConfig()
 	if err != nil {
 		log.Fatal().Err(err).Msg("could not read config file")

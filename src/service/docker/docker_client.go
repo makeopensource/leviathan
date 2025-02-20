@@ -158,8 +158,9 @@ func (c *DkClient) ListContainers(machineId string) ([]*dktypes.ContainerMetaDat
 }
 
 // CreateNewContainer creates a new container from given image
-func (c *DkClient) CreateNewContainer(jobUuid string, image string, machineLimits container.Resources) (string, error) {
-	runCommand := fmt.Sprintf("cd /home/autolab && make grade")
+func (c *DkClient) CreateNewContainer(jobUuid, image, entryCmd string, machineLimits container.Resources) (string, error) {
+	baseCmd := "cd /home/autolab"
+	runCommand := fmt.Sprintf("%s && %s", baseCmd, entryCmd)
 
 	config := &container.Config{
 		Image: image,

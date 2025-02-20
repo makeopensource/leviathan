@@ -21,6 +21,7 @@ func (job *JobServer) NewJob(ctx context.Context, req *connect.Request[v1.NewJob
 	stu := req.Msg.GetStudentSubmission()
 	tag := req.Msg.GetImageName()
 	dockerfile := req.Msg.GetDockerFile()
+	entryCmd := req.Msg.GetEntryCmd()
 
 	vars := []*types.FileUpload{makeF, grader, stu, dockerfile}
 	for _, v := range vars {
@@ -36,10 +37,14 @@ func (job *JobServer) NewJob(ctx context.Context, req *connect.Request[v1.NewJob
 	if tag == "" {
 		return nil, fmt.Errorf("docker image tag is empty")
 	}
+	if entryCmd == "" {
+		return nil, fmt.Errorf("entry cmd is empty")
+	}
 
 	newJob := models.Job{
-		LabData:    models.LabModel{ImageTag: tag},
-		JobTimeout: time.Second * time.Duration(req.Msg.JobTimeoutInSeconds),
+		JobEntryCmd: entryCmd,
+		LabData:     models.LabModel{ImageTag: tag},
+		JobTimeout:  time.Second * time.Duration(req.Msg.JobTimeoutInSeconds),
 	}
 
 	jobId, err := job.Service.NewJob(&newJob, makeF, grader, stu, dockerfile)

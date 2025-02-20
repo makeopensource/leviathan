@@ -77,8 +77,10 @@ func (job *JobService) NewJob(newJob *models.Job, makefile *v1.FileUpload, grade
 		return "", fmt.Errorf("failed to save job to db")
 	}
 
-	// run in go routine in case queue is full and this gets blocked
-	go job.queue.AddJob(newJob)
+	err = job.queue.AddJob(newJob)
+	if err != nil {
+		return "", err
+	}
 
 	return jobId.String(), nil
 }
@@ -242,21 +244,20 @@ func (job *JobService) StreamJobAndLogs(ctx context.Context, jobUuid string, str
 }
 
 func (job *JobService) ListenToJobLogs(ctx context.Context, jobInfo *models.Job) chan string {
-	logChannel := make(chan string, 50)
+	logChannel := make(chan string, 10)
 	go func() {
 		// keep reading until ctx is done
 		for {
-			// Read all the content of the file
-			content := readLogFile(jobInfo)
-			logChannel <- content
-
-			// err if context was cancelled, i.e. connection closed
-			if ctx.Err() != nil {
+			// use select instead if time.sleep for better perf
+			select {
+			case <-time.After(2 * time.Second):
+				// Read all the content of the file
+				content := readLogFile(jobInfo)
+				logChannel <- content
+			case <-ctx.Done():
 				log.Debug().Msgf("Stopping listening for logs: %s", jobInfo.JobId)
 				return
 			}
-
-			time.Sleep(1 * time.Second)
 		}
 	}()
 
@@ -264,8 +265,7 @@ func (job *JobService) ListenToJobLogs(ctx context.Context, jobInfo *models.Job)
 }
 
 func (job *JobService) SubToJob(jobUuid string) chan *models.Job {
-	jch := job.broadcastCh.Subscribe(jobUuid)
-	return jch
+	return job.broadcastCh.Subscribe(jobUuid)
 }
 
 func (job *JobService) UnsubToJob(jobUuid string) {

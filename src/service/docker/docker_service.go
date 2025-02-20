@@ -145,7 +145,7 @@ func (service *DkService) CreateContainerReq(machineId string, jobId string, ima
 		NanoCPUs: 2 * 1000000000,
 	}
 
-	containerID, err := machine.CreateNewContainer(jobId, imageTag, resources)
+	containerID, err := machine.CreateNewContainer(jobId, imageTag, "", resources)
 	if err != nil {
 		log.Error().Err(err).Msgf("Failed to create container for job %s", jobId)
 		return "", err

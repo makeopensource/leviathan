@@ -18,6 +18,15 @@ const (
 	outputFolderKey      = "folder.output_folder"
 	// docker config
 	enableLocalDockerKey = "clients.enable_local_docker"
+
+	// postgres
+	enablePostgresKey = "db.enable_postgres"
+	postgresHostKey   = "db.postgres_host"
+	postgresPortKey   = "db.postgres_port"
+	postgresUserKey   = "db.postgres_user"
+	postgresPassKey   = "db.postgres_pass"
+	postgresDBKey     = "db.postgres_db"
+	postgresSslKey    = "db.postgres_ssl"
 )
 
 var (
@@ -33,6 +42,16 @@ var (
 	DockerFilesFolder   = Config{dockerFilesFolderKey}
 	OutputFolder        = Config{outputFolderKey}
 	EnableLocalDocker   = Config{enableLocalDockerKey}
+
+	// postgres
+
+	EnablePostgres = Config{enablePostgresKey}
+	postgresHost   = Config{postgresHostKey}
+	postgresPort   = Config{postgresPortKey}
+	postgresUser   = Config{postgresUserKey}
+	postgresPass   = Config{postgresPassKey}
+	postgresDB     = Config{postgresDBKey}
+	postgresSsl    = Config{postgresSslKey}
 )
 
 type Config struct {

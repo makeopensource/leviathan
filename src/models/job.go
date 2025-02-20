@@ -2,6 +2,7 @@ package models
 
 import (
 	"context"
+	"fmt"
 	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
 	"time"
@@ -41,6 +42,7 @@ type Job struct {
 	JobId         string `gorm:"uniqueIndex"`
 	MachineId     string
 	ContainerId   string
+	JobEntryCmd   string
 	Status        JobStatus
 	StatusMessage string
 	LabData       LabModel `gorm:"-"`
@@ -51,6 +53,36 @@ type Job struct {
 	TmpJobFolderPath string
 	JobTimeout       time.Duration
 	JobCtx           context.Context `gorm:"-"`
+}
+
+// ValidateForQueue checks for fields required before sending job to queue
+func (j *Job) ValidateForQueue() error {
+	if j.JobId == "" {
+		return fmt.Errorf("job id is empty")
+	}
+	if j.MachineId == "" {
+		return fmt.Errorf("machine id is empty")
+	}
+	if j.JobEntryCmd == "" {
+		return fmt.Errorf("job entry cmd is empty")
+	}
+	if j.JobTimeout == 0 {
+		return fmt.Errorf("job timeout is 0")
+	}
+	if j.JobCtx == nil {
+		return fmt.Errorf("job context is nil")
+	}
+	if j.OutputLogFilePath == "" {
+		return fmt.Errorf("output log file is empty")
+	}
+	if j.TmpJobFolderPath == "" {
+		return fmt.Errorf("tmp job folder is empty")
+	}
+	if j.LabData.ImageTag == "" {
+		return fmt.Errorf("image tag is empty")
+	}
+
+	return nil
 }
 
 // AfterUpdate adds hooks for job streaming, updates a go channel everytime a job is updated
@@ -73,15 +105,4 @@ type MachineLimits struct {
 	NanoCPU uint64
 	// Memory in MB
 	Memory uint64
-}
-
-// LogChannelWriter implements io.Writer interface,
-// to send docker output to a grpc stream
-type LogChannelWriter struct {
-	Channel chan string
-}
-
-func (w *LogChannelWriter) Write(p []byte) (n int, err error) {
-	w.Channel <- string(p)
-	return len(p), nil
 }

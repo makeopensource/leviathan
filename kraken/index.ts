@@ -37,14 +37,21 @@ app.post('/submit',
                 return;
             }
 
-            const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+            let entryCmd = req.body.entryCmd as string;
+            entryCmd = entryCmd.trim()
+            if (entryCmd === "" || entryCmd.startsWith("&&") || entryCmd.endsWith("&&")) {
+                res.status(400).send('Invalid entry command must not start or end with && or empty');
+                return
+            }
 
+            const files = req.files as { [fieldname: string]: Express.Multer.File[] };
             const grader = files['grader'][0]
             const makefile = files['makefile'][0]
             const student = files['student'][0]
             const dockerfile = files['dockerfile'][0]
 
             const job = <NewJobRequest>{
+                entryCmd: entryCmd,
                 jobTimeoutInSeconds: BigInt(jobTimeout),
                 imageName: imageTag,
                 makeFile: {

@@ -91,7 +91,7 @@ func TestCancel(t *testing.T) {
 	testJob(t, jobId, timeout.expectedOutput, models.Canceled)
 
 	// verify cancel function was removed from context map
-	value := JobTestService.queue.GetJobCancelFunc(jobId)
+	value := JobTestService.queue.getJobCancelFunc(jobId)
 	if value != nil {
 		t.Fatalf("Job was cancelled, but the cancel func was not nil")
 	}
@@ -125,8 +125,9 @@ func setupJobProcess(studentCodePath string, timeout time.Duration) string {
 	}
 
 	newJob := &models.Job{
-		LabData:    models.LabModel{ImageTag: ImageName},
-		JobTimeout: timeout,
+		LabData:     models.LabModel{ImageTag: ImageName},
+		JobTimeout:  timeout,
+		JobEntryCmd: "make grade",
 	}
 
 	jobId, err := JobTestService.NewJob(

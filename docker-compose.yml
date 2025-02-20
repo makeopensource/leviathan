@@ -18,17 +18,19 @@ services:
     profiles:
       - '' # so it starts with normal docker compose
 
-  minio:
-    container_name: leviathan_minio
-    image: quay.io/minio/minio
-    command: server /data --console-address ":9001"
-    env_file:
-      - .env
-    volumes:
-      - ./appdata/leviathan_minio:/data
+  db:
+    # Runs the PostgreSQL database
+    image: postgres
+    environment:
+      POSTGRES_DB: leviathan
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
     ports:
-      - "9012:9000"
-      - "9013:9001"
+      - '5432:5432'
+    expose:
+      - '5432'
+    restart: unless-stopped
     profiles:
       - dev
+      - post
       - '' # so it starts with normal docker compose

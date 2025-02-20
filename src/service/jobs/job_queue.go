@@ -45,8 +45,17 @@ func (q *JobQueue) CreateJobProcessors() {
 	}
 }
 
-func (q *JobQueue) AddJob(mes *models.Job) {
-	q.jobChannel <- mes
+func (q *JobQueue) AddJob(mes *models.Job) error {
+	err := mes.ValidateForQueue()
+	if err != nil {
+		return err
+	}
+
+	// run in go routine in case queue is full and gets blocked
+	go func() {
+		q.jobChannel <- mes
+	}()
+	return nil
 }
 
 func (q *JobQueue) NewJobContext(messageId string) context.Context {
@@ -60,21 +69,21 @@ func (q *JobQueue) NewJobContext(messageId string) context.Context {
 	return ctx
 }
 
-func (q *JobQueue) GetJobCancelFunc(messageId string) context.CancelFunc {
-	val, ok := q.contextMap.Load(messageId)
-	if !ok {
-		return nil
-	}
-	return val
-}
-
 func (q *JobQueue) CancelJob(messageId string) {
-	cancel := q.GetJobCancelFunc(messageId)
+	cancel := q.getJobCancelFunc(messageId)
 	if cancel == nil {
 		log.Warn().Str("messageId", messageId).Msg("nil job context")
 		return
 	}
 	cancel()
+}
+
+func (q *JobQueue) getJobCancelFunc(messageId string) context.CancelFunc {
+	val, ok := q.contextMap.Load(messageId)
+	if !ok {
+		return nil
+	}
+	return val
 }
 
 func (q *JobQueue) worker(workerId int) {

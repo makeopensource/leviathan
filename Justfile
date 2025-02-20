@@ -36,6 +36,9 @@ bdrn:
 dkrn:
 	docker compose up
 
+post:
+    docker compose --profile post up
+
 # lint go files
 [working-directory: 'src']
 lint:

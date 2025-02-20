@@ -1,15 +1,50 @@
 package common
 
 import (
-	"errors"
 	"fmt"
+	"github.com/joho/godotenv"
 	"github.com/makeopensource/leviathan/models"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
 	"os"
 )
 
+//dbPathKey         = "db_path"
+//logDirKey = "log_dir"
+//apiKeyKey = "apikey"
+//serverPortKey = "server.port"
+//concurrentJobsKey = "concurrent_jobs"
+//
+//// folders
+//submissionFolderKey  = "folder.submission_folder"
+//dockerFilesFolderKey = "folder.docker_files_folder"
+//outputFolderKey = "folder.output_folder"
+//// docker config
+//enableLocalDockerKey = "clients.enable_local_docker"
+//type Prefs struct {
+//	Server struct {
+//		Host string `mapstructure:"host" default:"localhost"`
+//		Port int    `mapstructure:"port" default:"8080"`
+//		TLS  bool   `mapstructure:"tls"` // No default, will be false
+//	} `mapstructure:"server"`
+//	Machines []models.MachineOptions `mapstructure:"database"`
+//	Database struct {
+//		User     string `mapstructure:"user" default:"admin"`
+//		Password string `mapstructure:"password"` // No default
+//		Name     string `mapstructure:"name" default:"mydatabase"`
+//	} `mapstructure:"database"`
+//	EnablelocalDocker bool   `mapstructure:"enable_local_docker"`
+//	LogLevel          string `mapstructure:"log_level" default:"info"`
+//	// Example with nested defaults
+//	Timeout time.Duration `mapstructure:"timeout" default:"5s"` // Example with time.Duration
+//}
+
 func InitConfig() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Warn().Err(err).Msg("enable to load .env file")
+	}
+
 	defer func() {
 		log.Logger = FileConsoleLogger()
 	}()
@@ -22,6 +57,7 @@ func InitConfig() {
 	viper.AddConfigPath(configDir)
 
 	setupDefaultOptions(configDir)
+	loadPostgresOptions()
 
 	submissionFolderPath := getStringEnvOrDefault("SUBMISSION_FOLDER", fmt.Sprintf("%s/%s", baseDir, "submissions"))
 	viper.SetDefault(submissionFolderKey, submissionFolderPath)
@@ -29,16 +65,10 @@ func InitConfig() {
 	outputFolderPath := getStringEnvOrDefault("OUTPUT_FOLDER", fmt.Sprintf("%s/%s", baseDir, "output"))
 	viper.SetDefault(outputFolderKey, submissionFolderPath)
 
-	dockerFolderPath := getStringEnvOrDefault("DOCKERFILE_FOLDER", fmt.Sprintf("%s/%s", baseDir, "dockerfiles"))
-	viper.SetDefault(dockerFilesFolderKey, dockerFolderPath)
+	err = makeDirectories([]string{submissionFolderPath, outputFolderPath})
 
-	err := makeDirectories([]string{submissionFolderPath, dockerFolderPath, outputFolderPath})
-
-	if err := viper.SafeWriteConfig(); err != nil {
-		var configFileAlreadyExistsError viper.ConfigFileAlreadyExistsError
-		if !errors.As(err, &configFileAlreadyExistsError) {
-			log.Fatal().Err(err).Msg("viper could not write to config file")
-		}
+	if err := viper.WriteConfig(); err != nil {
+		log.Fatal().Err(err).Msg("viper could not write to config file")
 	}
 
 	err = viper.ReadInConfig()
@@ -51,6 +81,41 @@ func InitConfig() {
 
 	// maybe create viper instance and return from this function
 	// future setup in case https://github.com/spf13/viper/issues/1855 is accepted
+}
+
+func loadPostgresOptions() {
+	enablePost := false
+	if getStringEnvOrDefault("POSTGRES_ENABLE", "false") == "true" {
+		enablePost = true
+	}
+	viper.SetDefault(
+		enablePostgresKey,
+		enablePost,
+	)
+	viper.SetDefault(
+		postgresHostKey,
+		getStringEnvOrDefault("POSTGRES_HOST", "localhost"),
+	)
+	viper.SetDefault(
+		postgresPortKey,
+		getStringEnvOrDefault("POSTGRES_PORT", "5432"),
+	)
+	viper.SetDefault(
+		postgresUserKey,
+		getStringEnvOrDefault("POSTGRES_USER", "postgres"),
+	)
+	viper.SetDefault(
+		postgresPassKey,
+		getStringEnvOrDefault("POSTGRES_PASSWORD", ""),
+	)
+	viper.SetDefault(
+		postgresDBKey,
+		getStringEnvOrDefault("POSTGRES_DB", "postgres"),
+	)
+	viper.SetDefault(
+		postgresSslKey,
+		getStringEnvOrDefault("POSTGRES_SSL", "disable"),
+	)
 }
 
 func getConfigDir(baseDir string) string {

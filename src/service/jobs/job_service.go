@@ -244,21 +244,20 @@ func (job *JobService) StreamJobAndLogs(ctx context.Context, jobUuid string, str
 }
 
 func (job *JobService) ListenToJobLogs(ctx context.Context, jobInfo *models.Job) chan string {
-	logChannel := make(chan string, 50)
+	logChannel := make(chan string, 10)
 	go func() {
 		// keep reading until ctx is done
 		for {
-			// Read all the content of the file
-			content := readLogFile(jobInfo)
-			logChannel <- content
-
-			// err if context was cancelled, i.e. connection closed
-			if ctx.Err() != nil {
+			// use select instead if time.sleep for better perf
+			select {
+			case <-time.After(2 * time.Second):
+				// Read all the content of the file
+				content := readLogFile(jobInfo)
+				logChannel <- content
+			case <-ctx.Done():
 				log.Debug().Msgf("Stopping listening for logs: %s", jobInfo.JobId)
 				return
 			}
-
-			time.Sleep(1 * time.Second)
 		}
 	}()
 

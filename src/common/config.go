@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/joho/godotenv"
-	"github.com/makeopensource/leviathan/models"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
 	"os"
@@ -13,7 +12,7 @@ import (
 func InitConfig() {
 	err := godotenv.Load()
 	if err != nil {
-		log.Warn().Err(err).Msg("enable to load .env file")
+		log.Warn().Err(err).Msg("unable to load .env file")
 	}
 
 	defer func() {
@@ -49,7 +48,7 @@ func InitConfig() {
 		log.Fatal().Err(err).Msg("could not read config file")
 	}
 
-	log.Info().Msg("Watching config file")
+	log.Info().Msgf("watching config file at %s", viper.ConfigFileUsed())
 	viper.WatchConfig()
 
 	// maybe create viper instance and return from this function
@@ -133,46 +132,4 @@ func makeDirectories(dirs []string) error {
 		}
 	}
 	return nil
-}
-
-func GetClientList() []models.MachineOptions {
-	var allMachines []models.MachineOptions
-
-	// Get all settings
-	allSettings := viper.AllSettings()
-
-	// Navigate to clients.ssh
-	clients, ok := allSettings["clients"].(map[string]interface{})
-	if !ok {
-		log.Error().Msgf("clients section not found or not configured")
-		return nil
-	}
-	ssh, ok := clients["ssh"].(map[string]interface{})
-	if !ok {
-		log.Error().Msgf("ssh section not found or not configured")
-		return nil
-	}
-
-	// Iterate over all keys in clients.ssh
-	for clientName, clientConfig := range ssh {
-		clientMap, ok := clientConfig.(map[string]interface{})
-		if !ok {
-			fmt.Printf("  Invalid configuration for %s\n", clientName)
-			continue
-		}
-
-		log.Info().Msgf("Found machine: %s", clientName)
-
-		options := models.MachineOptions{
-			Name:           clientName,
-			Host:           clientMap["host"].(string),
-			Port:           clientMap["port"].(int64),
-			User:           clientMap["user"].(string),
-			PrivateKeyFile: clientMap["private_key_file"].(string),
-		}
-		log.Debug().Any("Machine options", options).Msgf("Loaded: %s", clientName)
-		allMachines = append(allMachines, options)
-	}
-
-	return allMachines
 }

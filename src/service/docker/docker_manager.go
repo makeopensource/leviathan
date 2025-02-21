@@ -6,7 +6,9 @@ import (
 	"github.com/docker/docker/api/types/system"
 	"github.com/docker/docker/client"
 	"github.com/makeopensource/leviathan/common"
+	"github.com/makeopensource/leviathan/models"
 	"github.com/rs/zerolog/log"
+	"github.com/spf13/viper"
 	"sync"
 )
 
@@ -20,9 +22,50 @@ type RemoteClientManager struct {
 	mu      sync.RWMutex
 }
 
+func GetClientList() []models.MachineOptions {
+	var allMachines []models.MachineOptions
+
+	// Get all settings
+	allSettings := viper.AllSettings()
+
+	// Navigate to clients.ssh
+	clients, ok := allSettings["clients"].(map[string]interface{})
+	if !ok {
+		log.Error().Msgf("clients section not found or not configured")
+		return nil
+	}
+	ssh, ok := clients["ssh"].(map[string]interface{})
+	if !ok {
+		log.Warn().Msgf("ssh section not found or not configured")
+		return nil
+	}
+
+	// Iterate over all keys in clients.ssh
+	for clientName, clientConfig := range ssh {
+		clientMap, ok := clientConfig.(map[string]interface{})
+		if !ok {
+			log.Warn().Msgf("Invalid configuration for %s", clientName)
+			continue
+		}
+
+		options := models.MachineOptions{
+			Name:           clientName,
+			Host:           clientMap["host"].(string),
+			Port:           clientMap["port"].(int64),
+			User:           clientMap["user"].(string),
+			PrivateKeyFile: clientMap["private_key_file"].(string),
+		}
+
+		log.Info().Any("Machine options", options).Msgf("Found machine: %s", clientName)
+		allMachines = append(allMachines, options)
+	}
+
+	return allMachines
+}
+
 func InitDockerClients() *RemoteClientManager {
 	// contains clients loaded from config
-	untestedClientList := common.GetClientList()
+	untestedClientList := GetClientList()
 	// contains final connected list
 	clientList := map[string]*MachineStatus{}
 
@@ -66,7 +109,7 @@ func InitDockerClients() *RemoteClientManager {
 
 	if len(clientList) == 0 {
 		// machines should always be available
-		log.Fatal().Msgf("No docker clients connected")
+		log.Fatal().Msgf("No docker clients connected, check your config")
 	}
 
 	return &RemoteClientManager{Clients: clientList, mu: sync.RWMutex{}}

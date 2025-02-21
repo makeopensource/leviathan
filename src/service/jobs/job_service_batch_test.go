@@ -10,10 +10,11 @@ import (
 
 var (
 	testFuncs = map[string]func(*testing.T){
-		"correct":   TestCorrect,
-		"incorrect": TestIncorrect,
-		"cancel":    TestCancel,
-		"timeout":   TestTimeout,
+		"correct":      TestCorrect,
+		"incorrect":    TestIncorrect,
+		"cancel":       TestCancel,
+		"timeout":      TestTimeout,
+		"timeout_edge": TestTimeoutEdge,
 	}
 )
 
@@ -53,7 +54,7 @@ func Test10000Jobs(t *testing.T) {
 }
 
 func testBatchJobProcessor(t *testing.T, numJobs int) {
-	SetupTest()
+	setupTest()
 
 	testValues := maps.Values(testFuncs)
 

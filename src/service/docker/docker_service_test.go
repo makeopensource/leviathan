@@ -1,14 +1,40 @@
 package docker
 
 import (
+	"fmt"
 	"github.com/docker/docker/api/types/container"
 	"github.com/google/uuid"
 	"github.com/makeopensource/leviathan/common"
+	"sync"
 	"testing"
 )
 
+var (
+	DkTestService *DkService
+	setup         sync.Once
+)
+
+const (
+	ImageName      = "arithmetic-python"
+	DockerFilePath = "../../../example/simple-addition/ex-Dockerfile"
+)
+
+func TestConcurrentImageBuilds(t *testing.T) {
+	setupTest()
+	numTimes := 100
+	for i := 0; i < numTimes; i++ {
+		t.Run(fmt.Sprintf("image_%d", i), func(t *testing.T) {
+			t.Parallel()
+			err := DkTestService.NewImageReq(DockerFilePath, "test")
+			if err != nil {
+				t.Fatal(err)
+			}
+		})
+	}
+}
+
 func TestCopyToContainer(t *testing.T) {
-	SetupTest()
+	setupTest()
 
 	machine, err := DkTestService.ClientManager.GetClientById(DkTestService.ClientManager.GetLeastJobCountMachineId())
 	if err != nil {
@@ -40,4 +66,16 @@ func TestCopyToContainer(t *testing.T) {
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
+}
+
+func setupTest() {
+	setup.Do(func() {
+		common.InitConfig()
+		initServices()
+	})
+}
+
+func initServices() {
+	clientList := InitDockerClients()
+	DkTestService = NewDockerService(clientList)
 }

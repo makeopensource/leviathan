@@ -36,7 +36,7 @@ func NewDkClient(client *client.Client) *DkClient {
 }
 
 func NewSSHClient(connectionString string) (*DkClient, error) {
-	helper, err := connhelper.GetConnectionHelper(fmt.Sprintf("ssh://%s:22", connectionString))
+	helper, err := connhelper.GetConnectionHelper(fmt.Sprintf("ssh://%s", connectionString))
 	if err != nil {
 		log.Error().Err(err).Msgf("connection string: %s", connectionString)
 		return nil, err

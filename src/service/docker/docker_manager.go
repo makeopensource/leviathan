@@ -70,7 +70,7 @@ func InitDockerClients() *RemoteClientManager {
 	clientList := map[string]*MachineStatus{}
 
 	for _, machine := range untestedClientList {
-		connStr := fmt.Sprintf("%s@%s", machine.User, machine.Host)
+		connStr := fmt.Sprintf("%s@%s:%d", machine.User, machine.Host, machine.Port)
 		remoteClient, err := NewSSHClient(connStr)
 		if err != nil {
 			log.Error().Err(err).Msgf("Failed to setup remote docker client: %s", machine.Name)

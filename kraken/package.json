@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "description": "",
   "scripts": {
-    "start": "ts-node index.ts",
-    "watch": "nodemon index.ts",
-    "build": "parcel build ui/index.html --dist-dir dist",
+    "start": "npm run build && ts-node index.ts",
+    "watch": "npm run build && nodemon index.ts",
+    "build": "parcel build ui/* --dist-dir ui/dist",
     "clean": "rimraf dist .parcel-cache node_modules"
   },
   "repository": {

@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"github.com/makeopensource/leviathan/models"
 	"github.com/rs/zerolog/log"
-	"github.com/spf13/viper"
 	"gorm.io/driver/postgres"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+	"path/filepath"
 )
 
 func InitDB() *gorm.DB {
@@ -35,7 +35,7 @@ func InitDB() *gorm.DB {
 }
 
 func useSqlite() (gorm.Dialector, *gorm.Config) {
-	dbPath := viper.GetString("db_path")
+	dbPath := SqliteDbPath.GetStr()
 	if dbPath == "" {
 		log.Fatal().Msgf("db_path is empty")
 	}
@@ -45,7 +45,13 @@ func useSqlite() (gorm.Dialector, *gorm.Config) {
 		PrepareStmt: true,
 	}
 
-	log.Info().Msgf("using sqlite at: %s", dbPath)
+	abs, err := filepath.Abs(dbPath)
+	if err != nil {
+		log.Warn().Err(err).Msgf("failed to determine absolute path")
+		log.Info().Msgf("using sqlite at: %s", dbPath)
+	} else {
+		log.Info().Msgf("using sqlite at: %s", abs)
+	}
 
 	return connectionStr, config
 }

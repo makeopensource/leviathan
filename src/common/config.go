@@ -4,23 +4,26 @@ import (
 	"errors"
 	"fmt"
 	"github.com/joho/godotenv"
-	"github.com/makeopensource/leviathan/models"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
 	"os"
+	"path/filepath"
 )
 
 func InitConfig() {
 	err := godotenv.Load()
 	if err != nil {
-		log.Warn().Err(err).Msg("enable to load .env file")
+		log.Warn().Err(err).Msg("unable to load .env file")
 	}
 
 	defer func() {
 		log.Logger = FileConsoleLogger()
 	}()
 
-	baseDir := getBaseDir()
+	baseDir, err := getBaseDir()
+	if err != nil {
+		log.Fatal().Err(err).Msg("unable to get base dir")
+	}
 	configDir := getConfigDir(baseDir)
 
 	viper.SetConfigName("config")
@@ -30,11 +33,11 @@ func InitConfig() {
 	setupDefaultOptions(configDir)
 	loadPostgresOptions()
 
-	submissionFolderPath := getStringEnvOrDefault("SUBMISSION_FOLDER", fmt.Sprintf("%s/%s", baseDir, "submissions"))
-	viper.SetDefault(submissionFolderKey, submissionFolderPath)
+	submissionFolderPath := getStringEnvOrDefault("TMP_SUBMISSION_FOLDER", fmt.Sprintf("%s/%s", baseDir, "submissions"))
+	viper.SetDefault(submissionDirKey, submissionFolderPath)
 
-	outputFolderPath := getStringEnvOrDefault("OUTPUT_FOLDER", fmt.Sprintf("%s/%s", baseDir, "output"))
-	viper.SetDefault(outputFolderKey, submissionFolderPath)
+	outputFolderPath := getStringEnvOrDefault("LOG_OUTPUT_FOLDER", fmt.Sprintf("%s/%s", baseDir, "output"))
+	viper.SetDefault(outputDirKey, outputFolderPath)
 
 	err = makeDirectories([]string{submissionFolderPath, outputFolderPath})
 
@@ -49,7 +52,7 @@ func InitConfig() {
 		log.Fatal().Err(err).Msg("could not read config file")
 	}
 
-	log.Info().Msg("Watching config file")
+	log.Info().Msgf("watching config file at %s", viper.ConfigFileUsed())
 	viper.WatchConfig()
 
 	// maybe create viper instance and return from this function
@@ -110,19 +113,15 @@ func getStringEnvOrDefault(key, defaultVal string) string {
 
 func setupDefaultOptions(configDir string) {
 	// misc application files
-	viper.SetDefault(dbPathKey, fmt.Sprintf("%s/leviathan.db", configDir))
+	viper.SetDefault(sqliteDbPathKey, fmt.Sprintf("%s/leviathan.db", configDir))
 	viper.SetDefault(logDirKey, fmt.Sprintf("%s/logs/leviathan.log", configDir))
-	viper.SetDefault(serverPortKey, "11200")
+	viper.SetDefault(serverPortKey, "9221")
 	viper.SetDefault(enableLocalDockerKey, true)
 	viper.SetDefault(concurrentJobsKey, 50)
 }
 
-func getBaseDir() string {
-	baseDir := "./appdata"
-	if os.Getenv("IS_DOCKER") != "" {
-		baseDir = "/appdata"
-	}
-	return baseDir
+func getBaseDir() (string, error) {
+	return filepath.Abs("./appdata")
 }
 
 func makeDirectories(dirs []string) error {
@@ -133,46 +132,4 @@ func makeDirectories(dirs []string) error {
 		}
 	}
 	return nil
-}
-
-func GetClientList() []models.MachineOptions {
-	var allMachines []models.MachineOptions
-
-	// Get all settings
-	allSettings := viper.AllSettings()
-
-	// Navigate to clients.ssh
-	clients, ok := allSettings["clients"].(map[string]interface{})
-	if !ok {
-		log.Error().Msgf("clients section not found or not configured")
-		return nil
-	}
-	ssh, ok := clients["ssh"].(map[string]interface{})
-	if !ok {
-		log.Error().Msgf("ssh section not found or not configured")
-		return nil
-	}
-
-	// Iterate over all keys in clients.ssh
-	for clientName, clientConfig := range ssh {
-		clientMap, ok := clientConfig.(map[string]interface{})
-		if !ok {
-			fmt.Printf("  Invalid configuration for %s\n", clientName)
-			continue
-		}
-
-		log.Info().Msgf("Found machine: %s", clientName)
-
-		options := models.MachineOptions{
-			Name:           clientName,
-			Host:           clientMap["host"].(string),
-			Port:           clientMap["port"].(int64),
-			User:           clientMap["user"].(string),
-			PrivateKeyFile: clientMap["private_key_file"].(string),
-		}
-		log.Debug().Any("Machine options", options).Msgf("Loaded: %s", clientName)
-		allMachines = append(allMachines, options)
-	}
-
-	return allMachines
 }

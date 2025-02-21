@@ -13,7 +13,7 @@ var statusList = []models.JobStatus{models.Complete, models.Failed, models.Cance
 
 // TODO
 func TestBroadcastJobs(t *testing.T) {
-	SetupTest()
+	setupTest()
 
 	numJobs := 5
 	var jobList []*models.Job
@@ -30,23 +30,23 @@ func TestBroadcastJobs(t *testing.T) {
 			time.AfterFunc(1*time.Second, func() {
 				job.StatusMessage = "changing job status"
 				job.Status = models.Queued
-				JobTestService.db.Model(job).Save(job)
+				jobTestService.db.Model(job).Save(job)
 			})
 
 			time.AfterFunc(2*time.Second, func() {
 				job.StatusMessage = "changing job status"
 				job.Status = models.Running
-				JobTestService.db.Model(job).Save(job)
+				jobTestService.db.Model(job).Save(job)
 			})
 
 			time.AfterFunc(4*time.Second, func() {
 				job.StatusMessage = "changing job"
 				// random 'finished' status
 				job.Status = statusList[rand.IntN(len(statusList))]
-				JobTestService.db.Model(job).Save(job)
+				jobTestService.db.Model(job).Save(job)
 			})
 
-			jobCh := JobTestService.SubToJob(job.JobId)
+			jobCh := jobTestService.SubToJob(job.JobId)
 
 			for {
 				select {

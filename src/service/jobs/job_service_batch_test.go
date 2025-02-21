@@ -8,15 +8,6 @@ import (
 	"testing"
 )
 
-var (
-	testFuncs = map[string]func(*testing.T){
-		"correct":   TestCorrect,
-		"incorrect": TestIncorrect,
-		"cancel":    TestCancel,
-		"timeout":   TestTimeout,
-	}
-)
-
 func Test50Jobs(t *testing.T) {
 	if os.Getenv("CI") != "" {
 		t.Skip("Skipping testing in CI environment")
@@ -53,7 +44,7 @@ func Test10000Jobs(t *testing.T) {
 }
 
 func testBatchJobProcessor(t *testing.T, numJobs int) {
-	SetupTest()
+	setupTest()
 
 	testValues := maps.Values(testFuncs)
 

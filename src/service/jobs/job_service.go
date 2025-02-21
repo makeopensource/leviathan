@@ -10,6 +10,7 @@ import (
 	v1 "github.com/makeopensource/leviathan/generated/types/v1"
 	"github.com/makeopensource/leviathan/models"
 	"github.com/makeopensource/leviathan/service/docker"
+	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
 	"os"
@@ -18,37 +19,36 @@ import (
 )
 
 type JobService struct {
-	db           *gorm.DB
-	labFileCache *models.LabFilesCache
-	dockerSrv    *docker.DkService
-	queue        *JobQueue
-	broadcastCh  *models.BroadcastChannel
+	db          *gorm.DB
+	dockerSrv   *docker.DkService
+	queue       *JobQueue
+	broadcastCh *models.BroadcastChannel
 }
 
-func NewJobService(db *gorm.DB, cache *models.LabFilesCache, bc *models.BroadcastChannel, dockerService *docker.DkService) *JobService {
+func NewJobService(db *gorm.DB, bc *models.BroadcastChannel, dockerService *docker.DkService) *JobService {
 	return &JobService{
-		db:           db,
-		broadcastCh:  bc,
-		labFileCache: cache,
-		dockerSrv:    dockerService,
-		queue:        NewJobQueue(uint(common.ConcurrentJobs.GetUint64()), db, dockerService),
+		db:          db,
+		broadcastCh: bc,
+		dockerSrv:   dockerService,
+		queue:       NewJobQueue(uint(common.ConcurrentJobs.GetUint64()), db, dockerService),
 	}
 }
 
 func (job *JobService) NewJob(newJob *models.Job, makefile *v1.FileUpload, grader *v1.FileUpload, student *v1.FileUpload, dockerfile *v1.FileUpload) (string, error) {
-	mId := job.dockerSrv.ClientManager.GetLeastJobCountMachineId()
-	if mId == "" {
-		return "", fmt.Errorf("failed to assign machine")
-	}
-
 	jobId, err := uuid.NewUUID()
 	if err != nil {
-		log.Error().Err(err).Msgf("Failed to generate job ID")
+		log.Error().Err(err).Msg("Failed to generate job ID")
 		return "", fmt.Errorf("failed to generate job ID")
 	}
+	newJob.JobId = jobId.String()
+
+	mId := job.dockerSrv.ClientManager.GetLeastJobCountMachineId()
+
+	// job context, so that it can be cancelled, and store sub logger
+	ctx := job.queue.NewJobContext(newJob.JobId)
 
 	jobDir, err := common.CreateTmpJobDir(
-		jobId.String(),
+		newJob.JobId,
 		map[string][]byte{
 			grader.Filename:     grader.Content,
 			makefile.Filename:   makefile.Content,
@@ -57,26 +57,31 @@ func (job *JobService) NewJob(newJob *models.Job, makefile *v1.FileUpload, grade
 		},
 	)
 	if err != nil {
-		log.Error().Err(err).Msgf("Failed to create job dir")
+		jobLog(ctx).Error().Err(err).Msg("Failed to create job dir")
 		return "", fmt.Errorf("failed to create job dir")
 	}
 
+	logPath, err, reason := setupLogFile(newJob.JobId)
+	if err != nil {
+		jobLog(ctx).Error().Err(err).Str("reason", reason).Msg("failed to setup log file")
+		return "", fmt.Errorf("failed to setup log file")
+	}
+
 	// setup job metadata
-	newJob.JobId = jobId.String()
 	newJob.MachineId = mId
 	newJob.Status = models.Queued
-	newJob.OutputLogFilePath = job.setupLogFile(newJob.JobId)
+	newJob.OutputLogFilePath = logPath
 	newJob.TmpJobFolderPath = jobDir
 	newJob.LabData.DockerFilePath = fmt.Sprintf("%s/%s", newJob.TmpJobFolderPath, dockerfile.Filename)
-	// job context, so that it can be cancelled
-	newJob.JobCtx = job.queue.NewJobContext(newJob.JobId)
+	newJob.JobCtx = ctx
 
 	res := job.db.Create(newJob)
 	if res.Error != nil {
-		log.Error().Err(res.Error).Msgf("Failed to save job to db")
+		jobLog(ctx).Error().Err(res.Error).Msg("Failed to save job to db")
 		return "", fmt.Errorf("failed to save job to db")
 	}
 
+	jobLog(ctx).Info().Msg("sending job to queue")
 	err = job.queue.AddJob(newJob)
 	if err != nil {
 		return "", err
@@ -89,46 +94,18 @@ func (job *JobService) CancelJob(jobUuid string) {
 	job.queue.CancelJob(jobUuid)
 }
 
-// WaitForJob is similar to GetJobStatus but is blocking and runs until job is complete or errors
-func (job *JobService) WaitForJob(ctx context.Context, jobUuid string) (*models.Job, error) {
-	jobInfoCh := job.SubToJob(jobUuid)
-	defer func() {
-		go job.UnsubToJob(jobUuid)
-	}()
-
-	var jobInfo *models.Job
-	for {
-		select {
-		case tmp, ok := <-jobInfoCh:
-			//log.Debug().Any("job", tmp).Msg("New job data")
-			if !ok {
-				return jobInfo, nil
-			} else {
-				jobInfo = tmp
-			}
-		case <-ctx.Done():
-			log.Debug().Msg("Context done")
-			return nil, fmt.Errorf("context canceled")
-		}
-	}
-}
-
-// WaitForJobAndLogs this is an experimental function, it is not working
-// todo logs return empty
+// WaitForJobAndLogs blocks until job reaches, Cancelled, Complete, error
 func (job *JobService) WaitForJobAndLogs(ctx context.Context, jobUuid string) (*models.Job, string, error) {
 	jobInf, complete, content, err := job.checkJob(jobUuid)
 	if err != nil {
 		return nil, "", err
 	}
 	if complete {
-		// job was returned, indicating job is complete
 		return jobInf, content, nil
 	}
 
 	jobInfoCh := job.SubToJob(jobUuid)
-	defer func() {
-		go job.UnsubToJob(jobUuid)
-	}()
+	defer job.UnsubToJob(jobUuid)
 
 	logContext, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -145,7 +122,7 @@ func (job *JobService) WaitForJobAndLogs(ctx context.Context, jobUuid string) (*
 	for {
 		if jobOk {
 			// read log file one last time
-			content := readLogFile(jobInfo)
+			content := common.ReadLogFile(jobInfo.OutputLogFilePath)
 			return jobInfo, content, nil
 		}
 
@@ -183,15 +160,13 @@ func (job *JobService) StreamJobAndLogs(ctx context.Context, jobUuid string, str
 	}
 
 	jobInfoCh := job.SubToJob(jobInfo.JobId)
-	defer func() {
-		go job.UnsubToJob(jobUuid)
-	}()
+	defer job.UnsubToJob(jobUuid)
 
+	// since ListenToJobLogs reads logs in an infinite loop,
+	// always cancel this context, exiting the loop
 	logContext, cancel := context.WithCancel(context.Background())
-	defer func() {
-		cancel()
-		log.Debug().Msg("log context done")
-	}()
+	defer cancel()
+
 	logsCh := job.ListenToJobLogs(logContext, jobInfo)
 	if err != nil {
 		return err
@@ -203,9 +178,9 @@ func (job *JobService) StreamJobAndLogs(ctx context.Context, jobUuid string, str
 	// Keep listening until channel closes, indicating job is complete
 	for {
 		if jobOk {
-			content := readLogFile(jobInfo)
+			content := common.ReadLogFile(jobInfo.OutputLogFilePath)
 			if err != nil {
-				log.Warn().Err(err).Msgf("Failed to read job log file at %s", jobInfo.OutputLogFilePath)
+				log.Warn().Err(err).Str("path", jobInfo.OutputLogFilePath).Msg("Failed to read job log file")
 			}
 			err = sendJobToStream(stream, jobInfo, content)
 			if err != nil {
@@ -217,20 +192,18 @@ func (job *JobService) StreamJobAndLogs(ctx context.Context, jobUuid string, str
 
 		select {
 		case logsTmp, ok := <-logsCh:
-			// stream on status change
-			if ok && logsTmp != logs {
-				log.Debug().Msgf("job logs changed")
+			if ok {
+				log.Debug().Msg("job logs changed")
 				logs = logsTmp
-				err := sendJobToStream(stream, jobInfo, logs)
+				err := sendJobToStream(stream, jobInfo, logsTmp)
 				if err != nil {
 					return err
 				}
 			}
 		case jobTmp, ok := <-jobInfoCh:
 			jobOk = !ok
-			// stream on status change
 			if ok && jobInfo != nil && jobTmp.Status != jobInfo.Status {
-				log.Debug().Msgf("job Info changed")
+				log.Debug().Msgf("job status changed from %s to %s", jobInfo.Status, jobTmp.Status)
 				jobInfo = jobTmp
 				err := sendJobToStream(stream, jobInfo, logs)
 				if err != nil {
@@ -244,18 +217,21 @@ func (job *JobService) StreamJobAndLogs(ctx context.Context, jobUuid string, str
 }
 
 func (job *JobService) ListenToJobLogs(ctx context.Context, jobInfo *models.Job) chan string {
-	logChannel := make(chan string, 10)
+	logChannel := make(chan string, 2)
 	go func() {
+		prevLength := 0
 		// keep reading until ctx is done
 		for {
-			// use select instead if time.sleep for better perf
 			select {
 			case <-time.After(2 * time.Second):
-				// Read all the content of the file
-				content := readLogFile(jobInfo)
-				logChannel <- content
+				content := common.ReadLogFile(jobInfo.OutputLogFilePath)
+				// send if content changed
+				if len(content) > prevLength {
+					prevLength = len(content)
+					logChannel <- content
+				}
 			case <-ctx.Done():
-				log.Debug().Msgf("Stopping listening for logs: %s", jobInfo.JobId)
+				log.Debug().Str(common.JobLogKey, jobInfo.JobId).Msg("stopping listening for logs")
 				return
 			}
 		}
@@ -277,16 +253,12 @@ func (job *JobService) checkJob(jobUuid string) (*models.Job, bool, string, erro
 	if err != nil {
 		return nil, false, "", fmt.Errorf("failed to get job info")
 	}
+
 	if jobInf.Status.Done() {
-		log.Debug().Msgf("Job %s is done", jobUuid)
+		log.Debug().Str(common.JobLogKey, jobUuid).Msg("job is already done")
 
-		content, err := os.ReadFile(jobInf.OutputLogFilePath)
-		if err != nil {
-			log.Warn().Err(err).Msgf("Failed to read job log file at %s", jobInf.OutputLogFilePath)
-			return nil, false, "", fmt.Errorf("failed to read log file")
-		}
-
-		return jobInf, true, string(content), nil
+		content := common.ReadLogFile(jobInf.OutputLogFilePath)
+		return jobInf, true, content, nil
 	} else {
 		return jobInf, false, "", nil
 	}
@@ -302,29 +274,25 @@ func (job *JobService) getJobFromDB(jobUuid string) (*models.Job, error) {
 }
 
 // setupLogFile store grader output
-// this is blocking operation make sure to
-// stream logs in a go routine
-func (job *JobService) setupLogFile(jobId string) string {
+func setupLogFile(jobId string) (string, error, string) {
 	outputFile := fmt.Sprintf("%s/%s.txt", common.OutputFolder.GetStr(), jobId)
 	outFile, err := os.Create(outputFile)
 	if err != nil {
-		log.Error().Err(err).Msgf("Error while creating file")
-		return ""
+		return "", err, fmt.Sprintf("error while creating log file at %s", outputFile)
 	}
 	defer func() {
 		err := outFile.Close()
 		if err != nil {
-			log.Error().Err(err).Msgf("Error while closing file")
+			log.Warn().Err(err).Msg("error while closing log file")
 		}
 	}()
 
 	full, err := filepath.Abs(outputFile)
 	if err != nil {
-		log.Error().Err(err).Msgf("Error while getting absolute path")
-		return ""
+		return "", err, "error while getting absolute path"
 	}
 
-	return full
+	return full, nil, ""
 }
 
 func sendJobToStream(stream *connect.ServerStream[v2.JobLogsResponse], jobInfo *models.Job, logs string) error {
@@ -347,11 +315,6 @@ func sendJobToStream(stream *connect.ServerStream[v2.JobLogsResponse], jobInfo *
 	return nil
 }
 
-func readLogFile(jobInfo *models.Job) string {
-	content, err := os.ReadFile(jobInfo.OutputLogFilePath)
-	if err != nil {
-		log.Warn().Err(err).Msgf("Failed to read job log file at %s", jobInfo.OutputLogFilePath)
-		return ""
-	}
-	return string(content)
+func jobLog(ctx context.Context) *zerolog.Logger {
+	return log.Ctx(ctx)
 }

@@ -1,16 +1,38 @@
 package api
 
 import (
+	"fmt"
 	v1 "github.com/makeopensource/leviathan/api/v1"
+	"github.com/makeopensource/leviathan/common"
 	dkclient "github.com/makeopensource/leviathan/generated/docker_rpc/v1/v1connect"
 	jobClient "github.com/makeopensource/leviathan/generated/jobs/v1/v1connect"
 	labClient "github.com/makeopensource/leviathan/generated/labs/v1/v1connect"
 	statsClient "github.com/makeopensource/leviathan/generated/stats/v1/v1connect"
 	"github.com/makeopensource/leviathan/service"
+	"github.com/rs/zerolog/log"
+	"golang.org/x/net/http2"
+	"golang.org/x/net/http2/h2c"
 	"net/http"
 )
 
-func SetupEndpoints() *http.ServeMux {
+func StartGrpcServer() {
+	mux := setupEndpoints()
+
+	srvAddr := fmt.Sprintf(":%s", common.ServerPort.GetStr())
+	log.Info().Msgf("Started server on %s", srvAddr)
+
+	err := http.ListenAndServe(
+		srvAddr,
+		// Use h2c so we can serve HTTP/2 without TLS.
+		h2c.NewHandler(mux, &http2.Server{}),
+	)
+	if err != nil {
+		log.Fatal().Err(err).Msgf("Failed to start server on %s", srvAddr)
+		return
+	}
+}
+
+func setupEndpoints() *http.ServeMux {
 	docker, lab, job, stats := service.InitServices()
 
 	endpoints := []func() (string, http.Handler){

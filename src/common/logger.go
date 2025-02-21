@@ -1,20 +1,28 @@
 package common
 
 import (
+	"context"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"gopkg.in/natefinch/lumberjack.v2"
 	"os"
 )
 
-// cache os.getenv('debug') value for perf
+const (
+	JobLogKey = "jobID"
+)
+
 var (
 	consoleWriter = zerolog.ConsoleWriter{
 		Out:        os.Stderr,
 		TimeFormat: "2006-01-02 15:04:05",
 	}
-	baseLogger = log.With().Caller().Logger()
+	baseLogger = log.With().Caller().Logger().Output(consoleWriter)
 )
+
+func CreateJobSubLoggerCtx(ctx context.Context, jobID string) context.Context {
+	return log.Logger.With().Str(JobLogKey, jobID).Logger().WithContext(ctx)
+}
 
 func FileConsoleLogger() zerolog.Logger {
 	return baseLogger.Output(
@@ -26,7 +34,7 @@ func FileConsoleLogger() zerolog.Logger {
 }
 
 func ConsoleLogger() zerolog.Logger {
-	return baseLogger.Output(consoleWriter)
+	return baseLogger
 }
 
 func GetFileLogger(logFile string) *lumberjack.Logger {

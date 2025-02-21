@@ -19,7 +19,7 @@ const app = express();
 const upload = multer();
 const port = 3000;
 
-app.use(express.static(path.join(__dirname, 'ui')));
+app.use(express.static(path.join('ui/dist')));
 // Define the endpoint
 app.post('/submit',
     upload.fields([
@@ -80,7 +80,7 @@ app.post('/submit',
     });
 
 const server = app.listen(port, () => {
-    console.log(`Server is running on port ${port}`);
+    console.log(`Server is running on http://localhost:${port}`);
 });
 
 const wss = new WebSocketServer({server, path: "/ws"});

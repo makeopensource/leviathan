@@ -210,31 +210,6 @@ func TarFile(filePath string) (*bytes.Reader, string) {
 	return bytes.NewReader(buf.Bytes()), dockerFile
 }
 
-func SaveDockerfile(filename string, contents []byte) (string, error) {
-	tmpPath, err := os.CreateTemp(DockerFilesFolder.GetStr(), fmt.Sprintf("%s_*", filename))
-	if err != nil {
-		return "", err
-	}
-
-	_, err = tmpPath.Write(contents)
-	if err != nil {
-		return "", err
-	}
-	defer func(tmpPath *os.File) {
-		err := tmpPath.Close()
-		if err != nil {
-			log.Error().Err(err).Msg("Error closing temp file")
-		}
-	}(tmpPath)
-
-	abs, err := filepath.Abs(tmpPath.Name())
-	if err != nil {
-		return "", err
-	}
-
-	return abs, nil
-}
-
 func GetLastLine(file *os.File) (string, error) {
 	stat, err := file.Stat()
 	if err != nil {
@@ -301,4 +276,13 @@ func DecodeID(combinedId string) (string, string, error) {
 		return "", "", errors.New("could not decode ID")
 	}
 	return strs[0], strs[1], nil
+}
+
+func ReadLogFile(logPath string) string {
+	content, err := os.ReadFile(logPath)
+	if err != nil {
+		log.Warn().Err(err).Msgf("Failed to read job log file at %s", logPath)
+		return ""
+	}
+	return string(content)
 }

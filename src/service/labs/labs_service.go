@@ -8,18 +8,12 @@ import (
 	"os"
 )
 
-const (
-	submissions = "submissions"
-	grader      = "grader"
-)
-
 type LabService struct {
-	db            *gorm.DB
-	labFilesCache *models.LabFilesCache
+	db *gorm.DB
 }
 
-func NewLabService(db *gorm.DB, cache *models.LabFilesCache) *LabService {
-	return &LabService{db: db, labFilesCache: cache}
+func NewLabService(db *gorm.DB) *LabService {
+	return &LabService{db: db}
 }
 
 func (labSrv *LabService) GetLab(labName string) (*models.LabModel, error) {

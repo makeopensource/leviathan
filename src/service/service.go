@@ -16,13 +16,12 @@ func InitServices() (*docker.DkService, *labs.LabService, *jobs.JobService, *sta
 	// inject broadcast channel to database
 	db = db.WithContext(ctx)
 
-	fCache := models.NewLabFilesCache(db)
 	clientList := docker.InitDockerClients()
 
 	dkService := docker.NewDockerService(clientList)
-	labService := labs.NewLabService(db, fCache)
-	jobService := jobs.NewJobService(db, fCache, bc, dkService) // depends on docker service
-	statsService := stats.NewStatsService(db, fCache)
+	labService := labs.NewLabService(db)
+	jobService := jobs.NewJobService(db, bc, dkService) // depends on docker service
+	statsService := stats.NewStatsService(db)
 
 	return dkService, labService, jobService, statsService
 }

@@ -19,7 +19,7 @@ const app = express();
 const upload = multer();
 const port = 3000;
 
-app.use(express.static(path.join(__dirname, 'ui')));
+app.use(express.static(path.join('ui/dist')));
 // Define the endpoint
 app.post('/submit',
     upload.fields([

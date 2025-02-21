@@ -31,7 +31,7 @@ func GetClientList() []models.MachineOptions {
 	// Navigate to clients.ssh
 	clients, ok := allSettings["clients"].(map[string]interface{})
 	if !ok {
-		log.Error().Msgf("clients section not found or not configured")
+		log.Warn().Msgf("clients section not found or not configured")
 		return nil
 	}
 	ssh, ok := clients["ssh"].(map[string]interface{})
@@ -44,7 +44,7 @@ func GetClientList() []models.MachineOptions {
 	for clientName, clientConfig := range ssh {
 		clientMap, ok := clientConfig.(map[string]interface{})
 		if !ok {
-			log.Warn().Msgf("Invalid configuration for %s", clientName)
+			log.Warn().Msgf("invalid configuration for %s", clientName)
 			continue
 		}
 

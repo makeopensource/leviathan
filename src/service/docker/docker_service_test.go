@@ -25,7 +25,7 @@ func TestConcurrentImageBuilds(t *testing.T) {
 	for i := 0; i < numTimes; i++ {
 		t.Run(fmt.Sprintf("image_%d", i), func(t *testing.T) {
 			t.Parallel()
-			err := DkTestService.NewImageReq(DockerFilePath, "test")
+			err := DkTestService.BuildNewImageOnAllClients(DockerFilePath, "test")
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -43,7 +43,7 @@ func TestCopyToContainer(t *testing.T) {
 
 	ifg := uuid.New()
 
-	contId, err := machine.CreateNewContainer(ifg.String(), ImageName, "", container.Resources{})
+	contId, err := machine.CreateNewContainer(ifg.String(), ImageName, "", "echo hello", container.Resources{})
 	if err != nil {
 		t.Fatalf("%v", err)
 	}

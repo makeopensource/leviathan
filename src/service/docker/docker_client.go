@@ -35,7 +35,6 @@ func NewDkClient(client *client.Client) *DkClient {
 	}
 }
 
-// NewSSHClient creates a new SSH based web_gen
 func NewSSHClient(connectionString string) (*DkClient, error) {
 	helper, err := connhelper.GetConnectionHelper(fmt.Sprintf("ssh://%s:22", connectionString))
 	if err != nil {
@@ -57,14 +56,13 @@ func NewSSHClient(connectionString string) (*DkClient, error) {
 	)
 
 	if err != nil {
-		log.Error().Err(err).Msgf("failed create remote docker web_gen with connectionString %s", connectionString)
-		return nil, fmt.Errorf("unable to connect to docker web_gen")
+		log.Error().Err(err).Msgf("failed create remote docker client with connectionString %s", connectionString)
+		return nil, fmt.Errorf("unable to connect to docker client")
 	}
 
 	return NewDkClient(newClient), nil
 }
 
-// NewLocalClient create a new web_gen based locally
 func NewLocalClient() (*DkClient, error) {
 	cli, err := client.NewClientWithOpts(
 		client.FromEnv,
@@ -120,17 +118,20 @@ func (c *DkClient) BuildImageFromDockerfile(dockerfilePath string, tagName strin
 	defer func(Body io.ReadCloser) {
 		err := Body.Close()
 		if err != nil {
-			log.Error().Err(err).Msgf("failed to close Docker image")
+			log.Error().Err(err).Msgf("failed to close docker image build response")
 		}
 	}(resp.Body)
 
+	logWriter := &common.LogWriter{LoggerFunc: func(s string) {
+		log.Debug().Str("image", tagName).Msgf("%s", s)
+	}}
 	// Print the build output
-	_, err = io.Copy(os.Stdout, resp.Body)
+	_, err = io.Copy(logWriter, resp.Body)
 	if err != nil {
 		return fmt.Errorf("failed to read build output: %v", err)
 	}
 
-	log.Info().Msgf("Docker image '%s' built successfully", tagName)
+	log.Info().Msgf("docker image '%s' built successfully", tagName)
 	return nil
 }
 
@@ -183,8 +184,8 @@ func (c *DkClient) ListContainers(machineId string) ([]*dktypes.ContainerMetaDat
 }
 
 // CreateNewContainer creates a new container from given image
-func (c *DkClient) CreateNewContainer(jobUuid, image, entryCmd string, machineLimits container.Resources) (string, error) {
-	baseCmd := "cd /home/autolab"
+func (c *DkClient) CreateNewContainer(jobUuid, image, jobFolder, entryCmd string, machineLimits container.Resources) (string, error) {
+	baseCmd := fmt.Sprintf("cd /home/%s", jobFolder)
 	runCommand := fmt.Sprintf("%s && %s", baseCmd, entryCmd)
 
 	config := &container.Config{

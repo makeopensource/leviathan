@@ -8,16 +8,6 @@ import (
 	"testing"
 )
 
-var (
-	testFuncs = map[string]func(*testing.T){
-		"correct":      TestCorrect,
-		"incorrect":    TestIncorrect,
-		"cancel":       TestCancel,
-		"timeout":      TestTimeout,
-		"timeout_edge": TestTimeoutEdge,
-	}
-)
-
 func Test50Jobs(t *testing.T) {
 	if os.Getenv("CI") != "" {
 		t.Skip("Skipping testing in CI environment")

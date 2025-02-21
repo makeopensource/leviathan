@@ -64,7 +64,23 @@ var (
 		//	expectedOutput: "",
 		//},
 	}
+	testFuncs = map[string]func(*testing.T){
+		"correct":      TestCorrect,
+		"incorrect":    TestIncorrect,
+		"cancel":       TestCancel,
+		"timeout":      TestTimeout,
+		"timeout_edge": TestTimeoutEdge,
+	}
 )
+
+func TestAll(t *testing.T) {
+	for tCase, test := range testFuncs {
+		t.Run(tCase, func(t *testing.T) {
+			t.Parallel()
+			test(t)
+		})
+	}
+}
 
 func TestCorrect(t *testing.T) {
 	setupTest()
@@ -94,7 +110,7 @@ func TestTimeout(t *testing.T) {
 }
 
 // TestTimeoutEdge takes in a submission that takes 11 seconds to run,
-// designed to check if the go scheduler, is correctly selecting the timeout case
+// designed to check if the go scheduler is correctly selecting the timeout case
 // intended to be run in a batch test
 func TestTimeoutEdge(t *testing.T) {
 	setupTest()

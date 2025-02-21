@@ -6,41 +6,45 @@ import (
 )
 
 const (
-	dbPathKey         = "db_path"
-	logDirKey         = "log_dir"
-	apiKeyKey         = "apikey"
-	serverPortKey     = "server.port"
 	concurrentJobsKey = "concurrent_jobs"
 
+	apiKeyKey     = "server.apikey"
+	serverPortKey = "server.port"
+
 	// folders
-	submissionFolderKey  = "folder.submission_folder"
-	dockerFilesFolderKey = "folder.docker_files_folder"
-	outputFolderKey      = "folder.output_folder"
+	logDirKey        = "folder.log_dir"
+	submissionDirKey = "folder.submission_dir"
+	outputDirKey     = "folder.log_output_dir"
 	// docker config
 	enableLocalDockerKey = "clients.enable_local_docker"
 
+	sqliteDbPathKey = "db.sqlite.db_path"
 	// postgres
-	enablePostgresKey = "db.enable_postgres"
-	postgresHostKey   = "db.postgres_host"
-	postgresPortKey   = "db.postgres_port"
-	postgresUserKey   = "db.postgres_user"
-	postgresPassKey   = "db.postgres_pass"
-	postgresDBKey     = "db.postgres_db"
-	postgresSslKey    = "db.postgres_ssl"
+	enablePostgresKey = "db.postgres.enable_postgres"
+	postgresHostKey   = "db.postgres.postgres_host"
+	postgresPortKey   = "db.postgres.postgres_port"
+	postgresUserKey   = "db.postgres.postgres_user"
+	postgresPassKey   = "db.postgres.postgres_pass"
+	postgresDBKey     = "db.postgres.postgres_db"
+	postgresSslKey    = "db.postgres.postgres_ssl"
 )
 
 var (
 	// internal use
-	LogDir = Config{logDirKey}
-	DbPath = Config{dbPathKey}
+
+	LogDir       = Config{logDirKey}
+	SqliteDbPath = Config{sqliteDbPathKey}
+
 	// general
+
 	ApiKey         = Config{apiKeyKey}
 	ServerPort     = Config{serverPortKey}
 	ConcurrentJobs = Config{concurrentJobsKey}
+
 	// folderstuff
-	SubmissionTarFolder = Config{submissionFolderKey}
-	DockerFilesFolder   = Config{dockerFilesFolderKey}
-	OutputFolder        = Config{outputFolderKey}
+
+	SubmissionTarFolder = Config{submissionDirKey}
+	OutputFolder        = Config{outputDirKey}
 	EnableLocalDocker   = Config{enableLocalDockerKey}
 
 	// postgres

@@ -7,6 +7,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
 	"os"
+	"path/filepath"
 )
 
 func InitConfig() {
@@ -19,7 +20,10 @@ func InitConfig() {
 		log.Logger = FileConsoleLogger()
 	}()
 
-	baseDir := getBaseDir()
+	baseDir, err := getBaseDir()
+	if err != nil {
+		log.Fatal().Err(err).Msg("unable to get base dir")
+	}
 	configDir := getConfigDir(baseDir)
 
 	viper.SetConfigName("config")
@@ -29,11 +33,11 @@ func InitConfig() {
 	setupDefaultOptions(configDir)
 	loadPostgresOptions()
 
-	submissionFolderPath := getStringEnvOrDefault("SUBMISSION_FOLDER", fmt.Sprintf("%s/%s", baseDir, "submissions"))
-	viper.SetDefault(submissionFolderKey, submissionFolderPath)
+	submissionFolderPath := getStringEnvOrDefault("TMP_SUBMISSION_FOLDER", fmt.Sprintf("%s/%s", baseDir, "submissions"))
+	viper.SetDefault(submissionDirKey, submissionFolderPath)
 
-	outputFolderPath := getStringEnvOrDefault("OUTPUT_FOLDER", fmt.Sprintf("%s/%s", baseDir, "output"))
-	viper.SetDefault(outputFolderKey, submissionFolderPath)
+	outputFolderPath := getStringEnvOrDefault("LOG_OUTPUT_FOLDER", fmt.Sprintf("%s/%s", baseDir, "output"))
+	viper.SetDefault(outputDirKey, outputFolderPath)
 
 	err = makeDirectories([]string{submissionFolderPath, outputFolderPath})
 
@@ -109,19 +113,15 @@ func getStringEnvOrDefault(key, defaultVal string) string {
 
 func setupDefaultOptions(configDir string) {
 	// misc application files
-	viper.SetDefault(dbPathKey, fmt.Sprintf("%s/leviathan.db", configDir))
+	viper.SetDefault(sqliteDbPathKey, fmt.Sprintf("%s/leviathan.db", configDir))
 	viper.SetDefault(logDirKey, fmt.Sprintf("%s/logs/leviathan.log", configDir))
-	viper.SetDefault(serverPortKey, "11200")
+	viper.SetDefault(serverPortKey, "9221")
 	viper.SetDefault(enableLocalDockerKey, true)
 	viper.SetDefault(concurrentJobsKey, 50)
 }
 
-func getBaseDir() string {
-	baseDir := "./appdata"
-	if os.Getenv("IS_DOCKER") != "" {
-		baseDir = "/appdata"
-	}
-	return baseDir
+func getBaseDir() (string, error) {
+	return filepath.Abs("./appdata")
 }
 
 func makeDirectories(dirs []string) error {

@@ -12,17 +12,27 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/makeopensource/leviathan/common"
 	dktypes "github.com/makeopensource/leviathan/generated/docker_rpc/v1"
+	"github.com/makeopensource/leviathan/models"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/rs/zerolog/log"
 	"io"
 	"net/http"
 	"os"
 	"path/filepath"
+	"sync"
 )
 
 // DkClient a wrapper for the docker client struct, that exposes the commands leviathan needs
 type DkClient struct {
-	Client *client.Client
+	Client     *client.Client
+	imageQueue *models.Map[string, *sync.Mutex]
+}
+
+func NewDkClient(client *client.Client) *DkClient {
+	return &DkClient{
+		Client:     client,
+		imageQueue: &models.Map[string, *sync.Mutex]{},
+	}
 }
 
 // NewSSHClient creates a new SSH based web_gen
@@ -51,7 +61,7 @@ func NewSSHClient(connectionString string) (*DkClient, error) {
 		return nil, fmt.Errorf("unable to connect to docker web_gen")
 	}
 
-	return &DkClient{Client: newClient}, nil
+	return NewDkClient(newClient), nil
 }
 
 // NewLocalClient create a new web_gen based locally
@@ -65,13 +75,26 @@ func NewLocalClient() (*DkClient, error) {
 		return nil, fmt.Errorf("unable to create docker client")
 	}
 
-	return &DkClient{Client: cli}, nil
+	return NewDkClient(cli), nil
 }
 
 // Docker image controls
 
 // BuildImageFromDockerfile Build image
 func (c *DkClient) BuildImageFromDockerfile(dockerfilePath string, tagName string) error {
+	// prevent concurrently duplicate image builds
+	tagLock, ok := c.imageQueue.Load(tagName)
+	if !ok {
+		c.imageQueue.Store(tagName, &sync.Mutex{})
+		tagLock, ok = c.imageQueue.Load(tagName)
+		if !ok {
+			log.Warn().Msgf("docker image %s not found in imageQueue", tagName)
+			return fmt.Errorf("unable to find image: %s in queue", tagName)
+		}
+	}
+	tagLock.Lock()
+	defer tagLock.Unlock()
+
 	_, err := os.Stat(dockerfilePath)
 	if err != nil {
 		log.Error().Err(err).Msgf("failed to stat path %s", dockerfilePath)
@@ -84,9 +107,11 @@ func (c *DkClient) BuildImageFromDockerfile(dockerfilePath string, tagName strin
 		context.Background(),
 		dockerfileTar,
 		types.ImageBuildOptions{
-			Context:    dockerfileTar,
-			Dockerfile: dockerfile,
-			Tags:       []string{tagName},
+			Context:     dockerfileTar,
+			Dockerfile:  dockerfile,
+			Tags:        []string{tagName},
+			ForceRemove: true, // Removes intermediate containers
+			Remove:      true, // Removes intermediate images
 		})
 	if err != nil {
 		return fmt.Errorf("failed to build Docker image: %v", err)

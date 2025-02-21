@@ -80,7 +80,7 @@ app.post('/submit',
     });
 
 const server = app.listen(port, () => {
-    console.log(`Server is running on port ${port}`);
+    console.log(`Server is running on http://localhost:${port}`);
 });
 
 const wss = new WebSocketServer({server, path: "/ws"});

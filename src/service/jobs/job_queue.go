@@ -252,7 +252,7 @@ func (q *JobQueue) greatSuccess(job *models.Job, jobResult string) {
 // cleanupJob clean up job
 // sets job to success, removes the container and associated tmp job data
 func (q *JobQueue) cleanupJob(msg *models.Job, client *docker.DkClient) {
-	jobLog(msg.JobCtx).Info().Msg("Cleaning up job")
+	jobLog(msg.JobCtx).Info().Msg("cleaning up job")
 
 	q.updateJobVeryNice(msg)
 

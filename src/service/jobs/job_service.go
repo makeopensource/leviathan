@@ -37,7 +37,7 @@ func NewJobService(db *gorm.DB, bc *models.BroadcastChannel, dockerService *dock
 func (job *JobService) NewJob(newJob *models.Job, makefile *v1.FileUpload, grader *v1.FileUpload, student *v1.FileUpload, dockerfile *v1.FileUpload) (string, error) {
 	jobId, err := uuid.NewUUID()
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to generate job ID")
+		log.Error().Err(err).Msg("failed to generate job ID")
 		return "", fmt.Errorf("failed to generate job ID")
 	}
 	newJob.JobId = jobId.String()
@@ -47,17 +47,29 @@ func (job *JobService) NewJob(newJob *models.Job, makefile *v1.FileUpload, grade
 	// job context, so that it can be cancelled, and store sub logger
 	ctx := job.queue.NewJobContext(newJob.JobId)
 
-	jobDir, err := common.CreateTmpJobDir(
+	dockerFileDir, err := common.CreateTmpJobDir(
 		newJob.JobId,
+		"", // randomly named tmp folder
 		map[string][]byte{
-			grader.Filename:     grader.Content,
-			makefile.Filename:   makefile.Content,
-			student.Filename:    student.Content,
 			dockerfile.Filename: dockerfile.Content,
 		},
 	)
 	if err != nil {
-		jobLog(ctx).Error().Err(err).Msg("Failed to create job dir")
+		jobLog(ctx).Error().Err(err).Msg("failed to create dockerfile dir")
+		return "", fmt.Errorf("failed to create dockerfile dir")
+	}
+
+	jobDir, err := common.CreateTmpJobDir(
+		newJob.JobId,
+		common.SubmissionTarFolder.GetStr(),
+		map[string][]byte{
+			grader.Filename:   grader.Content,
+			makefile.Filename: makefile.Content,
+			student.Filename:  student.Content,
+		},
+	)
+	if err != nil {
+		jobLog(ctx).Error().Err(err).Msg("failed to create job dir")
 		return "", fmt.Errorf("failed to create job dir")
 	}
 
@@ -66,14 +78,17 @@ func (job *JobService) NewJob(newJob *models.Job, makefile *v1.FileUpload, grade
 		jobLog(ctx).Error().Err(err).Str("reason", reason).Msg("failed to setup log file")
 		return "", fmt.Errorf("failed to setup log file")
 	}
+	verifyJobLimits(newJob)
 
 	// setup job metadata
 	newJob.MachineId = mId
 	newJob.Status = models.Queued
 	newJob.OutputLogFilePath = logPath
 	newJob.TmpJobFolderPath = jobDir
-	newJob.LabData.DockerFilePath = fmt.Sprintf("%s/%s", newJob.TmpJobFolderPath, dockerfile.Filename)
+	newJob.LabData.DockerFilePath = fmt.Sprintf("%s/%s", dockerFileDir, dockerfile.Filename)
 	newJob.JobCtx = ctx
+
+	jobLog(newJob.JobCtx).Debug().Any("limits", newJob.JobCtx).Msg("job limits")
 
 	res := job.db.Create(newJob)
 	if res.Error != nil {
@@ -88,6 +103,20 @@ func (job *JobService) NewJob(newJob *models.Job, makefile *v1.FileUpload, grade
 	}
 
 	return jobId.String(), nil
+}
+
+// verifyJobLimits checks if job limits are provided,
+// and sets fields that are missing with default values
+func verifyJobLimits(job *models.Job) {
+	if job.JobLimits.PidsLimit == 0 {
+		job.JobLimits.PidsLimit = 100 // Default value
+	}
+	if job.JobLimits.NanoCPU == 0 {
+		job.JobLimits.NanoCPU = 1 // Default value
+	}
+	if job.JobLimits.Memory == 0 {
+		job.JobLimits.Memory = 512 // Default value in MB
+	}
 }
 
 func (job *JobService) CancelJob(jobUuid string) {
@@ -227,6 +256,7 @@ func (job *JobService) ListenToJobLogs(ctx context.Context, jobInfo *models.Job)
 				content := common.ReadLogFile(jobInfo.OutputLogFilePath)
 				// send if content changed
 				if len(content) > prevLength {
+					log.Debug().Str(common.JobLogKey, jobInfo.JobId).Msgf("sending log, length changed from %d to %d", prevLength, len(content))
 					prevLength = len(content)
 					logChannel <- content
 				}

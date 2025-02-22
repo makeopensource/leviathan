@@ -41,7 +41,7 @@ func NewJobQueue(totalJobs uint, db *gorm.DB, dk *docker.DkService) *JobQueue {
 
 func (q *JobQueue) CreateJobProcessors() {
 	for i := 1; i < int(q.totalJobs); i++ {
-		go q.worker(i)
+		go q.worker()
 	}
 }
 
@@ -87,76 +87,78 @@ func (q *JobQueue) getJobCancelFunc(messageId string) context.CancelFunc {
 	return val
 }
 
-func (q *JobQueue) worker(workerId int) {
+func (q *JobQueue) worker() {
 	for msg := range q.jobChannel {
+		if msg == nil {
+			log.Error().Msg("job received was nil, this should NEVER HAPPEN")
+			continue
+		}
+
 		if errors.Is(msg.JobCtx.Err(), context.Canceled) {
 			q.setJobAsCancelled(msg)
 			jobLog(msg.JobCtx).Warn().Msgf("job context was canceled before queue could process")
 			continue
 		}
 
-		jobLog(msg.JobCtx).Info().Int("workerID", workerId).Msgf("Worker is now processing job")
+		jobLog(msg.JobCtx).Info().Msgf("worker is now processing job")
 		q.runJob(msg)
 	}
 }
 
 // runJob should ALWAYS BE BLOCKING, as it prevents the worker from moving on to a new job
-func (q *JobQueue) runJob(msg *models.Job) {
-	q.setJobInSetup(msg)
-
-	client, contId, err, reason := q.setupJob(msg)
-	defer q.cleanupJob(msg, client)
+func (q *JobQueue) runJob(job *models.Job) {
+	client, contId, err, reason := q.setupJob(job)
+	defer q.cleanupJob(job, client)
 
 	if err != nil {
-		q.bigProblem(reason, msg, err)
-		return
-	}
-
-	q.setJobInProgress(msg)
-
-	err = client.StartContainer(contId)
-	if err != nil {
-		q.bigProblem("unable to start job container", msg, err)
+		q.bigProblem(job, reason, err)
 		return
 	}
 
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 
+	q.setJobInProgress(job)
+	err = client.StartContainer(contId)
+	if err != nil {
+		q.bigProblem(job, "unable to start job container", err)
+		return
+	}
+
 	// start writing to log file so that
 	// we can stream changes to the log file to the user
 	go func() {
 		defer wg.Done()
-		q.writeLogs(client, msg)
+		q.writeLogs(client, job)
 	}()
 
 	statusCh, errCh := client.Client.ContainerWait(context.Background(), contId, cond.WaitConditionNotRunning)
 	select {
 	case _ = <-statusCh:
 		wg.Wait() // for logs to complete writing
-		q.verifyLogs(msg.OutputLogFilePath, msg)
+		q.verifyLogs(job.OutputLogFilePath, job)
 		return
 	case err := <-errCh:
-		q.bigProblem("error occurred while waiting for job process", msg, err)
+		q.bigProblem(job, "error occurred while waiting for job process", err)
 		return
-	case <-time.After(msg.JobTimeout):
-		q.bigProblem(fmt.Sprintf("Maximum timeout reached for job, job ran for %s", msg.JobTimeout), msg, nil)
+	case <-time.After(job.JobTimeout):
+		q.bigProblem(job, fmt.Sprintf("Maximum timeout reached for job, job ran for %s", job.JobTimeout), nil)
 		return
-	case <-msg.JobCtx.Done():
-		q.setJobAsCancelled(msg)
+	case <-job.JobCtx.Done():
+		q.setJobAsCancelled(job)
 		return
 	}
 }
 
 func (q *JobQueue) writeLogs(client *docker.DkClient, msg *models.Job) {
-	outPutFile, err := os.OpenFile(msg.OutputLogFilePath, os.O_RDWR|os.O_CREATE, 660)
+	outputFile, err := os.OpenFile(msg.OutputLogFilePath, os.O_RDWR|os.O_CREATE, 660)
 	if err != nil {
-		q.bigProblem("unable to open output file", msg, err)
+		q.bigProblem(msg, "unable to open output file", err)
 		return
 	}
 
 	defer func() {
-		err := outPutFile.Close()
+		err := outputFile.Close()
 		if err != nil {
 			log.Error().Err(err).Msg("Error while closing output file")
 		}
@@ -164,13 +166,13 @@ func (q *JobQueue) writeLogs(client *docker.DkClient, msg *models.Job) {
 
 	logs, err := client.TailContainerLogs(context.Background(), msg.ContainerId)
 	if err != nil {
-		q.bigProblem("unable to tail job container", msg, err)
+		q.bigProblem(msg, "unable to tail job container", err)
 		return
 	}
 
-	_, err = stdcopy.StdCopy(outPutFile, outPutFile, logs)
+	_, err = stdcopy.StdCopy(outputFile, outputFile, logs)
 	if err != nil {
-		q.bigProblem("unable to write to output file", msg, err)
+		q.bigProblem(msg, "unable to write to output file", err)
 		return
 	}
 }
@@ -179,9 +181,11 @@ func (q *JobQueue) writeLogs(client *docker.DkClient, msg *models.Job) {
 // returns nil client if an error occurred while setup,
 // make sure to handle null ptr dereference
 func (q *JobQueue) setupJob(msg *models.Job) (*docker.DkClient, string, error, string) {
+	q.setJobInSetup(msg)
+
 	machine, err := q.dkSrv.ClientManager.GetClientById(msg.MachineId)
 	if err != nil {
-		return nil, "", nil, "Failed to get machine info"
+		return nil, "", err, "Failed to get machine info"
 	}
 
 	// incase dockerfile is not passed and referenced via tag name
@@ -190,18 +194,17 @@ func (q *JobQueue) setupJob(msg *models.Job) (*docker.DkClient, string, error, s
 		if err != nil {
 			return nil, "", err, "Failed to create image"
 		}
-		err = os.Remove(msg.LabData.DockerFilePath)
+		// folder structure is '/<id>/autolab/Dockerfile, get the <random id> folder path
+		err = os.RemoveAll(filepath.Dir(filepath.Dir(msg.LabData.DockerFilePath)))
 		if err != nil {
 			return nil, "", err, "failed to delete dockerfile"
 		}
 	}
 
-	pidsLimit := int64(100)
-	// todo load from job message
 	resources := cont.Resources{
-		NanoCPUs:  1 * models.CPUQuota, // 1 virtual core
-		Memory:    512 * models.MB,
-		PidsLimit: &pidsLimit,
+		NanoCPUs:  msg.JobLimits.NanoCPU * models.CPUQuota,
+		Memory:    msg.JobLimits.Memory * models.MB,
+		PidsLimit: &msg.JobLimits.PidsLimit,
 	}
 
 	contId, err := machine.CreateNewContainer(msg.JobId, msg.LabData.ImageTag, filepath.Base(msg.TmpJobFolderPath), msg.JobEntryCmd, resources)
@@ -226,11 +229,8 @@ func (q *JobQueue) setupJob(msg *models.Job) (*docker.DkClient, string, error, s
 // bigProblem job failed, Not good!
 // The publicReason will be displayed to the end user, providing a user-friendly message.
 // The err parameter holds the underlying error, used for debugging purposes.
-// we use variadic param to make jobtar optional
-func (q *JobQueue) bigProblem(publicReason string, job *models.Job, err error) {
+func (q *JobQueue) bigProblem(job *models.Job, publicReason string, err error) {
 	jobLog(job.JobCtx).Error().Err(err).Str("reason", publicReason).Msg("job failed")
-
-	// job will be saved by the cleanup function
 	job.Status = models.Failed
 	job.StatusMessage = publicReason
 }
@@ -301,7 +301,7 @@ func (q *JobQueue) verifyLogs(file string, msg *models.Job) {
 
 	outputFile, err := os.Open(file)
 	if err != nil {
-		q.bigProblem("unable to open log file", msg, err)
+		q.bigProblem(msg, "unable to open log file", err)
 		return
 	}
 	defer func(open *os.File) {
@@ -313,12 +313,12 @@ func (q *JobQueue) verifyLogs(file string, msg *models.Job) {
 
 	line, err := common.GetLastLine(outputFile)
 	if err != nil {
-		q.bigProblem("unable to get logs", msg, err)
+		q.bigProblem(msg, "unable to get logs", err)
 		return
 	}
 
 	if !common.IsValidJSON(line) {
-		q.bigProblem("unable to parse log output", msg, err)
+		q.bigProblem(msg, "unable to parse log output", err)
 		return
 	}
 

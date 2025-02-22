@@ -21,8 +21,8 @@ const DefaultFilePerm = 0o775
 // you might be wondering why the '/autolab' subdir, TarDir untars it under its parent dir,
 // so in container this will unpack with 'autolab' as the parent folder
 // why not modify TarDir I tried and, this was easier than modifying whatever is going in that function
-func CreateTmpJobDir(uuid string, files map[string][]byte) (string, error) {
-	tmpFolder, err := os.MkdirTemp(SubmissionTarFolder.GetStr(), uuid)
+func CreateTmpJobDir(uuid, baseFolder string, files map[string][]byte) (string, error) {
+	tmpFolder, err := os.MkdirTemp(baseFolder, uuid)
 	if err != nil {
 		return "", err
 	}

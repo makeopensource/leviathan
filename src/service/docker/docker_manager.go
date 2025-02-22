@@ -7,6 +7,7 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/makeopensource/leviathan/common"
 	"github.com/makeopensource/leviathan/models"
+	"github.com/mitchellh/mapstructure"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
 	"sync"
@@ -26,38 +27,29 @@ func GetClientList() []models.MachineOptions {
 	var allMachines []models.MachineOptions
 
 	// Get all settings
-	allSettings := viper.AllSettings()
-
-	// Navigate to clients.ssh
-	clients, ok := allSettings["clients"].(map[string]interface{})
+	allSettings := viper.Get("clients.ssh")
+	clients, ok := allSettings.(map[string]interface{})
 	if !ok {
-		log.Warn().Msgf("clients section not found or not configured")
-		return nil
-	}
-	ssh, ok := clients["ssh"].(map[string]interface{})
-	if !ok {
-		log.Warn().Msgf("ssh section not found or not configured")
-		return nil
+		log.Warn().Msg("clients.ssh no found or configured")
+		return allMachines
 	}
 
-	// Iterate over all keys in clients.ssh
-	for clientName, clientConfig := range ssh {
-		clientMap, ok := clientConfig.(map[string]interface{})
-		if !ok {
-			log.Warn().Msgf("invalid configuration for %s", clientName)
+	for name, info := range clients {
+		var options models.MachineOptions
+
+		// Decode using mapstructure
+		err := mapstructure.Decode(info, &options)
+		if err != nil {
+			log.Warn().Err(err).Msgf("Error decoding configuration structure for %s", name)
 			continue
 		}
 
-		options := models.MachineOptions{
-			Name:           clientName,
-			Host:           clientMap["host"].(string),
-			Port:           clientMap["port"].(int64),
-			User:           clientMap["user"].(string),
-			PrivateKeyFile: clientMap["private_key_file"].(string),
-		}
+		// Set the name manually since it's not part of the nested structure
+		options.Name = name
 
-		log.Info().Any("Machine options", options).Msgf("Found machine: %s", clientName)
+		// Append to the list
 		allMachines = append(allMachines, options)
+		log.Info().Any("options", options).Msgf("Loaded Machine: %s", name)
 	}
 
 	return allMachines
@@ -98,10 +90,11 @@ func InitDockerClients() *RemoteClientManager {
 		info, err := testClientConn(localClient.Client)
 		if err != nil {
 			log.Warn().Err(err).Msgf("Client failed to connect: localdocker")
-		}
-		clientList[info.ID] = &MachineStatus{
-			Client:     localClient,
-			ActiveJobs: 0,
+		} else {
+			clientList[info.ID] = &MachineStatus{
+				Client:     localClient,
+				ActiveJobs: 0,
+			}
 		}
 	} else {
 		log.Warn().Msgf("Local docker is disabled in config")

@@ -9,6 +9,7 @@ import (
 	"github.com/makeopensource/leviathan/service/docker"
 	"github.com/rs/zerolog/log"
 	"github.com/stretchr/testify/assert"
+	"math/rand/v2"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -58,11 +59,16 @@ var (
 			expectedOutput: "Maximum timeout reached for job, job ran for 10s",
 			correctStatus:  models.Failed,
 		},
-
-		//"forkb": {
-		//	studentFile:    "../../../example/simple-addition/student_fork_bomb.py",
-		//	expectedOutput: "",
-		//},
+		"oom": {
+			studentFile:    "../../../example/simple-addition/student_oom.py",
+			expectedOutput: "unable to parse log output",
+			correctStatus:  models.Failed,
+		},
+		"forkb": {
+			studentFile:    "../../../example/simple-addition/student_fork_bomb.py",
+			expectedOutput: `{"addition": {"passed": false, "message": "Addition test caused an error: [Errno 11] Resource temporarily unavailable"}, "subtraction": {"passed": true, "message": ""}, "multiplication": {"passed": false, "message": "Multiplication failed. Expected 42, got 48"}, "division": {"passed": false, "message": "Division failed. Expected 4, got 3.3333333333333335"}}`,
+			correctStatus:  models.Complete, // job completes since we can parse the last line
+		},
 	}
 	testFuncs = map[string]func(*testing.T){
 		"correct":      TestCorrect,
@@ -70,6 +76,8 @@ var (
 		"cancel":       TestCancel,
 		"timeout":      TestTimeout,
 		"timeout_edge": TestTimeoutEdge,
+		"oom":          TestOom,
+		"forkb":        TestForkBomb,
 	}
 )
 
@@ -85,6 +93,12 @@ func TestAll(t *testing.T) {
 func TestCorrect(t *testing.T) {
 	setupTest()
 	correct := testCases["correct"]
+	testJobProcessor(t, correct.studentFile, correct.expectedOutput, defaultTimeout, correct.correctStatus)
+}
+
+func TestOom(t *testing.T) {
+	setupTest()
+	correct := testCases["oom"]
 	testJobProcessor(t, correct.studentFile, correct.expectedOutput, defaultTimeout, correct.correctStatus)
 }
 
@@ -124,7 +138,7 @@ func TestCancel(t *testing.T) {
 	setupTest()
 	timeLimit := time.Second * 10
 	timeout := testCases["timeout"]
-	timeout.expectedOutput = fmt.Sprintf("Job was cancelled")
+	timeout.expectedOutput = "Job was cancelled"
 
 	jobId := setupJobProcess(timeout.studentFile, timeLimit)
 
@@ -170,7 +184,7 @@ func setupJobProcess(studentCodePath string, timeout time.Duration) string {
 	}
 
 	newJob := &models.Job{
-		LabData:     models.LabModel{ImageTag: imageName},
+		LabData:     models.Lab{ImageTag: imageName},
 		JobTimeout:  timeout,
 		JobEntryCmd: "make grade",
 	}
@@ -203,6 +217,21 @@ func setupJobProcess(studentCodePath string, timeout time.Duration) string {
 }
 
 func testJob(t *testing.T, jobId string, correctOutput string, correctStatus models.JobStatus) {
+	// randomly cancel a job
+	// 1 in 20 to cancel a job
+	if rand.IntN(20) == 1 {
+		// cancel the job after 3 seconds
+		cancelSec := rand.IntN(10) // cancel after random seconds
+		log.Info().Msgf("this job will be canclled after %d", cancelSec)
+
+		time.AfterFunc(time.Duration(cancelSec)*time.Second, func() {
+			jobTestService.CancelJob(jobId)
+		})
+
+		correctStatus = models.Canceled
+		correctOutput = "Job was cancelled"
+	}
+
 	jobInfo, logs, err := jobTestService.WaitForJobAndLogs(context.Background(), jobId)
 	if err != nil {
 		t.Fatalf("Error waiting for job: %v", err)

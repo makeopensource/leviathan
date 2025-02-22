@@ -43,7 +43,7 @@ func (job *JobServer) NewJob(ctx context.Context, req *connect.Request[v1.NewJob
 
 	newJob := models.Job{
 		JobEntryCmd: entryCmd,
-		LabData:     models.LabModel{ImageTag: tag},
+		LabData:     models.Lab{ImageTag: tag},
 		JobTimeout:  time.Second * time.Duration(req.Msg.JobTimeoutInSeconds),
 	}
 

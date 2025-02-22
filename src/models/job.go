@@ -45,8 +45,8 @@ type Job struct {
 	JobEntryCmd   string
 	Status        JobStatus
 	StatusMessage string
-	LabData       LabModel `gorm:"-"`
-	//JobLimits                 MachineLimits
+	LabData       Lab           `gorm:"embedded;embeddedPrefix:lab_"`
+	JobLimits     MachineLimits `gorm:"embedded;embeddedPrefix:machine_limit_"`
 	// OutputLogFilePath text file contain the container std out
 	OutputLogFilePath string
 	// TmpJobFolderPath holds the path to the tmp dir all files related to the job except the final output
@@ -57,6 +57,9 @@ type Job struct {
 
 // ValidateForQueue checks for fields required before sending job to queue
 func (j *Job) ValidateForQueue() error {
+	if j == nil {
+		return fmt.Errorf("job is nil")
+	}
 	if j.JobId == "" {
 		return fmt.Errorf("job id is empty")
 	}

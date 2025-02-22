@@ -5,16 +5,18 @@ services:
       context: .
     ports:
       - "9221:9221"
+      - "22:22"
     env_file:
       - .env
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./appdata/:/app/appdata
       # warning mounting ssh will not work in windows hosts https://nickjanetakis.com/blog/docker-tip-56-volume-mounting-ssh-keys-into-a-docker-container
-      - ${USERPROFILE}/.ssh:/root/.ssh:ro
+      - ~/.ssh:/root/.ssh:ro  # Read-only for security
+
     restart: "no"
     depends_on:
-      - minio
+      - db
     profiles:
       - '' # so it starts with normal docker compose
 

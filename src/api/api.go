@@ -6,8 +6,6 @@ import (
 	"github.com/makeopensource/leviathan/common"
 	dkclient "github.com/makeopensource/leviathan/generated/docker_rpc/v1/v1connect"
 	jobClient "github.com/makeopensource/leviathan/generated/jobs/v1/v1connect"
-	labClient "github.com/makeopensource/leviathan/generated/labs/v1/v1connect"
-	statsClient "github.com/makeopensource/leviathan/generated/stats/v1/v1connect"
 	"github.com/makeopensource/leviathan/service"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/net/http2"
@@ -33,7 +31,7 @@ func StartGrpcServer() {
 }
 
 func setupEndpoints() *http.ServeMux {
-	docker, lab, job, stats := service.InitServices()
+	docker, job := service.InitServices()
 
 	endpoints := []func() (string, http.Handler){
 		// jobs endpoints
@@ -45,16 +43,6 @@ func setupEndpoints() *http.ServeMux {
 		func() (string, http.Handler) {
 			dkSrv := &v1.DockerServer{Service: docker}
 			return dkclient.NewDockerServiceHandler(dkSrv)
-		},
-		// lab endpoints
-		func() (string, http.Handler) {
-			labSrv := &v1.LabServer{Service: lab}
-			return labClient.NewLabServiceHandler(labSrv)
-		},
-		// stats endpoints
-		func() (string, http.Handler) {
-			statsSrv := &v1.StatsServer{Service: stats}
-			return statsClient.NewStatsServiceHandler(statsSrv)
 		},
 	}
 

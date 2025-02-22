@@ -105,7 +105,7 @@ func (j *Job) AfterUpdate(tx *gorm.DB) (err error) {
 type MachineLimits struct {
 	PidsLimit int64
 	// NanoCPU will be multiplied by CPUQuota
-	NanoCPU uint64
+	NanoCPU int64
 	// Memory in MB
-	Memory uint64
+	Memory int64
 }

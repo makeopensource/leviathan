@@ -96,28 +96,33 @@ wss.on('connection', async (ws, req) => {
         return;
     }
 
-    const dataStream = jobService.streamStatus(<JobLogRequest>{jobId: jobId})
+    const controller = new AbortController();
+    const dataStream = jobService.streamStatus(<JobLogRequest>{jobId: jobId}, {signal: controller.signal})
 
-    for await (const chunk of dataStream) {
-        if (!chunk.jobInfo) {
-            console.warn("Empty job state")
-            continue
+    ws.on("close", () => {
+        console.log("disconnected")
+        controller.abort()
+    })
+    try {
+        for await (const chunk of dataStream) {
+            if (!chunk.jobInfo) {
+                console.warn("Empty job state")
+                continue
+            }
+
+            const {jobTimeout, $unknown, $typeName, ...rest} = chunk.jobInfo!
+
+            console.log("Job", rest);
+            console.log(chunk.logs)
+
+            ws.send(JSON.stringify({
+                logs: chunk.logs,
+                jobStatus: rest,
+            }));
         }
-
-        const {jobTimeout, $unknown, $typeName, ...rest} = chunk.jobInfo!
-
-        console.log("Job", rest);
-        console.log(chunk.logs)
-
-        ws.send(JSON.stringify({
-            logs: chunk.logs,
-            jobStatus: rest,
-        }));
+    } catch (e) {
+        console.error(e)
     }
 
     console.log("Job ID:", jobId, "done streaming");
 });
-
-wss.on('close', () => {
-
-})

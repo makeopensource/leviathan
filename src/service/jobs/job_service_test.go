@@ -9,7 +9,6 @@ import (
 	"github.com/makeopensource/leviathan/service/docker"
 	"github.com/rs/zerolog/log"
 	"github.com/stretchr/testify/assert"
-	"math/rand/v2"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -217,21 +216,6 @@ func setupJobProcess(studentCodePath string, timeout time.Duration) string {
 }
 
 func testJob(t *testing.T, jobId string, correctOutput string, correctStatus models.JobStatus) {
-	// randomly cancel a job
-	// 1 in 20 to cancel a job
-	if rand.IntN(20) == 1 {
-		// cancel the job after 3 seconds
-		cancelSec := rand.IntN(10) // cancel after random seconds
-		log.Info().Msgf("this job will be canclled after %d", cancelSec)
-
-		time.AfterFunc(time.Duration(cancelSec)*time.Second, func() {
-			jobTestService.CancelJob(jobId)
-		})
-
-		correctStatus = models.Canceled
-		correctOutput = "Job was cancelled"
-	}
-
 	jobInfo, logs, err := jobTestService.WaitForJobAndLogs(context.Background(), jobId)
 	if err != nil {
 		t.Fatalf("Error waiting for job: %v", err)

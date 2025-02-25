@@ -76,11 +76,10 @@ func NewLocalClient() (*DkClient, error) {
 	return NewDkClient(cli), nil
 }
 
-// Docker image controls
-
 // BuildImageFromDockerfile Build image
 func (c *DkClient) BuildImageFromDockerfile(dockerfilePath string, tagName string) error {
-	// prevent concurrently duplicate image builds
+	// prevent concurrently duplicate image builds\
+	// todo potential memory leak since tags are never removed from the image map
 	tagLock, ok := c.imageQueue.Load(tagName)
 	if !ok {
 		c.imageQueue.Store(tagName, &sync.Mutex{})
@@ -202,7 +201,6 @@ func (c *DkClient) CreateNewContainer(jobUuid, image, jobFolder, entryCmd string
 		Binds: []string{
 			"/etc/localtime:/etc/localtime:ro", // add a time mount to fix clock skew issue in make
 		},
-		//Binds:      mounts,
 	}
 	networkingConfig := &network.NetworkingConfig{}
 

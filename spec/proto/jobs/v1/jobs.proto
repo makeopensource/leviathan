@@ -20,6 +20,7 @@ message NewJobRequest {
   string imageName = 5;
   uint64 jobTimeoutInSeconds = 6;
   string entryCmd = 7;
+  MachineLimits limits = 8;
 }
 
 message NewJobResponse {
@@ -52,4 +53,10 @@ message JobStatus {
   string output_file_path = 6;
   string tmp_job_folder_path = 7;
   int64 job_timeout = 8;
+}
+
+message MachineLimits {
+  int32 CPUCores = 1;
+  int32 memoryInMb = 2;
+  int32 PidLimit = 3;
 }

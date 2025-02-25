@@ -31,10 +31,10 @@ dev:
 
 bdrn:
     just dk
-    docker run --rm --network=host -v /var/run/docker.sock:/var/run/docker.sock {{imageName}}
+    docker run --rm --network=host -v /var/run/docker.sock:/var/run/docker.sock -v appdata:/app/appdata/ {{imageName}}
 
 dkrn:
-	docker compose up
+	docker compose up --build
 
 post:
     docker compose --profile post up

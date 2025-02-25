@@ -44,6 +44,15 @@ app.post('/submit',
                 return
             }
 
+            let memory = req.body.memory as number
+            let cpuCore = req.body.cpuCores as number
+            let pids = req.body.pidLimit as number
+
+            if (!memory || !cpuCore || !pids) {
+                res.status(400).send('Invalid machine limits');
+                return
+            }
+
             const files = req.files as { [fieldname: string]: Express.Multer.File[] };
             const grader = files['grader'][0]
             const makefile = files['makefile'][0]
@@ -54,6 +63,11 @@ app.post('/submit',
                 entryCmd: entryCmd,
                 jobTimeoutInSeconds: BigInt(jobTimeout),
                 imageName: imageTag,
+                limits: {
+                    PidLimit: pids,
+                    CPUCores: cpuCore,
+                    memoryInMb: memory,
+                },
                 makeFile: {
                     content: new Uint8Array(makefile.buffer),
                     filename: makefile.originalname,
@@ -96,28 +110,33 @@ wss.on('connection', async (ws, req) => {
         return;
     }
 
-    const dataStream = jobService.streamStatus(<JobLogRequest>{jobId: jobId})
+    const controller = new AbortController();
+    const dataStream = jobService.streamStatus(<JobLogRequest>{jobId: jobId}, {signal: controller.signal})
 
-    for await (const chunk of dataStream) {
-        if (!chunk.jobInfo) {
-            console.warn("Empty job state")
-            continue
+    ws.on("close", () => {
+        console.log("disconnected")
+        controller.abort()
+    })
+    try {
+        for await (const chunk of dataStream) {
+            if (!chunk.jobInfo) {
+                console.warn("Empty job state")
+                continue
+            }
+
+            const {jobTimeout, $unknown, $typeName, ...rest} = chunk.jobInfo!
+
+            console.log("Job", rest);
+            console.log(chunk.logs)
+
+            ws.send(JSON.stringify({
+                logs: chunk.logs,
+                jobStatus: rest,
+            }));
         }
-
-        const {jobTimeout, $unknown, $typeName, ...rest} = chunk.jobInfo!
-
-        console.log("Job", rest);
-        console.log(chunk.logs)
-
-        ws.send(JSON.stringify({
-            logs: chunk.logs,
-            jobStatus: rest,
-        }));
+    } catch (e) {
+        console.error(e)
     }
 
     console.log("Job ID:", jobId, "done streaming");
 });
-
-wss.on('close', () => {
-
-})

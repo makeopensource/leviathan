@@ -8,6 +8,7 @@ import (
 	types "github.com/makeopensource/leviathan/generated/types/v1"
 	"github.com/makeopensource/leviathan/models"
 	"github.com/makeopensource/leviathan/service/jobs"
+	"strings"
 	"time"
 )
 
@@ -43,8 +44,13 @@ func (job *JobServer) NewJob(ctx context.Context, req *connect.Request[v1.NewJob
 
 	newJob := models.Job{
 		JobEntryCmd: entryCmd,
-		LabData:     models.LabModel{ImageTag: tag},
+		LabData:     models.Lab{ImageTag: strings.ToLower(strings.TrimSpace(tag))},
 		JobTimeout:  time.Second * time.Duration(req.Msg.JobTimeoutInSeconds),
+		JobLimits: models.MachineLimits{
+			PidsLimit: int64(req.Msg.GetLimits().PidLimit),
+			NanoCPU:   int64(req.Msg.GetLimits().CPUCores),
+			Memory:    int64(req.Msg.GetLimits().MemoryInMb),
+		},
 	}
 
 	jobId, err := job.Service.NewJob(&newJob, makeF, grader, stu, dockerfile)

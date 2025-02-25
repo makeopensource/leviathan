@@ -59,7 +59,6 @@ func testBatchJobProcessor(t *testing.T, numJobs int) {
 			// Enable parallel execution for this subtest
 			t.Parallel()
 			testCase(t)
-			fmt.Printf("Job %d finished\n", i)
 		})
 	}
 }

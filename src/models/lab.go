@@ -1,10 +1,7 @@
 package models
 
-import "gorm.io/gorm"
-
-type LabModel struct {
-	gorm.Model
-	LabName        string
+type Lab struct {
+	Name           string
 	ImageTag       string
 	DockerFilePath string
 }

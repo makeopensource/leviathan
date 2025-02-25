@@ -58,11 +58,16 @@ var (
 			expectedOutput: "Maximum timeout reached for job, job ran for 10s",
 			correctStatus:  models.Failed,
 		},
-
-		//"forkb": {
-		//	studentFile:    "../../../example/simple-addition/student_fork_bomb.py",
-		//	expectedOutput: "",
-		//},
+		"oom": {
+			studentFile:    "../../../example/simple-addition/student_oom.py",
+			expectedOutput: "unable to parse log output",
+			correctStatus:  models.Failed,
+		},
+		"forkb": {
+			studentFile:    "../../../example/simple-addition/student_fork_bomb.py",
+			expectedOutput: `{"addition": {"passed": false, "message": "Addition test caused an error: [Errno 11] Resource temporarily unavailable"}, "subtraction": {"passed": true, "message": ""}, "multiplication": {"passed": false, "message": "Multiplication failed. Expected 42, got 48"}, "division": {"passed": false, "message": "Division failed. Expected 4, got 3.3333333333333335"}}`,
+			correctStatus:  models.Complete, // job completes since we can parse the last line
+		},
 	}
 	testFuncs = map[string]func(*testing.T){
 		"correct":      TestCorrect,
@@ -70,6 +75,8 @@ var (
 		"cancel":       TestCancel,
 		"timeout":      TestTimeout,
 		"timeout_edge": TestTimeoutEdge,
+		"oom":          TestOom,
+		"forkb":        TestForkBomb,
 	}
 )
 
@@ -85,6 +92,12 @@ func TestAll(t *testing.T) {
 func TestCorrect(t *testing.T) {
 	setupTest()
 	correct := testCases["correct"]
+	testJobProcessor(t, correct.studentFile, correct.expectedOutput, defaultTimeout, correct.correctStatus)
+}
+
+func TestOom(t *testing.T) {
+	setupTest()
+	correct := testCases["oom"]
 	testJobProcessor(t, correct.studentFile, correct.expectedOutput, defaultTimeout, correct.correctStatus)
 }
 
@@ -124,7 +137,7 @@ func TestCancel(t *testing.T) {
 	setupTest()
 	timeLimit := time.Second * 10
 	timeout := testCases["timeout"]
-	timeout.expectedOutput = fmt.Sprintf("Job was cancelled")
+	timeout.expectedOutput = "Job was cancelled"
 
 	jobId := setupJobProcess(timeout.studentFile, timeLimit)
 
@@ -170,7 +183,7 @@ func setupJobProcess(studentCodePath string, timeout time.Duration) string {
 	}
 
 	newJob := &models.Job{
-		LabData:     models.LabModel{ImageTag: imageName},
+		LabData:     models.Lab{ImageTag: imageName},
 		JobTimeout:  timeout,
 		JobEntryCmd: "make grade",
 	}

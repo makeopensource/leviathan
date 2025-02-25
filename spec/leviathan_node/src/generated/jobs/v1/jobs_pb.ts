@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file jobs/v1/jobs.proto.
  */
 export const file_jobs_v1_jobs: GenFile = /*@__PURE__*/
-  fileDesc("ChJqb2JzL3YxL2pvYnMucHJvdG8SB2pvYnMudjEi/gEKDU5ld0pvYlJlcXVlc3QSJgoIbWFrZUZpbGUYASABKAsyFC50eXBlcy52MS5GaWxlVXBsb2FkEigKCmdyYWRlckZpbGUYAiABKAsyFC50eXBlcy52MS5GaWxlVXBsb2FkEi8KEXN0dWRlbnRTdWJtaXNzaW9uGAMgASgLMhQudHlwZXMudjEuRmlsZVVwbG9hZBIoCgpkb2NrZXJGaWxlGAQgASgLMhQudHlwZXMudjEuRmlsZVVwbG9hZBIRCglpbWFnZU5hbWUYBSABKAkSGwoTam9iVGltZW91dEluU2Vjb25kcxgGIAEoBBIQCghlbnRyeUNtZBgHIAEoCSIfCg5OZXdKb2JSZXNwb25zZRINCgVqb2JJZBgBIAEoCSIhChBDYW5jZWxKb2JSZXF1ZXN0Eg0KBWpvYklkGAEgASgJIhMKEUNhbmNlbEpvYlJlc3BvbnNlIh4KDUpvYkxvZ1JlcXVlc3QSDQoFam9iSWQYASABKAkiRAoPSm9iTG9nc1Jlc3BvbnNlEiMKB2pvYkluZm8YASABKAsyEi5qb2JzLnYxLkpvYlN0YXR1cxIMCgRsb2dzGAIgASgJIrkBCglKb2JTdGF0dXMSDgoGam9iX2lkGAEgASgJEhIKCm1hY2hpbmVfaWQYAiABKAkSFAoMY29udGFpbmVyX2lkGAMgASgJEg4KBnN0YXR1cxgEIAEoCRIWCg5zdGF0dXNfbWVzc2FnZRgFIAEoCRIYChBvdXRwdXRfZmlsZV9wYXRoGAYgASgJEhsKE3RtcF9qb2JfZm9sZGVyX3BhdGgYByABKAkSEwoLam9iX3RpbWVvdXQYCCABKAMy1QEKCkpvYlNlcnZpY2USOwoGTmV3Sm9iEhYuam9icy52MS5OZXdKb2JSZXF1ZXN0Ghcuam9icy52MS5OZXdKb2JSZXNwb25zZSIAEkQKDFN0cmVhbVN0YXR1cxIWLmpvYnMudjEuSm9iTG9nUmVxdWVzdBoYLmpvYnMudjEuSm9iTG9nc1Jlc3BvbnNlIgAwARJECglDYW5jZWxKb2ISGS5qb2JzLnYxLkNhbmNlbEpvYlJlcXVlc3QaGi5qb2JzLnYxLkNhbmNlbEpvYlJlc3BvbnNlIgBCjAEKC2NvbS5qb2JzLnYxQglKb2JzUHJvdG9QAVo1Z2l0aHViLmNvbS9tYWtlb3BlbnNvdXJjZS9sZXZpYXRoYW4vZ2VuZXJhdGVkL2pvYnMvdjGiAgNKWFiqAgdKb2JzLlYxygIHSm9ic1xWMeICE0pvYnNcVjFcR1BCTWV0YWRhdGHqAghKb2JzOjpWMWIGcHJvdG8z", [file_types_v1_types]);
+  fileDesc("ChJqb2JzL3YxL2pvYnMucHJvdG8SB2pvYnMudjEipgIKDU5ld0pvYlJlcXVlc3QSJgoIbWFrZUZpbGUYASABKAsyFC50eXBlcy52MS5GaWxlVXBsb2FkEigKCmdyYWRlckZpbGUYAiABKAsyFC50eXBlcy52MS5GaWxlVXBsb2FkEi8KEXN0dWRlbnRTdWJtaXNzaW9uGAMgASgLMhQudHlwZXMudjEuRmlsZVVwbG9hZBIoCgpkb2NrZXJGaWxlGAQgASgLMhQudHlwZXMudjEuRmlsZVVwbG9hZBIRCglpbWFnZU5hbWUYBSABKAkSGwoTam9iVGltZW91dEluU2Vjb25kcxgGIAEoBBIQCghlbnRyeUNtZBgHIAEoCRImCgZsaW1pdHMYCCABKAsyFi5qb2JzLnYxLk1hY2hpbmVMaW1pdHMiHwoOTmV3Sm9iUmVzcG9uc2USDQoFam9iSWQYASABKAkiIQoQQ2FuY2VsSm9iUmVxdWVzdBINCgVqb2JJZBgBIAEoCSITChFDYW5jZWxKb2JSZXNwb25zZSIeCg1Kb2JMb2dSZXF1ZXN0Eg0KBWpvYklkGAEgASgJIkQKD0pvYkxvZ3NSZXNwb25zZRIjCgdqb2JJbmZvGAEgASgLMhIuam9icy52MS5Kb2JTdGF0dXMSDAoEbG9ncxgCIAEoCSK5AQoJSm9iU3RhdHVzEg4KBmpvYl9pZBgBIAEoCRISCgptYWNoaW5lX2lkGAIgASgJEhQKDGNvbnRhaW5lcl9pZBgDIAEoCRIOCgZzdGF0dXMYBCABKAkSFgoOc3RhdHVzX21lc3NhZ2UYBSABKAkSGAoQb3V0cHV0X2ZpbGVfcGF0aBgGIAEoCRIbChN0bXBfam9iX2ZvbGRlcl9wYXRoGAcgASgJEhMKC2pvYl90aW1lb3V0GAggASgDIkcKDU1hY2hpbmVMaW1pdHMSEAoIQ1BVQ29yZXMYASABKAISEgoKbWVtb3J5SW5NYhgCIAEoAxIQCghQaWRMaW1pdBgDIAEoAzLVAQoKSm9iU2VydmljZRI7CgZOZXdKb2ISFi5qb2JzLnYxLk5ld0pvYlJlcXVlc3QaFy5qb2JzLnYxLk5ld0pvYlJlc3BvbnNlIgASRAoMU3RyZWFtU3RhdHVzEhYuam9icy52MS5Kb2JMb2dSZXF1ZXN0Ghguam9icy52MS5Kb2JMb2dzUmVzcG9uc2UiADABEkQKCUNhbmNlbEpvYhIZLmpvYnMudjEuQ2FuY2VsSm9iUmVxdWVzdBoaLmpvYnMudjEuQ2FuY2VsSm9iUmVzcG9uc2UiAEKMAQoLY29tLmpvYnMudjFCCUpvYnNQcm90b1ABWjVnaXRodWIuY29tL21ha2VvcGVuc291cmNlL2xldmlhdGhhbi9nZW5lcmF0ZWQvam9icy92MaICA0pYWKoCB0pvYnMuVjHKAgdKb2JzXFYx4gITSm9ic1xWMVxHUEJNZXRhZGF0YeoCCEpvYnM6OlYxYgZwcm90bzM", [file_types_v1_types]);
 
 /**
  * @generated from message jobs.v1.NewJobRequest
@@ -52,6 +52,11 @@ export type NewJobRequest = Message<"jobs.v1.NewJobRequest"> & {
    * @generated from field: string entryCmd = 7;
    */
   entryCmd: string;
+
+  /**
+   * @generated from field: jobs.v1.MachineLimits limits = 8;
+   */
+  limits?: MachineLimits;
 };
 
 /**
@@ -198,6 +203,33 @@ export type JobStatus = Message<"jobs.v1.JobStatus"> & {
  */
 export const JobStatusSchema: GenMessage<JobStatus> = /*@__PURE__*/
   messageDesc(file_jobs_v1_jobs, 6);
+
+/**
+ * @generated from message jobs.v1.MachineLimits
+ */
+export type MachineLimits = Message<"jobs.v1.MachineLimits"> & {
+  /**
+   * @generated from field: float CPUCores = 1;
+   */
+  CPUCores: number;
+
+  /**
+   * @generated from field: int64 memoryInMb = 2;
+   */
+  memoryInMb: bigint;
+
+  /**
+   * @generated from field: int64 PidLimit = 3;
+   */
+  PidLimit: bigint;
+};
+
+/**
+ * Describes the message jobs.v1.MachineLimits.
+ * Use `create(MachineLimitsSchema)` to create a new message.
+ */
+export const MachineLimitsSchema: GenMessage<MachineLimits> = /*@__PURE__*/
+  messageDesc(file_jobs_v1_jobs, 7);
 
 /**
  * @generated from service jobs.v1.JobService

@@ -56,7 +56,7 @@ message JobStatus {
 }
 
 message MachineLimits {
-  int64 CPUCores = 1;
-  int64 memoryInMb = 2;
-  int64 PidLimit = 3;
+  int32 CPUCores = 1;
+  int32 memoryInMb = 2;
+  int32 PidLimit = 3;
 }

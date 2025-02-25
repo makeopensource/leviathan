@@ -44,6 +44,15 @@ app.post('/submit',
                 return
             }
 
+            let memory = req.body.memory as number
+            let cpuCore = req.body.cpuCores as number
+            let pids = req.body.pidLimit as number
+
+            if (!memory || !cpuCore || !pids) {
+                res.status(400).send('Invalid machine limits');
+                return
+            }
+
             const files = req.files as { [fieldname: string]: Express.Multer.File[] };
             const grader = files['grader'][0]
             const makefile = files['makefile'][0]
@@ -54,6 +63,11 @@ app.post('/submit',
                 entryCmd: entryCmd,
                 jobTimeoutInSeconds: BigInt(jobTimeout),
                 imageName: imageTag,
+                limits: {
+                    PidLimit: pids,
+                    CPUCores: cpuCore,
+                    memoryInMb: memory,
+                },
                 makeFile: {
                     content: new Uint8Array(makefile.buffer),
                     filename: makefile.originalname,

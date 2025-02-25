@@ -85,51 +85,66 @@
 <body>
 <h1>Leviathan test</h1>
 <form action="/submit" method="POST" enctype="multipart/form-data">
-<div class="upload-container" id="dropZone">
-    <!-- Dockerfile input -->
-    <div class="file-input">
-        <label class="file-label" for="dockerfile">Dockerfile:</label>
-        <input type="file" id="dockerfile" name="dockerfile" required>
-    </div>
+    <div class="upload-container" id="dropZone">
+        <!-- Dockerfile input -->
+        <div class="file-input">
+            <label class="file-label" for="dockerfile">Dockerfile:</label>
+            <input type="file" id="dockerfile" name="dockerfile" required>
+        </div>
 
-    <!-- Makefile input -->
-    <div class="file-input">
-        <label class="file-label" for="makefile">Makefile:</label>
-        <input type="file" id="makefile" name="makefile" required>
-    </div>
+        <!-- Makefile input -->
+        <div class="file-input">
+            <label class="file-label" for="makefile">Makefile:</label>
+            <input type="file" id="makefile" name="makefile" required>
+        </div>
 
-    <!-- Grader input -->
-    <div class="file-input">
-        <label class="file-label" for="grader">Grader:</label>
-        <input type="file" id="grader" name="grader" required>
-    </div>
+        <!-- Grader input -->
+        <div class="file-input">
+            <label class="file-label" for="grader">Grader:</label>
+            <input type="file" id="grader" name="grader" required>
+        </div>
 
-    <!-- Student input -->
-    <div class="file-input">
-        <label class="file-label" for="student">Student:</label>
-        <input type="file" id="student" name="student" required>
-    </div>
-    <!-- Image Tag input -->
-    <div class="file-input">
-        <label class="file-label" for="imageTag">Image Tag:</label>
-        <input type="text" id="imageTag" name="imageTag" required>
-    </div>
+        <!-- Student input -->
+        <div class="file-input">
+            <label class="file-label" for="student">Student:</label>
+            <input type="file" id="student" name="student" required>
+        </div>
+        <!-- Image Tag input -->
+        <div class="file-input">
+            <label class="file-label" for="imageTag">Image Tag:</label>
+            <input type="text" id="imageTag" name="imageTag" required>
+        </div>
 
-    <!-- Timeout input -->
-    <div class="file-input">
-        <label class="file-label" for="timeoutInSeconds">Timeout (in seconds):</label>
-        <input type="number" id="timeoutInSeconds" name="timeoutInSeconds" required>
-    </div>
+        <!-- Timeout input -->
+        <div class="file-input">
+            <label class="file-label" for="timeoutInSeconds">Timeout (in seconds):</label>
+            <input type="number" id="timeoutInSeconds" name="timeoutInSeconds" required>
+        </div>
 
-    <!-- Timeout input -->
-    <div class="file-input">
-        <label class="file-label" for="entryCmd">Entry command :</label>
-        <input type="text" id="entryCmd" name="entryCmd" required>
-    </div>
+        <!-- Timeout input -->
+        <div class="file-input">
+            <label class="file-label" for="entryCmd">Entry command :</label>
+            <input type="text" id="entryCmd" name="entryCmd" required>
+        </div>
 
-    <!-- Submit button -->
-    <button class="upload-button" id="uploadButton" type="submit">Send job</button>
-</div>
+        <div class="file-input">
+            <label class="file-label" for="memory">Memory (MB):</label>
+            <input type="number" id="memory" name="memory" value="512" required>
+        </div>
+
+        <div class="file-input">
+            <label class="file-label" for="pidLimit">PID Limit:</label>
+            <input type="number" id="pidLimit" name="pidLimit" value="10" required>
+        </div>
+
+        <div class="file-input">
+            <label class="file-label" for="cpuCores">CPU Cores:</label>
+            <input type="number" id="cpuCores" name="cpuCores" value="1" required>
+        </div>
+
+        <!-- Submit button -->
+        <button class="upload-button" id="uploadButton" type="submit">Send job</button>
+    </div>
 </form>
 </body>
 </html>

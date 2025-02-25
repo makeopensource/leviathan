@@ -201,7 +201,6 @@ func (c *DkClient) CreateNewContainer(jobUuid, image, jobFolder, entryCmd string
 		Binds: []string{
 			"/etc/localtime:/etc/localtime:ro", // add a time mount to fix clock skew issue in make
 		},
-		//Binds:      mounts,
 	}
 	networkingConfig := &network.NetworkingConfig{}
 

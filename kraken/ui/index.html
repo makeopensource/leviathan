@@ -80,71 +80,93 @@
         input[type="file"]::-webkit-file-upload-button:hover {
             background-color: #555;
         }
+
+        .file-list {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #333;
+            border-radius: 4px;
+        }
+
+        .file-list-item {
+            margin: 5px 0;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
 <h1>Leviathan test</h1>
 <form action="/submit" method="POST" enctype="multipart/form-data">
-    <div class="upload-container" id="dropZone">
-        <!-- Dockerfile input -->
-        <div class="file-input">
-            <label class="file-label" for="dockerfile">Dockerfile:</label>
-            <input type="file" id="dockerfile" name="dockerfile" required>
-        </div>
 
-        <!-- Makefile input -->
-        <div class="file-input">
-            <label class="file-label" for="makefile">Makefile:</label>
-            <input type="file" id="makefile" name="makefile" required>
-        </div>
-
-        <!-- Grader input -->
-        <div class="file-input">
-            <label class="file-label" for="grader">Grader:</label>
-            <input type="file" id="grader" name="grader" required>
-        </div>
-
-        <!-- Student input -->
-        <div class="file-input">
-            <label class="file-label" for="student">Student:</label>
-            <input type="file" id="student" name="student" required>
-        </div>
-        <!-- Image Tag input -->
-        <div class="file-input">
-            <label class="file-label" for="imageTag">Image Tag:</label>
-            <input type="text" id="imageTag" name="imageTag" required>
-        </div>
-
-        <!-- Timeout input -->
-        <div class="file-input">
-            <label class="file-label" for="timeoutInSeconds">Timeout (in seconds):</label>
-            <input type="number" id="timeoutInSeconds" name="timeoutInSeconds" required>
-        </div>
-
-        <!-- Timeout input -->
-        <div class="file-input">
-            <label class="file-label" for="entryCmd">Entry command :</label>
-            <input type="text" id="entryCmd" name="entryCmd" required>
-        </div>
-
-        <div class="file-input">
-            <label class="file-label" for="memory">Memory (MB):</label>
-            <input type="number" id="memory" name="memory" value="512" required>
-        </div>
-
-        <div class="file-input">
-            <label class="file-label" for="pidLimit">PID Limit:</label>
-            <input type="number" id="pidLimit" name="pidLimit" value="10" required>
-        </div>
-
-        <div class="file-input">
-            <label class="file-label" for="cpuCores">CPU Cores:</label>
-            <input type="number" id="cpuCores" name="cpuCores" value="1" required>
-        </div>
-
-        <!-- Submit button -->
-        <button class="upload-button" id="uploadButton" type="submit">Send job</button>
+    <!-- File list input -->
+    <div class="file-input">
+        <label class="file-label" for="fileList">Upload Job Files (at least one required, max: 10):</label>
+        <input type="file" id="fileList" name="fileList" multiple required>
+        <div id="fileListDisplay" class="file-list"></div>
+        <ul class="file-comments">
+            <li>Upload all files required for the job, (includes the student submission)</li>
+            <li>Leviathan does not care what files are uploaded</li>
+            <li>you must specify the entry command below, for the job to start</li>
+        </ul>
     </div>
+
+    <!-- Dockerfile input -->
+    <div class="file-input">
+        <label class="file-label" for="dockerfile">Dockerfile:</label>
+        <input type="file" id="dockerfile" name="dockerfile"  required>
+    </div>
+
+    <!-- Image Tag input -->
+    <div class="file-input">
+        <label class="file-label" for="imageTag">Image Tag:</label>
+        <input type="text" id="imageTag" name="imageTag" value="test" required>
+    </div>
+
+    <!-- Timeout input -->
+    <div class="file-input">
+        <label class="file-label" for="timeoutInSeconds">Timeout (in seconds):</label>
+        <input type="number" id="timeoutInSeconds" name="timeoutInSeconds" value="10" required>
+    </div>
+
+    <div class="file-input">
+        <label class="file-label" for="entryCmd">Entry command :</label>
+        <input type="text" id="entryCmd" name="entryCmd" required>
+    </div>
+
+    <div class="file-input" hidden="hidden">
+        <label class="file-label" for="memory">Memory (MB):</label>
+        <input type="number" id="memory" name="memory" value="512" required>
+    </div>
+
+    <div class="file-input" hidden="hidden">
+        <label class="file-label" for="pidLimit">PID Limit:</label>
+        <input type="number" id="pidLimit" name="pidLimit" value="10" required>
+    </div>
+
+    <div class="file-input" hidden="hidden">
+        <label class="file-label" for="cpuCores">CPU Cores:</label>
+        <input type="number" id="cpuCores" name="cpuCores" value="1" required>
+    </div>
+
+    <!-- Submit button -->
+    <button class="upload-button" id="uploadButton" type="submit">Send job</button>
 </form>
+
+<script>
+    document.getElementById("fileList").addEventListener("change", function () {
+        const fileListDisplay = document.getElementById("fileListDisplay");
+        fileListDisplay.innerHTML = ""; // Clear previous list
+
+        if (this.files.length > 0) {
+            for (let file of this.files) {
+                const fileSize = (file.size / 1024).toFixed(2); // Convert bytes to KB
+                const fileItem = document.createElement("div");
+                fileItem.className = "file-list-item";
+                fileItem.textContent = `${file.name} - ${fileSize} KB`;
+                fileListDisplay.appendChild(fileItem);
+            }
+        }
+    });
+</script>
 </body>
 </html>

@@ -5,6 +5,7 @@
   "scripts": {
     "start": "npm run build && ts-node index.ts",
     "watch": "npm run build && nodemon index.ts",
+    "sta": "ts-node index.ts",
     "build": "parcel build ui/* --dist-dir ui/dist",
     "clean": "rimraf dist .parcel-cache node_modules"
   },

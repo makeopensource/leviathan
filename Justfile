@@ -7,8 +7,9 @@ list:
     just --list
 
 # build kraken
+[working-directory: 'kraken']
 krd:
-	docker build -f kraken/Dockerfile ./kraken -t kraken:dev
+	docker build . -t kraken:dev
 
 krn:
     just krd

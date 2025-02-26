@@ -5,7 +5,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/google/uuid"
-	"github.com/makeopensource/leviathan/common"
+	com "github.com/makeopensource/leviathan/common"
 	v2 "github.com/makeopensource/leviathan/generated/jobs/v1"
 	v1 "github.com/makeopensource/leviathan/generated/types/v1"
 	"github.com/makeopensource/leviathan/models"
@@ -30,11 +30,11 @@ func NewJobService(db *gorm.DB, bc *models.BroadcastChannel, dockerService *dock
 		db:          db,
 		broadcastCh: bc,
 		dockerSrv:   dockerService,
-		queue:       NewJobQueue(uint(common.ConcurrentJobs.GetUint64()), db, dockerService),
+		queue:       NewJobQueue(uint(com.ConcurrentJobs.GetUint64()), db, dockerService),
 	}
 }
 
-func (job *JobService) NewJob(newJob *models.Job, makefile *v1.FileUpload, grader *v1.FileUpload, student *v1.FileUpload, dockerfile *v1.FileUpload) (string, error) {
+func (job *JobService) NewJob(newJob *models.Job, jobFiles []*v1.FileUpload, dockerfile *v1.FileUpload) (string, error) {
 	jobId, err := uuid.NewUUID()
 	if err != nil {
 		log.Error().Err(err).Msg("failed to generate job ID")
@@ -47,38 +47,24 @@ func (job *JobService) NewJob(newJob *models.Job, makefile *v1.FileUpload, grade
 	// job context, so that it can be cancelled, and store sub logger
 	ctx := job.queue.NewJobContext(newJob.JobId)
 
-	dockerFileDir, err := common.CreateTmpJobDir(
-		newJob.JobId,
-		"", // randomly named tmp folder
-		map[string][]byte{
-			dockerfile.Filename: dockerfile.Content,
-		},
-	)
+	// "" implies randomly named tmp folder
+	dockerFileDir, err := com.CreateTmpJobDir(newJob.JobId, "", dockerfile)
 	if err != nil {
-		jobLog(ctx).Error().Err(err).Msg("failed to create dockerfile dir")
+		jog(ctx).Error().Err(err).Msg("failed to create dockerfile dir")
 		return "", fmt.Errorf("failed to create dockerfile dir")
 	}
 
-	jobDir, err := common.CreateTmpJobDir(
-		newJob.JobId,
-		common.SubmissionTarFolder.GetStr(),
-		map[string][]byte{
-			grader.Filename:   grader.Content,
-			makefile.Filename: makefile.Content,
-			student.Filename:  student.Content,
-		},
-	)
+	jobDir, err := com.CreateTmpJobDir(newJob.JobId, com.SubmissionFolder.GetStr(), jobFiles...)
 	if err != nil {
-		jobLog(ctx).Error().Err(err).Msg("failed to create job dir")
+		jog(ctx).Error().Err(err).Msg("failed to create job dir")
 		return "", fmt.Errorf("failed to create job dir")
 	}
 
 	logPath, err, reason := setupLogFile(newJob.JobId)
 	if err != nil {
-		jobLog(ctx).Error().Err(err).Str("reason", reason).Msg("failed to setup log file")
+		jog(ctx).Error().Err(err).Str("reason", reason).Msg("failed to setup log file")
 		return "", fmt.Errorf("failed to setup log file")
 	}
-	verifyJobLimits(newJob)
 
 	// setup job metadata
 	newJob.MachineId = mId
@@ -87,36 +73,22 @@ func (job *JobService) NewJob(newJob *models.Job, makefile *v1.FileUpload, grade
 	newJob.TmpJobFolderPath = jobDir
 	newJob.LabData.DockerFilePath = fmt.Sprintf("%s/%s", dockerFileDir, dockerfile.Filename)
 	newJob.JobCtx = ctx
-
-	jobLog(newJob.JobCtx).Debug().Any("limits", newJob.JobCtx).Msg("job limits")
+	newJob.VerifyJobLimits()
+	jog(newJob.JobCtx).Debug().Any("limits", newJob.JobLimits).Msg("job limits")
 
 	res := job.db.Create(newJob)
 	if res.Error != nil {
-		jobLog(ctx).Error().Err(res.Error).Msg("Failed to save job to db")
+		jog(ctx).Error().Err(res.Error).Msg("Failed to save job to db")
 		return "", fmt.Errorf("failed to save job to db")
 	}
 
-	jobLog(ctx).Info().Msg("sending job to queue")
+	jog(ctx).Info().Msg("sending job to queue")
 	err = job.queue.AddJob(newJob)
 	if err != nil {
 		return "", err
 	}
 
 	return jobId.String(), nil
-}
-
-// verifyJobLimits checks if job limits are provided,
-// and sets fields that are missing with default values
-func verifyJobLimits(job *models.Job) {
-	if job.JobLimits.PidsLimit == 0 {
-		job.JobLimits.PidsLimit = 100 // Default value
-	}
-	if job.JobLimits.NanoCPU == 0 {
-		job.JobLimits.NanoCPU = 1 // Default value
-	}
-	if job.JobLimits.Memory == 0 {
-		job.JobLimits.Memory = 512 // Default value in MB
-	}
 }
 
 func (job *JobService) CancelJob(jobUuid string) {
@@ -151,7 +123,7 @@ func (job *JobService) WaitForJobAndLogs(ctx context.Context, jobUuid string) (*
 	for {
 		if jobOk {
 			// read log file one last time
-			content := common.ReadLogFile(jobInfo.OutputLogFilePath)
+			content := com.ReadLogFile(jobInfo.OutputLogFilePath)
 			return jobInfo, content, nil
 		}
 
@@ -207,7 +179,7 @@ func (job *JobService) StreamJobAndLogs(ctx context.Context, jobUuid string, str
 	// Keep listening until channel closes, indicating job is complete
 	for {
 		if jobOk {
-			content := common.ReadLogFile(jobInfo.OutputLogFilePath)
+			content := com.ReadLogFile(jobInfo.OutputLogFilePath)
 			if err != nil {
 				log.Warn().Err(err).Str("path", jobInfo.OutputLogFilePath).Msg("Failed to read job log file")
 			}
@@ -253,15 +225,15 @@ func (job *JobService) ListenToJobLogs(ctx context.Context, jobInfo *models.Job)
 		for {
 			select {
 			case <-time.After(2 * time.Second):
-				content := common.ReadLogFile(jobInfo.OutputLogFilePath)
+				content := com.ReadLogFile(jobInfo.OutputLogFilePath)
 				// send if content changed
 				if len(content) > prevLength {
-					log.Debug().Str(common.JobLogKey, jobInfo.JobId).Msgf("sending log, length changed from %d to %d", prevLength, len(content))
+					log.Debug().Str(com.JobLogKey, jobInfo.JobId).Msgf("sending log, length changed from %d to %d", prevLength, len(content))
 					prevLength = len(content)
 					logChannel <- content
 				}
 			case <-ctx.Done():
-				log.Debug().Str(common.JobLogKey, jobInfo.JobId).Msg("stopping listening for logs")
+				log.Debug().Str(com.JobLogKey, jobInfo.JobId).Msg("stopping listening for logs")
 				return
 			}
 		}
@@ -285,9 +257,9 @@ func (job *JobService) checkJob(jobUuid string) (*models.Job, bool, string, erro
 	}
 
 	if jobInf.Status.Done() {
-		log.Debug().Str(common.JobLogKey, jobUuid).Msg("job is already done")
+		log.Debug().Str(com.JobLogKey, jobUuid).Msg("job is already done")
 
-		content := common.ReadLogFile(jobInf.OutputLogFilePath)
+		content := com.ReadLogFile(jobInf.OutputLogFilePath)
 		return jobInf, true, content, nil
 	} else {
 		return jobInf, false, "", nil
@@ -305,7 +277,7 @@ func (job *JobService) getJobFromDB(jobUuid string) (*models.Job, error) {
 
 // setupLogFile store grader output
 func setupLogFile(jobId string) (string, error, string) {
-	outputFile := fmt.Sprintf("%s/%s.txt", common.OutputFolder.GetStr(), jobId)
+	outputFile := fmt.Sprintf("%s/%s.txt", com.OutputFolder.GetStr(), jobId)
 	outFile, err := os.Create(outputFile)
 	if err != nil {
 		return "", err, fmt.Sprintf("error while creating log file at %s", outputFile)
@@ -328,14 +300,9 @@ func setupLogFile(jobId string) (string, error, string) {
 func sendJobToStream(stream *connect.ServerStream[v2.JobLogsResponse], jobInfo *models.Job, logs string) error {
 	err := stream.Send(&v2.JobLogsResponse{
 		JobInfo: &v2.JobStatus{
-			JobId:            jobInfo.JobId,
-			MachineId:        jobInfo.MachineId,
-			ContainerId:      jobInfo.ContainerId,
-			Status:           string(jobInfo.Status),
-			StatusMessage:    jobInfo.StatusMessage,
-			OutputFilePath:   "",
-			TmpJobFolderPath: "",
-			JobTimeout:       int64(jobInfo.JobTimeout),
+			JobId:         jobInfo.JobId,
+			Status:        string(jobInfo.Status),
+			StatusMessage: jobInfo.StatusMessage,
 		},
 		Logs: logs,
 	})
@@ -345,6 +312,9 @@ func sendJobToStream(stream *connect.ServerStream[v2.JobLogsResponse], jobInfo *
 	return nil
 }
 
-func jobLog(ctx context.Context) *zerolog.Logger {
+// zerolog log with context, intended for job logs
+//
+// shorthand for log.Ctx(ctx)
+func jog(ctx context.Context) *zerolog.Logger {
 	return log.Ctx(ctx)
 }

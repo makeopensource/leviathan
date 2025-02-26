@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	v1 "github.com/makeopensource/leviathan/generated/jobs/v1"
-	types "github.com/makeopensource/leviathan/generated/types/v1"
 	"github.com/makeopensource/leviathan/models"
 	"github.com/makeopensource/leviathan/service/jobs"
 	"strings"
@@ -17,17 +16,14 @@ type JobServer struct {
 }
 
 func (job *JobServer) NewJob(ctx context.Context, req *connect.Request[v1.NewJobRequest]) (*connect.Response[v1.NewJobResponse], error) {
-	makeF := req.Msg.GetMakeFile()
-	grader := req.Msg.GetGraderFile()
-	stu := req.Msg.GetStudentSubmission()
+	jobFiles := req.Msg.GetJobFiles()
 	tag := req.Msg.GetImageName()
 	dockerfile := req.Msg.GetDockerFile()
 	entryCmd := req.Msg.GetEntryCmd()
 
-	vars := []*types.FileUpload{makeF, grader, stu, dockerfile}
-	for _, v := range vars {
+	for i, v := range jobFiles {
 		if v == nil {
-			return nil, fmt.Errorf("some fields are empty")
+			return nil, fmt.Errorf("nil file at index %d", i)
 		} else if v.Filename == "" {
 			return nil, fmt.Errorf("filename is empty")
 		} else if len(v.Content) == 0 {
@@ -53,7 +49,7 @@ func (job *JobServer) NewJob(ctx context.Context, req *connect.Request[v1.NewJob
 		},
 	}
 
-	jobId, err := job.Service.NewJob(&newJob, makeF, grader, stu, dockerfile)
+	jobId, err := job.Service.NewJob(&newJob, jobFiles, dockerfile)
 	if err != nil {
 		return nil, err
 	}

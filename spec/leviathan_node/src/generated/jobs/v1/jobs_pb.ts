@@ -12,49 +12,39 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file jobs/v1/jobs.proto.
  */
 export const file_jobs_v1_jobs: GenFile = /*@__PURE__*/
-  fileDesc("ChJqb2JzL3YxL2pvYnMucHJvdG8SB2pvYnMudjEipgIKDU5ld0pvYlJlcXVlc3QSJgoIbWFrZUZpbGUYASABKAsyFC50eXBlcy52MS5GaWxlVXBsb2FkEigKCmdyYWRlckZpbGUYAiABKAsyFC50eXBlcy52MS5GaWxlVXBsb2FkEi8KEXN0dWRlbnRTdWJtaXNzaW9uGAMgASgLMhQudHlwZXMudjEuRmlsZVVwbG9hZBIoCgpkb2NrZXJGaWxlGAQgASgLMhQudHlwZXMudjEuRmlsZVVwbG9hZBIRCglpbWFnZU5hbWUYBSABKAkSGwoTam9iVGltZW91dEluU2Vjb25kcxgGIAEoBBIQCghlbnRyeUNtZBgHIAEoCRImCgZsaW1pdHMYCCABKAsyFi5qb2JzLnYxLk1hY2hpbmVMaW1pdHMiHwoOTmV3Sm9iUmVzcG9uc2USDQoFam9iSWQYASABKAkiIQoQQ2FuY2VsSm9iUmVxdWVzdBINCgVqb2JJZBgBIAEoCSITChFDYW5jZWxKb2JSZXNwb25zZSIeCg1Kb2JMb2dSZXF1ZXN0Eg0KBWpvYklkGAEgASgJIkQKD0pvYkxvZ3NSZXNwb25zZRIjCgdqb2JJbmZvGAEgASgLMhIuam9icy52MS5Kb2JTdGF0dXMSDAoEbG9ncxgCIAEoCSK5AQoJSm9iU3RhdHVzEg4KBmpvYl9pZBgBIAEoCRISCgptYWNoaW5lX2lkGAIgASgJEhQKDGNvbnRhaW5lcl9pZBgDIAEoCRIOCgZzdGF0dXMYBCABKAkSFgoOc3RhdHVzX21lc3NhZ2UYBSABKAkSGAoQb3V0cHV0X2ZpbGVfcGF0aBgGIAEoCRIbChN0bXBfam9iX2ZvbGRlcl9wYXRoGAcgASgJEhMKC2pvYl90aW1lb3V0GAggASgDIkcKDU1hY2hpbmVMaW1pdHMSEAoIQ1BVQ29yZXMYASABKAUSEgoKbWVtb3J5SW5NYhgCIAEoBRIQCghQaWRMaW1pdBgDIAEoBTLVAQoKSm9iU2VydmljZRI7CgZOZXdKb2ISFi5qb2JzLnYxLk5ld0pvYlJlcXVlc3QaFy5qb2JzLnYxLk5ld0pvYlJlc3BvbnNlIgASRAoMU3RyZWFtU3RhdHVzEhYuam9icy52MS5Kb2JMb2dSZXF1ZXN0Ghguam9icy52MS5Kb2JMb2dzUmVzcG9uc2UiADABEkQKCUNhbmNlbEpvYhIZLmpvYnMudjEuQ2FuY2VsSm9iUmVxdWVzdBoaLmpvYnMudjEuQ2FuY2VsSm9iUmVzcG9uc2UiAEKMAQoLY29tLmpvYnMudjFCCUpvYnNQcm90b1ABWjVnaXRodWIuY29tL21ha2VvcGVuc291cmNlL2xldmlhdGhhbi9nZW5lcmF0ZWQvam9icy92MaICA0pYWKoCB0pvYnMuVjHKAgdKb2JzXFYx4gITSm9ic1xWMVxHUEJNZXRhZGF0YeoCCEpvYnM6OlYxYgZwcm90bzM", [file_types_v1_types]);
+  fileDesc("ChJqb2JzL3YxL2pvYnMucHJvdG8SB2pvYnMudjEiywEKDU5ld0pvYlJlcXVlc3QSJgoIam9iRmlsZXMYASADKAsyFC50eXBlcy52MS5GaWxlVXBsb2FkEigKCmRvY2tlckZpbGUYAiABKAsyFC50eXBlcy52MS5GaWxlVXBsb2FkEhEKCWltYWdlTmFtZRgDIAEoCRIbChNqb2JUaW1lb3V0SW5TZWNvbmRzGAQgASgEEhAKCGVudHJ5Q21kGAUgASgJEiYKBmxpbWl0cxgGIAEoCzIWLmpvYnMudjEuTWFjaGluZUxpbWl0cyIfCg5OZXdKb2JSZXNwb25zZRINCgVqb2JJZBgBIAEoCSIhChBDYW5jZWxKb2JSZXF1ZXN0Eg0KBWpvYklkGAEgASgJIhMKEUNhbmNlbEpvYlJlc3BvbnNlIh4KDUpvYkxvZ1JlcXVlc3QSDQoFam9iSWQYASABKAkiRAoPSm9iTG9nc1Jlc3BvbnNlEiMKB2pvYkluZm8YASABKAsyEi5qb2JzLnYxLkpvYlN0YXR1cxIMCgRsb2dzGAIgASgJIkMKCUpvYlN0YXR1cxIOCgZqb2JfaWQYASABKAkSDgoGc3RhdHVzGAIgASgJEhYKDnN0YXR1c19tZXNzYWdlGAMgASgJIkcKDU1hY2hpbmVMaW1pdHMSEAoIQ1BVQ29yZXMYASABKAUSEgoKbWVtb3J5SW5NYhgCIAEoBRIQCghQaWRMaW1pdBgDIAEoBTLVAQoKSm9iU2VydmljZRI7CgZOZXdKb2ISFi5qb2JzLnYxLk5ld0pvYlJlcXVlc3QaFy5qb2JzLnYxLk5ld0pvYlJlc3BvbnNlIgASRAoMU3RyZWFtU3RhdHVzEhYuam9icy52MS5Kb2JMb2dSZXF1ZXN0Ghguam9icy52MS5Kb2JMb2dzUmVzcG9uc2UiADABEkQKCUNhbmNlbEpvYhIZLmpvYnMudjEuQ2FuY2VsSm9iUmVxdWVzdBoaLmpvYnMudjEuQ2FuY2VsSm9iUmVzcG9uc2UiAEKMAQoLY29tLmpvYnMudjFCCUpvYnNQcm90b1ABWjVnaXRodWIuY29tL21ha2VvcGVuc291cmNlL2xldmlhdGhhbi9nZW5lcmF0ZWQvam9icy92MaICA0pYWKoCB0pvYnMuVjHKAgdKb2JzXFYx4gITSm9ic1xWMVxHUEJNZXRhZGF0YeoCCEpvYnM6OlYxYgZwcm90bzM", [file_types_v1_types]);
 
 /**
  * @generated from message jobs.v1.NewJobRequest
  */
 export type NewJobRequest = Message<"jobs.v1.NewJobRequest"> & {
   /**
-   * @generated from field: types.v1.FileUpload makeFile = 1;
+   * @generated from field: repeated types.v1.FileUpload jobFiles = 1;
    */
-  makeFile?: FileUpload;
+  jobFiles: FileUpload[];
 
   /**
-   * @generated from field: types.v1.FileUpload graderFile = 2;
-   */
-  graderFile?: FileUpload;
-
-  /**
-   * @generated from field: types.v1.FileUpload studentSubmission = 3;
-   */
-  studentSubmission?: FileUpload;
-
-  /**
-   * @generated from field: types.v1.FileUpload dockerFile = 4;
+   * @generated from field: types.v1.FileUpload dockerFile = 2;
    */
   dockerFile?: FileUpload;
 
   /**
-   * @generated from field: string imageName = 5;
+   * @generated from field: string imageName = 3;
    */
   imageName: string;
 
   /**
-   * @generated from field: uint64 jobTimeoutInSeconds = 6;
+   * @generated from field: uint64 jobTimeoutInSeconds = 4;
    */
   jobTimeoutInSeconds: bigint;
 
   /**
-   * @generated from field: string entryCmd = 7;
+   * @generated from field: string entryCmd = 5;
    */
   entryCmd: string;
 
   /**
-   * @generated from field: jobs.v1.MachineLimits limits = 8;
+   * @generated from field: jobs.v1.MachineLimits limits = 6;
    */
   limits?: MachineLimits;
 };
@@ -162,39 +152,14 @@ export type JobStatus = Message<"jobs.v1.JobStatus"> & {
   jobId: string;
 
   /**
-   * @generated from field: string machine_id = 2;
-   */
-  machineId: string;
-
-  /**
-   * @generated from field: string container_id = 3;
-   */
-  containerId: string;
-
-  /**
-   * @generated from field: string status = 4;
+   * @generated from field: string status = 2;
    */
   status: string;
 
   /**
-   * @generated from field: string status_message = 5;
+   * @generated from field: string status_message = 3;
    */
   statusMessage: string;
-
-  /**
-   * @generated from field: string output_file_path = 6;
-   */
-  outputFilePath: string;
-
-  /**
-   * @generated from field: string tmp_job_folder_path = 7;
-   */
-  tmpJobFolderPath: string;
-
-  /**
-   * @generated from field: int64 job_timeout = 8;
-   */
-  jobTimeout: bigint;
 };
 
 /**

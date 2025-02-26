@@ -48,7 +48,7 @@ func (q *JobQueue) CreateJobProcessors() {
 func (q *JobQueue) AddJob(mes *models.Job) error {
 	err := mes.ValidateForQueue()
 	if err != nil {
-		jobLog(mes.JobCtx).Err(err).Msg("job validation failed")
+		jog(mes.JobCtx).Err(err).Msg("job validation failed")
 		return err
 	}
 
@@ -96,11 +96,11 @@ func (q *JobQueue) worker() {
 
 		if errors.Is(msg.JobCtx.Err(), context.Canceled) {
 			q.setJobAsCancelled(msg)
-			jobLog(msg.JobCtx).Warn().Msgf("job context was canceled before queue could process")
+			jog(msg.JobCtx).Warn().Msgf("job context was canceled before queue could process")
 			continue
 		}
 
-		jobLog(msg.JobCtx).Info().Msgf("worker is now processing job")
+		jog(msg.JobCtx).Info().Msgf("worker is now processing job")
 		q.runJob(msg)
 	}
 }
@@ -230,13 +230,13 @@ func (q *JobQueue) setupJob(msg *models.Job) (*docker.DkClient, string, error, s
 // The publicReason will be displayed to the end user, providing a user-friendly message.
 // The err parameter holds the underlying error, used for debugging purposes.
 func (q *JobQueue) bigProblem(job *models.Job, publicReason string, err error) {
-	jobLog(job.JobCtx).Error().Err(err).Str("reason", publicReason).Msg("job failed")
+	jog(job.JobCtx).Error().Err(err).Str("reason", publicReason).Msg("job failed")
 	job.Status = models.Failed
 	job.StatusMessage = publicReason
 }
 
 func (q *JobQueue) setJobAsCancelled(job *models.Job) {
-	jobLog(job.JobCtx).Info().Msg("job was cancelled")
+	jog(job.JobCtx).Info().Msg("job was cancelled")
 	job.Status = models.Canceled
 	job.StatusMessage = "Job was cancelled"
 }
@@ -244,7 +244,7 @@ func (q *JobQueue) setJobAsCancelled(job *models.Job) {
 // greatSuccess Very nice!
 // jobResult is the last line expected to be valid json string, returned to the job caller
 func (q *JobQueue) greatSuccess(job *models.Job, jobResult string) {
-	jobLog(job.JobCtx).Info().Msg("job completed successfully")
+	jog(job.JobCtx).Info().Msg("job completed successfully")
 	job.Status = models.Complete
 	job.StatusMessage = jobResult
 }
@@ -252,14 +252,14 @@ func (q *JobQueue) greatSuccess(job *models.Job, jobResult string) {
 // cleanupJob clean up job
 // sets job to success, removes the container and associated tmp job data
 func (q *JobQueue) cleanupJob(msg *models.Job, client *docker.DkClient) {
-	jobLog(msg.JobCtx).Info().Msg("cleaning up job")
+	jog(msg.JobCtx).Info().Msg("cleaning up job")
 
 	q.updateJobVeryNice(msg)
 
 	if client != nil {
 		err := client.RemoveContainer(msg.ContainerId, true, true)
 		if err != nil {
-			jobLog(msg.JobCtx).Warn().Err(err).Str("containerID", msg.ContainerId).Msg("unable to remove container")
+			jog(msg.JobCtx).Warn().Err(err).Str("containerID", msg.ContainerId).Msg("unable to remove container")
 		}
 	}
 
@@ -268,7 +268,7 @@ func (q *JobQueue) cleanupJob(msg *models.Job, client *docker.DkClient) {
 	tmpFold := filepath.Dir(msg.TmpJobFolderPath) // get the dir above autolab subdir
 	err := os.RemoveAll(tmpFold)
 	if err != nil {
-		jobLog(msg.JobCtx).Warn().Err(err).Str("dir", tmpFold).Msg("unable to remove tmp job directory")
+		jog(msg.JobCtx).Warn().Err(err).Str("dir", tmpFold).Msg("unable to remove tmp job directory")
 		return
 	}
 }
@@ -289,13 +289,13 @@ func (q *JobQueue) setJobInSetup(msg *models.Job) {
 func (q *JobQueue) updateJobVeryNice(msg *models.Job) {
 	res := q.db.Save(msg)
 	if res.Error != nil {
-		jobLog(msg.JobCtx).Error().Err(res.Error).Msg("error occurred while saving job to db")
+		jog(msg.JobCtx).Error().Err(res.Error).Msg("error occurred while saving job to db")
 	}
 }
 
 func (q *JobQueue) verifyLogs(file string, msg *models.Job) {
 	if msg.Status == models.Failed {
-		jobLog(msg.JobCtx).Warn().Msg("Job failed, skipping parsing log file")
+		jog(msg.JobCtx).Warn().Msg("Job failed, skipping parsing log file")
 		return
 	}
 
@@ -307,7 +307,7 @@ func (q *JobQueue) verifyLogs(file string, msg *models.Job) {
 	defer func(open *os.File) {
 		err := open.Close()
 		if err != nil {
-			jobLog(msg.JobCtx).Warn().Err(err).Msg("An error occurred while closing log file")
+			jog(msg.JobCtx).Warn().Err(err).Msg("An error occurred while closing log file")
 		}
 	}(outputFile)
 

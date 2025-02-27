@@ -6,7 +6,7 @@ if (!jobId) {
     alert("Job ID is required");
 }
 
-const socket = new WebSocket(`ws://${document.location.hostname}:${document.location.port}/ws?jobid=${jobId}`);
+const socket = new WebSocket(`${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${document.location.hostname}:${document.location.port}/ws?jobid=${jobId}`);
 socket.onmessage = (event) => {
     const response = JSON.parse(event.data);
     console.log(response);
@@ -37,10 +37,7 @@ function updateJobStatus(data) {
         // Update all info values
         const infoMapping = {
             'Job ID': data.jobId,
-            'Machine ID': data.machineId,
             'Container ID': data.containerId,
-            'Output Path': data.outputFilePath,
-            'Temp Job Folder': data.tmpJobFolderPath
         };
 
         // Update each field in the info grid
@@ -94,7 +91,7 @@ function updateStatusColors(status) {
             statusMessage.style.color = '#f87171';
             break;
 
-        case 'success':
+        case 'complete':
             statusBadge.style.backgroundColor = '#064e3b';
             statusBadge.style.color = '#34d399';
             statusMessage.style.backgroundColor = '#064e3b';

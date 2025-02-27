@@ -19,7 +19,7 @@ func NewBroadcastChannel() (*BroadcastChannel, context.Context) {
 func (c *BroadcastChannel) Broadcast(v *Job) {
 	ch, ok := c.subscribers.Load(v.JobId)
 	if !ok {
-		log.Warn().Msgf("job update channel %s does not exist", v.JobId)
+		log.Debug().Msgf("channel for job: %s is not being listened to, ignoring update", v.JobId)
 		return
 	}
 

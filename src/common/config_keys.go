@@ -43,9 +43,9 @@ var (
 
 	// folderstuff
 
-	SubmissionTarFolder = Config{submissionDirKey}
-	OutputFolder        = Config{outputDirKey}
-	EnableLocalDocker   = Config{enableLocalDockerKey}
+	SubmissionFolder  = Config{submissionDirKey}
+	OutputFolder      = Config{outputDirKey}
+	EnableLocalDocker = Config{enableLocalDockerKey}
 
 	// postgres
 

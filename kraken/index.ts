@@ -1,7 +1,14 @@
 import express, {Request, Response} from 'express';
 import multer from 'multer';
 
-import {createClient, createConnectTransport, JobLogRequest, JobService, NewJobRequest} from "leviathan-node-sdk"
+import {
+    createClient,
+    createConnectTransport,
+    FileUpload,
+    JobLogRequest,
+    JobService,
+    NewJobRequest
+} from "leviathan-node-sdk"
 import path from "node:path";
 
 import {WebSocketServer} from 'ws';
@@ -19,14 +26,12 @@ const app = express();
 const upload = multer();
 const port = 3000;
 
-app.use(express.static(path.join('ui/dist')));
+app.use(express.static(path.join('ui/')));
 // Define the endpoint
 app.post('/submit',
     upload.fields([
-        {name: 'grader', maxCount: 1},
-        {name: 'makefile', maxCount: 1},
-        {name: 'student', maxCount: 1},
-        {name: 'dockerfile', maxCount: 1},
+        {name: 'fileList', maxCount: 10},
+        {name: 'dockerfile', maxCount: 1}
     ]),
     async (req: Request, res: Response) => {
         try {
@@ -54,9 +59,12 @@ app.post('/submit',
             }
 
             const files = req.files as { [fieldname: string]: Express.Multer.File[] };
-            const grader = files['grader'][0]
-            const makefile = files['makefile'][0]
-            const student = files['student'][0]
+            const jobFiles = files['fileList'].map<FileUpload>(value => {
+                return <FileUpload>{
+                    filename: value.originalname,
+                    content: new Uint8Array(value.buffer),
+                }
+            })
             const dockerfile = files['dockerfile'][0]
 
             const job = <NewJobRequest>{
@@ -68,18 +76,7 @@ app.post('/submit',
                     CPUCores: cpuCore,
                     memoryInMb: memory,
                 },
-                makeFile: {
-                    content: new Uint8Array(makefile.buffer),
-                    filename: makefile.originalname,
-                },
-                graderFile: {
-                    content: new Uint8Array(grader.buffer),
-                    filename: grader.originalname,
-                },
-                studentSubmission: {
-                    content: new Uint8Array(student.buffer),
-                    filename: student.originalname,
-                },
+                jobFiles: jobFiles,
                 dockerFile: {
                     content: new Uint8Array(dockerfile.buffer),
                     filename: dockerfile.originalname,
@@ -100,7 +97,7 @@ const server = app.listen(port, () => {
 const wss = new WebSocketServer({server, path: "/ws"});
 
 wss.on('connection', async (ws, req) => {
-    const url = new URL(req.url!, `ws://${req.headers.host}`); // Important: Construct a full URL
+    const url = new URL(req.url!, `${req.headers.origin!.startsWith("http") ? "ws" : "wss"}://${req.headers.host}`); // Important: Construct a full URL
     const searchParams = new URLSearchParams(url.search);
     const jobId = searchParams.get('jobid') as string;
     console.log("Job ID:", jobId);
@@ -124,7 +121,7 @@ wss.on('connection', async (ws, req) => {
                 continue
             }
 
-            const {jobTimeout, $unknown, $typeName, ...rest} = chunk.jobInfo!
+            const {$unknown, $typeName, ...rest} = chunk.jobInfo!
 
             console.log("Job", rest);
             console.log(chunk.logs)

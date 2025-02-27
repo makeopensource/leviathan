@@ -88,6 +88,20 @@ func (j *Job) ValidateForQueue() error {
 	return nil
 }
 
+// VerifyJobLimits checks if job limits are provided,
+// and sets fields that are missing with default values
+func (j *Job) VerifyJobLimits() {
+	if j.JobLimits.PidsLimit == 0 {
+		j.JobLimits.PidsLimit = 100 // Default value
+	}
+	if j.JobLimits.NanoCPU == 0 {
+		j.JobLimits.NanoCPU = 1 // Default value
+	}
+	if j.JobLimits.Memory == 0 {
+		j.JobLimits.Memory = 512 // Default value in MB
+	}
+}
+
 // AfterUpdate adds hooks for job streaming, updates a go channel everytime a job is updated
 // the consumer is responsible if it wants to use the job
 func (j *Job) AfterUpdate(tx *gorm.DB) (err error) {

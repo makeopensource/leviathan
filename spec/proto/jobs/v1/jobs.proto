@@ -13,14 +13,12 @@ service JobService {
 }
 
 message NewJobRequest {
-  types.v1.FileUpload makeFile = 1;
-  types.v1.FileUpload graderFile = 2;
-  types.v1.FileUpload studentSubmission = 3;
-  types.v1.FileUpload dockerFile = 4;
-  string imageName = 5;
-  uint64 jobTimeoutInSeconds = 6;
-  string entryCmd = 7;
-  MachineLimits limits = 8;
+  repeated types.v1.FileUpload jobFiles = 1;
+  types.v1.FileUpload dockerFile = 2;
+  string imageName = 3;
+  uint64 jobTimeoutInSeconds = 4;
+  string entryCmd = 5;
+  MachineLimits limits = 6;
 }
 
 message NewJobResponse {
@@ -46,13 +44,8 @@ message JobLogsResponse {
 
 message JobStatus {
   string job_id = 1;
-  string machine_id = 2;
-  string container_id = 3;
-  string status = 4;
-  string status_message = 5;
-  string output_file_path = 6;
-  string tmp_job_folder_path = 7;
-  int64 job_timeout = 8;
+  string status = 2;
+  string status_message = 3;
 }
 
 message MachineLimits {

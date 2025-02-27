@@ -190,17 +190,19 @@ func setupJobProcess(studentCodePath string, timeout time.Duration) string {
 
 	jobId, err := jobTestService.NewJob(
 		newJob,
-		&v1.FileUpload{
-			Filename: filepath.Base(makeFilePath),
-			Content:  makefileBytes,
-		},
-		&v1.FileUpload{
-			Filename: filepath.Base(graderFilePath),
-			Content:  graderBytes,
-		},
-		&v1.FileUpload{
-			Filename: "student.py",
-			Content:  studentBytes,
+		[]*v1.FileUpload{
+			{
+				Filename: filepath.Base(makeFilePath),
+				Content:  makefileBytes,
+			},
+			{
+				Filename: filepath.Base(graderFilePath),
+				Content:  graderBytes,
+			},
+			{
+				Filename: "student.py",
+				Content:  studentBytes,
+			},
 		},
 		&v1.FileUpload{
 			Filename: filepath.Base(dockerFilePath),

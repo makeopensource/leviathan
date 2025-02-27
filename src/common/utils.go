@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	v1 "github.com/makeopensource/leviathan/generated/types/v1"
 	"github.com/rs/zerolog/log"
 	"io"
 	"os"
@@ -21,7 +22,7 @@ const DefaultFilePerm = 0o775
 // you might be wondering why the '/autolab' subdir, TarDir untars it under its parent dir,
 // so in container this will unpack with 'autolab' as the parent folder
 // why not modify TarDir I tried and, this was easier than modifying whatever is going in that function
-func CreateTmpJobDir(uuid, baseFolder string, files map[string][]byte) (string, error) {
+func CreateTmpJobDir(uuid, baseFolder string, files ...*v1.FileUpload) (string, error) {
 	tmpFolder, err := os.MkdirTemp(baseFolder, uuid)
 	if err != nil {
 		return "", err
@@ -32,8 +33,12 @@ func CreateTmpJobDir(uuid, baseFolder string, files map[string][]byte) (string, 
 		return "", err
 	}
 
-	for name, content := range files {
-		err := os.WriteFile(fmt.Sprintf("%s/%s", tmpFolder, name), content, DefaultFilePerm)
+	for _, file := range files {
+		err := os.WriteFile(
+			fmt.Sprintf("%s/%s", tmpFolder, file.Filename),
+			file.Content,
+			DefaultFilePerm,
+		)
 		if err != nil {
 			return "", err
 		}
@@ -160,7 +165,8 @@ func TarDir(src string, fileMode int64) (*bytes.Buffer, error) {
 
 // TarFile make input tar file from file path
 // stolen from https://stackoverflow.com/a/46518557/23258902
-// should not be used in CopyToContainer, which requires different file headers
+// should not be used in CopyToContainer, which requires different file headers,
+// I think I don't really know
 func TarFile(filePath string) (*bytes.Reader, string) {
 	dockerFile := filepath.Base(filePath)
 	log.Debug().Msgf("file: %s: from path %s", dockerFile, filePath)

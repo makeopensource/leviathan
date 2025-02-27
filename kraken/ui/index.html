@@ -104,10 +104,21 @@
         <input type="file" id="fileList" name="fileList" multiple required>
         <div id="fileListDisplay" class="file-list"></div>
         <ul class="file-comments">
-            <li>Upload all files required for the job, (includes the student submission)</li>
-            <li>Leviathan does not care what files are uploaded</li>
-            <li>you must specify the entry command below, for the job to start</li>
+            <li>Upload all files required for the job, (includes the student submission, grader script and any other supporting files)</li>
+            <li>Makefiles are optional, you can use any script you prefer as long as it can be called in the dockerfile</li>
+            <li>you must specify the entry command below, for the job to start, leviathan does not call any entry command by default</li>
         </ul>
+    </div>
+
+    <div class="file-input">
+        <label class="file-label" for="entryCmd">Entry command :</label>
+        <input type="text" id="entryCmd" name="entryCmd" required>
+    </div>
+
+    <!-- Timeout input -->
+    <div class="file-input">
+        <label class="file-label" for="timeoutInSeconds">Timeout (in seconds):</label>
+        <input type="number" id="timeoutInSeconds" name="timeoutInSeconds" value="10" required>
     </div>
 
     <!-- Dockerfile input -->
@@ -120,17 +131,6 @@
     <div class="file-input">
         <label class="file-label" for="imageTag">Image Tag:</label>
         <input type="text" id="imageTag" name="imageTag" value="test" required>
-    </div>
-
-    <!-- Timeout input -->
-    <div class="file-input">
-        <label class="file-label" for="timeoutInSeconds">Timeout (in seconds):</label>
-        <input type="number" id="timeoutInSeconds" name="timeoutInSeconds" value="10" required>
-    </div>
-
-    <div class="file-input">
-        <label class="file-label" for="entryCmd">Entry command :</label>
-        <input type="text" id="entryCmd" name="entryCmd" required>
     </div>
 
     <div class="file-input" hidden="hidden">

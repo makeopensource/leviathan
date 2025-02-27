@@ -6,7 +6,7 @@ if (!jobId) {
     alert("Job ID is required");
 }
 
-const socket = new WebSocket(`ws://${document.location.hostname}:${document.location.port}/ws?jobid=${jobId}`);
+const socket = new WebSocket(`${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${document.location.hostname}:${document.location.port}/ws?jobid=${jobId}`);
 socket.onmessage = (event) => {
     const response = JSON.parse(event.data);
     console.log(response);

@@ -63,10 +63,6 @@ func usePostgres() (gorm.Dialector, *gorm.Config) {
 	port := postgresPort.GetStr()
 	sslmode := postgresSsl.GetStr()
 
-	if sslmode == "enable" {
-		port = "443"
-	}
-
 	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=%s",
 		host,
 		user,

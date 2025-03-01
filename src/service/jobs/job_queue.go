@@ -136,7 +136,7 @@ func (q *JobQueue) runJob(job *models.Job) {
 	select {
 	case _ = <-statusCh:
 		wg.Wait() // for logs to complete writing
-		q.verifyLogs(job.OutputLogFilePath, job)
+		q.verifyLogs(job)
 		return
 	case err := <-errCh:
 		q.bigProblem(job, "error occurred while waiting for job process", err)
@@ -293,13 +293,13 @@ func (q *JobQueue) updateJobVeryNice(msg *models.Job) {
 	}
 }
 
-func (q *JobQueue) verifyLogs(file string, msg *models.Job) {
+func (q *JobQueue) verifyLogs(msg *models.Job) {
 	if msg.Status == models.Failed {
 		jog(msg.JobCtx).Warn().Msg("Job failed, skipping parsing log file")
 		return
 	}
 
-	outputFile, err := os.Open(file)
+	outputFile, err := os.Open(msg.OutputLogFilePath)
 	if err != nil {
 		q.bigProblem(msg, "unable to open log file", err)
 		return

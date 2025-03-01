@@ -97,7 +97,7 @@ const server = app.listen(port, () => {
 const wss = new WebSocketServer({server, path: "/ws"});
 
 wss.on('connection', async (ws, req) => {
-    const url = new URL(req.url!, `${req.headers.origin!.startsWith("http") ? "ws" : "wss"}://${req.headers.host}`); // Important: Construct a full URL
+    const url = new URL(req.url!, `${req.headers.origin!.startsWith("https") ? "wss" : "ws"}://${req.headers.host}`); // Important: Construct a full URL
     const searchParams = new URLSearchParams(url.search);
     const jobId = searchParams.get('jobid') as string;
     console.log("Job ID:", jobId);

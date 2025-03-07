@@ -18,6 +18,16 @@ krn:
 dk:
 	docker build . -t {{imageName}}
 
+# build leviathan with version and other metadata
+dkv:
+    docker build \
+        --build-arg VERSION=test \
+        --build-arg COMMIT_INFO=test \
+        --build-arg BUILD_DATE=test \
+        --build-arg BRANCH=test \
+        -t {{imageName}} .
+
+
 # docker compose up shorthand
 up:
     docker compose up --build

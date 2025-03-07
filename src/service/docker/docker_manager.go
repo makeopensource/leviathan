@@ -30,7 +30,7 @@ func GetClientList() []models.MachineOptions {
 	allSettings := viper.Get("clients.ssh")
 	clients, ok := allSettings.(map[string]interface{})
 	if !ok {
-		log.Warn().Msg("clients.ssh no found or configured")
+		log.Warn().Msg("clients.ssh not configured, ssh docker clients will not be used")
 		return allMachines
 	}
 

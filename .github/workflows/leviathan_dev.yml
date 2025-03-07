@@ -1,6 +1,4 @@
-# Builds leviathan images on dev
-
-name: Build develop images
+name: Build leviathan images
 on:
   workflow_dispatch:
 

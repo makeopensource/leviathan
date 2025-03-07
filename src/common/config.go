@@ -13,7 +13,7 @@ import (
 func InitConfig() {
 	err := godotenv.Load()
 	if err != nil {
-		log.Warn().Err(err).Msg("unable to load .env file")
+		log.Warn().Err(err).Msg(".env not found. you can safely ignore this warning if you dont have a .env file")
 	}
 
 	defer func() {

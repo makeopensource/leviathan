@@ -37,5 +37,12 @@ jobs:
         run: |
           REGISTRY="ghcr.io/${{ github.repository }}"
           VERSION="${{ steps.tagName.outputs.tag }}"
-          docker build . -t ${REGISTRY}:dev
+          docker build . 
+          docker build \
+            --build-arg VERSION=$(git describe --tags --always 2>/dev/null || echo "dev") \
+            --build-arg COMMIT_INFO=$(git rev-parse HEAD 2>/dev/null || echo "unknown") \
+            --build-arg BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ') \
+            --build-arg BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown") \
+            -t ${REGISTRY}:dev .
+          
           docker push ${REGISTRY}:dev

@@ -167,7 +167,7 @@ func TarDir(src string, fileMode int64) (*bytes.Buffer, error) {
 // stolen from https://stackoverflow.com/a/46518557/23258902
 // should not be used in CopyToContainer, which requires different file headers,
 // I think I don't really know
-func TarFile(filePath string) (*bytes.Reader, string) {
+func TarFile(filePath string) (*bytes.Reader, string, error) {
 	dockerFile := filepath.Base(filePath)
 	log.Debug().Msgf("file: %s: from path %s", dockerFile, filePath)
 
@@ -183,7 +183,7 @@ func TarFile(filePath string) (*bytes.Reader, string) {
 	fileReader, err := os.Open(filePath)
 	if err != nil {
 		log.Error().Err(err).Msgf("unable to open Dockerfile")
-		return nil, ""
+		return nil, "", err
 	}
 	defer func(fileReader *os.File) {
 		err := fileReader.Close()
@@ -195,7 +195,7 @@ func TarFile(filePath string) (*bytes.Reader, string) {
 	readFile, err := io.ReadAll(fileReader)
 	if err != nil {
 		log.Error().Err(err).Msgf("unable to read dockerfile")
-		return nil, ""
+		return nil, "", err
 	}
 
 	tarHeader := &tar.Header{
@@ -205,15 +205,15 @@ func TarFile(filePath string) (*bytes.Reader, string) {
 	err = tw.WriteHeader(tarHeader)
 	if err != nil {
 		log.Error().Err(err).Msgf("unable to write tar header")
-		return nil, ""
+		return nil, "", err
 	}
 	_, err = tw.Write(readFile)
 	if err != nil {
 		log.Error().Err(err).Msgf("unable to write tar body")
-		return nil, ""
+		return nil, "", err
 	}
 
-	return bytes.NewReader(buf.Bytes()), dockerFile
+	return bytes.NewReader(buf.Bytes()), dockerFile, nil
 }
 
 func GetLastLine(file *os.File) (string, error) {

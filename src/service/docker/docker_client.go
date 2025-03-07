@@ -78,8 +78,8 @@ func NewLocalClient() (*DkClient, error) {
 
 // BuildImageFromDockerfile Build image
 func (c *DkClient) BuildImageFromDockerfile(dockerfilePath string, tagName string) error {
-	// prevent concurrently duplicate image builds\
-	// todo potential memory leak since tags are never removed from the image map
+	// prevent concurrent duplicate image builds
+	// todo memory leak since tags are never removed from the image map
 	tagLock, ok := c.imageQueue.Load(tagName)
 	if !ok {
 		c.imageQueue.Store(tagName, &sync.Mutex{})
@@ -98,7 +98,10 @@ func (c *DkClient) BuildImageFromDockerfile(dockerfilePath string, tagName strin
 		return err
 	}
 
-	dockerfileTar, dockerfile := common.TarFile(dockerfilePath)
+	dockerfileTar, dockerfile, err := common.TarFile(dockerfilePath)
+	if err != nil {
+		return fmt.Errorf("failed to tar file %s", dockerfilePath)
+	}
 	// Build the Docker image
 	resp, err := c.Client.ImageBuild(
 		context.Background(),

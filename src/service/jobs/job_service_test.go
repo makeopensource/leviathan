@@ -149,11 +149,10 @@ func TestCancel(t *testing.T) {
 	testJob(t, jobId, timeout.expectedOutput, models.Canceled)
 
 	// verify cancel function was removed from context map
-	value := jobTestService.queue.getJobCancelFunc(jobId)
-	if value != nil {
+	_, ok := jobTestService.queue.contextMap.Load(jobId)
+	if ok {
 		t.Fatalf("Job was cancelled, but the cancel func was not nil")
 	}
-
 }
 
 func testJobProcessor(t *testing.T, studentCodePath string, correctOutput string, timeout time.Duration, status models.JobStatus) {
@@ -251,4 +250,5 @@ func initServices() {
 
 	dkTestService = docker.NewDockerService(clientList)
 	jobTestService = NewJobService(db, bc, dkTestService) // depends on docker service
+
 }

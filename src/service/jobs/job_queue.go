@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	cond "github.com/docker/docker/api/types/container"
 	cont "github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/makeopensource/leviathan/common"
@@ -71,20 +70,12 @@ func (q *JobQueue) NewJobContext(jobID string) context.Context {
 }
 
 func (q *JobQueue) CancelJob(messageId string) {
-	cancel := q.getJobCancelFunc(messageId)
-	if cancel == nil {
+	cancel, ok := q.contextMap.Load(messageId)
+	if !ok {
 		log.Warn().Str(common.JobLogKey, messageId).Msg("job context was nil")
 		return
 	}
 	cancel()
-}
-
-func (q *JobQueue) getJobCancelFunc(messageId string) context.CancelFunc {
-	val, ok := q.contextMap.Load(messageId)
-	if !ok {
-		return nil
-	}
-	return val
 }
 
 func (q *JobQueue) worker() {
@@ -132,7 +123,7 @@ func (q *JobQueue) runJob(job *models.Job) {
 		q.writeLogs(client, job)
 	}()
 
-	statusCh, errCh := client.Client.ContainerWait(context.Background(), contId, cond.WaitConditionNotRunning)
+	statusCh, errCh := client.Client.ContainerWait(context.Background(), contId, cont.WaitConditionNotRunning)
 	select {
 	case _ = <-statusCh:
 		wg.Wait() // for logs to complete writing

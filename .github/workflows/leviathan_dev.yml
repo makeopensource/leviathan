@@ -1,10 +1,11 @@
-# Builds leviathan images on dev
-
-name: Build develop images
+name: Build leviathan images
 on:
+  workflow_dispatch:
+
   push:
     branches:
       - dev
+      - master
     paths:
       - '.github/**'
       - 'src/**'
@@ -12,6 +13,7 @@ on:
   pull_request:
     branches:
       - dev
+      - master
     paths:
       - '.github/**'
       - 'src/**'
@@ -36,6 +38,11 @@ jobs:
       - name: build and push leviathan
         run: |
           REGISTRY="ghcr.io/${{ github.repository }}"
-          VERSION="${{ steps.tagName.outputs.tag }}"
-          docker build . -t ${REGISTRY}:dev
+          docker build \
+            --build-arg VERSION=$(git describe --tags --always 2>/dev/null || echo "dev") \
+            --build-arg COMMIT_INFO=$(git rev-parse HEAD 2>/dev/null || echo "unknown") \
+            --build-arg BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ') \
+            --build-arg BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown") \
+            -t ${REGISTRY}:dev .
+          
           docker push ${REGISTRY}:dev

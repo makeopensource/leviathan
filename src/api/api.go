@@ -16,9 +16,16 @@ import (
 func StartGrpcServer() {
 	mux := setupEndpoints()
 
-	srvAddr := fmt.Sprintf(":%s", common.ServerPort.GetStr())
-	log.Info().Msgf("Started server on %s", srvAddr)
+	log.Info().
+		Str("build_date", common.BuildDate).
+		Str("build_commit", common.CommitInfo).
+		Str("git_branch", common.Branch).
+		Str("go_version", common.GoVersion).
+		Str("build_version", common.Version).
+		Msg("Leviathan initialized successfully")
 
+	srvAddr := fmt.Sprintf(":%s", common.ServerPort.GetStr())
+	log.Info().Msgf("starting server on %s", srvAddr)
 	err := http.ListenAndServe(
 		srvAddr,
 		// Use h2c so we can serve HTTP/2 without TLS.

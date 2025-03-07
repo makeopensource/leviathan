@@ -38,7 +38,6 @@ jobs:
       - name: build and push leviathan
         run: |
           REGISTRY="ghcr.io/${{ github.repository }}"
-          docker build . 
           docker build \
             --build-arg VERSION=$(git describe --tags --always 2>/dev/null || echo "dev") \
             --build-arg COMMIT_INFO=$(git rev-parse HEAD 2>/dev/null || echo "unknown") \

@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	cond "github.com/docker/docker/api/types/container"
 	cont "github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/makeopensource/leviathan/common"
@@ -124,7 +123,7 @@ func (q *JobQueue) runJob(job *models.Job) {
 		q.writeLogs(client, job)
 	}()
 
-	statusCh, errCh := client.Client.ContainerWait(context.Background(), contId, cond.WaitConditionNotRunning)
+	statusCh, errCh := client.Client.ContainerWait(context.Background(), contId, cont.WaitConditionNotRunning)
 	select {
 	case _ = <-statusCh:
 		wg.Wait() // for logs to complete writing

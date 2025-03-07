@@ -250,4 +250,5 @@ func initServices() {
 
 	dkTestService = docker.NewDockerService(clientList)
 	jobTestService = NewJobService(db, bc, dkTestService) // depends on docker service
+
 }

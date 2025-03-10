@@ -5,6 +5,7 @@ import (
 	"github.com/docker/docker/api/types/container"
 	"github.com/google/uuid"
 	"github.com/makeopensource/leviathan/common"
+	v1 "github.com/makeopensource/leviathan/generated/types/v1"
 	"sync"
 	"testing"
 )
@@ -48,8 +49,9 @@ func TestCopyToContainer(t *testing.T) {
 		t.Fatalf("%v", err)
 	}
 
-	dir, err := common.CreateTmpJobDir(ifg.String(), map[string][]byte{
-		"test.txt": []byte("test test"),
+	dir, err := common.CreateTmpJobDir(ifg.String(), "", &v1.FileUpload{
+		Filename: "test.txt",
+		Content:  []byte("tests test"),
 	})
 	if err != nil {
 		t.Fatalf("%v", err)

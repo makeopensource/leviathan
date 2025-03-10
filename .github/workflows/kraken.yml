@@ -1,17 +1,15 @@
-# Builds leviathan images on master
-
-name: Build master
+name: Build kraken
 on:
-  push:
-    branches:
-      - dev
-    paths:
-      - 'kraken/**'
+  workflow_dispatch:
 
-  pull_request:
+  push:
+    tags:
+      - 'v*'  # match tags that start with v (like v1.0.0)
     branches:
       - dev
+      - master
     paths:
+      - '.github/workflows/kraken.yml'
       - 'kraken/**'
 
 jobs:
@@ -31,8 +29,21 @@ jobs:
       - name: Login to GHCR registry
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-      - name: build and push leviathan
+      - name: build and push kraken
+        working-directory: ./kraken
         run: |
           REGISTRY="ghcr.io/${{ github.repository }}/kraken"
-          docker build -f kraken/Dockerfile ./kraken -t ${REGISTRY}:dev
-          docker push ${REGISTRY}:dev
+          GIT_TAG=$(git describe --tags 2>/dev/null)
+          GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+
+          docker build \
+            -t ${REGISTRY}:${GIT_TAG} \
+            -t ${REGISTRY}:${GIT_BRANCH} .
+
+          if [[ ! -z "$GIT_TAG" && "$GIT_TAG" == v* ]]; then
+            docker push ${REGISTRY}:${GIT_TAG}
+          fi
+
+          if [ ! -z "$GIT_BRANCH" ]; then
+            docker push ${REGISTRY}:${GIT_BRANCH}
+          fi

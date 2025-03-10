@@ -32,21 +32,21 @@ jobs:
       - name: build and push leviathan
         run: |
           REGISTRY="ghcr.io/${{ github.repository }}"
-          GIT_TAG=$(git describe --tags 2>/dev/null)
-          GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+          GIT_TAG=$(git describe --tags 2>/dev/null || echo "develop")
+          GIT_BRANCH=${GITHUB_REF#refs/heads/}
           
           docker build \
-            --build-arg VERSION=$($GIT_TAG || echo "dev") \
+            --build-arg VERSION=$GIT_TAG \
             --build-arg COMMIT_INFO=$(git rev-parse HEAD 2>/dev/null || echo "unknown") \
             --build-arg BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ') \
-            --build-arg BRANCH=$($GIT_BRANCH || echo "unknown") \
+            --build-arg BRANCH=${GIT_BRANCH:-unknown} \
             -t ${REGISTRY}:${GIT_TAG} \
             -t ${REGISTRY}:${GIT_BRANCH} .
           
           if [[ ! -z "$GIT_TAG" && "$GIT_TAG" == v* ]]; then
-            docker push ${REGISTRY}:${GIT_TAG}
+          docker push ${REGISTRY}:${GIT_TAG}
           fi
           
           if [ ! -z "$GIT_BRANCH" ]; then
-            docker push ${REGISTRY}:${GIT_BRANCH}
+          docker push ${REGISTRY}:${GIT_BRANCH}
           fi

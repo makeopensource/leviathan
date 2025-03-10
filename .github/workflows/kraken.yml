@@ -13,7 +13,7 @@ on:
       - 'kraken/**'
 
 jobs:
-  build-docker-kraken:
+  build-docker:
     runs-on: ubuntu-latest
     permissions:
       packages: write # to be able to publish docker images
@@ -33,17 +33,17 @@ jobs:
         working-directory: ./kraken
         run: |
           REGISTRY="ghcr.io/${{ github.repository }}/kraken"
-          GIT_TAG=$(git describe --tags 2>/dev/null)
-          GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+          GIT_TAG=$(git describe --tags 2>/dev/null || echo "develop")
+          GIT_BRANCH=${GITHUB_REF#refs/heads/}
 
           docker build \
             -t ${REGISTRY}:${GIT_TAG} \
             -t ${REGISTRY}:${GIT_BRANCH} .
 
           if [[ ! -z "$GIT_TAG" && "$GIT_TAG" == v* ]]; then
-            docker push ${REGISTRY}:${GIT_TAG}
+          docker push ${REGISTRY}:${GIT_TAG}
           fi
 
           if [ ! -z "$GIT_BRANCH" ]; then
-            docker push ${REGISTRY}:${GIT_BRANCH}
+          docker push ${REGISTRY}:${GIT_BRANCH}
           fi

@@ -59,3 +59,7 @@ lint:
 [working-directory: 'src']
 tidy:
     go mod tidy
+
+[working-directory: 'src']
+vet:
+    go vet ./...

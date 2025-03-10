@@ -50,6 +50,11 @@ dkrn:
 post:
     docker compose --profile post up
 
+# update all go deps
+[working-directory: 'src']
+get:
+    go get -v -u all
+
 # lint go files
 [working-directory: 'src']
 lint:

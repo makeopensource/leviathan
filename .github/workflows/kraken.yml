@@ -36,14 +36,20 @@ jobs:
           GIT_TAG=$(git describe --tags 2>/dev/null || echo "develop")
           GIT_BRANCH=${GITHUB_REF#refs/heads/}
 
+          GIT_TAG_IMAGE="${REGISTRY}:${GIT_TAG}"
+          GIT_BRANCH_IMAGE="${REGISTRY}:${GIT_BRANCH}"
+          
+          docker pull ${GIT_TAG_IMAGE} || true
+          docker pull ${GIT_BRANCH_IMAGE} || true
+          
           docker build \
-            -t ${REGISTRY}:${GIT_TAG} \
-            -t ${REGISTRY}:${GIT_BRANCH} .
+            -t ${GIT_TAG_IMAGE} \
+            -t ${GIT_BRANCH_IMAGE} .
 
           if [[ ! -z "$GIT_TAG" && "$GIT_TAG" == v* ]]; then
-          docker push ${REGISTRY}:${GIT_TAG}
+          docker push ${GIT_TAG_IMAGE}
           fi
 
           if [ ! -z "$GIT_BRANCH" ]; then
-          docker push ${REGISTRY}:${GIT_BRANCH}
+          docker push ${GIT_BRANCH_IMAGE}
           fi

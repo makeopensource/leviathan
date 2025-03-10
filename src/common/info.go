@@ -22,9 +22,9 @@ import (
 // main.go
 
 var Version = "dev"
-var CommitInfo = "dev"
-var BuildDate = "dev"
-var Branch = "dev" // Git branch
+var CommitInfo = "unknown"
+var BuildDate = "unknown"
+var Branch = "unknown" // Git branch
 var GoVersion = runtime.Version()
 
 func PrintInfo() {
@@ -65,7 +65,7 @@ func PrintInfo() {
 	printField("GoVersion", runtime.Version())
 
 	// Add GitHub URL if repo info is available
-	if Branch != "dev" && CommitInfo != "dev" {
+	if Branch != "unknown" && CommitInfo != "unknown" {
 		fmt.Println(strings.Repeat("-", width))
 		fmt.Println("Links:")
 		githubURL := GetGitHubURL(Branch, CommitInfo)
@@ -96,7 +96,7 @@ func formatTime(input string) string {
 		//fmt.Printf("Error parsing build time: %v\n", err)
 		return input
 	}
-	return humanizeTime(buildTime)
+	return fmt.Sprintf("%s (%s)", buildTime, humanizeTime(buildTime))
 }
 
 // Seconds-based time units

@@ -1,6 +1,8 @@
 name: Go Lint and Test
 
 on:
+  workflow_dispatch:
+
   push:
     tags:
       - 'v*'  # match tags that start with v (like v1.0.0)
@@ -10,6 +12,7 @@ on:
       - dev
     paths:
       - 'src/**'
+      - .github/workflows/test.yml
 
 jobs:
   lint:

@@ -44,6 +44,11 @@ bdrn:
     just dk
     docker run --rm --network=host -v /var/run/docker.sock:/var/run/docker.sock -v appdata:/app/appdata/ {{imageName}}
 
+alias dc := dclean
+dclean:
+    docker rm -f $(docker ps -aq)
+    docker image prune -ay
+
 dkrn:
 	docker compose up --build
 

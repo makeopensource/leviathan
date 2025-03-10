@@ -305,7 +305,7 @@ func (c *DkClient) PruneContainers() error {
 	return nil
 }
 
-func (c *DkClient) GetContainerStatus(ctx context.Context, contId string) (*types.ContainerJSON, error) {
+func (c *DkClient) GetContainerStatus(ctx context.Context, contId string) (*container.InspectResponse, error) {
 	inspect, err := c.Client.ContainerInspect(ctx, contId)
 	if err != nil {
 		return nil, err

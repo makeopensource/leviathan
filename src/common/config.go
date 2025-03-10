@@ -40,6 +40,9 @@ func InitConfig() {
 	viper.SetDefault(outputDirKey, outputFolderPath)
 
 	err = makeDirectories([]string{submissionFolderPath, outputFolderPath})
+	if err != nil {
+		log.Fatal().Err(err).Msg("unable to make required directories")
+	}
 
 	if err := viper.SafeWriteConfig(); err != nil {
 		var configFileAlreadyExistsError viper.ConfigFileAlreadyExistsError

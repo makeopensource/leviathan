@@ -105,7 +105,7 @@ func (j *Job) VerifyJobLimits() {
 // AfterUpdate adds hooks for job streaming, updates a go channel everytime a job is updated
 // the consumer is responsible if it wants to use the job
 func (j *Job) AfterUpdate(tx *gorm.DB) (err error) {
-	ch := tx.Statement.Context.Value("broadcast")
+	ch := tx.Statement.Context.Value(BroadcastKey)
 	if ch == nil {
 		log.Warn().Msg("database broadcast channel is nil")
 		return

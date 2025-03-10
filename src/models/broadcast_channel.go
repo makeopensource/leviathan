@@ -5,6 +5,10 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+type BroadcastChannelKey string
+
+const BroadcastKey BroadcastChannelKey = "broadcast"
+
 type BroadcastChannel struct {
 	subscribers Map[string, chan *Job]
 }
@@ -13,7 +17,7 @@ func NewBroadcastChannel() (*BroadcastChannel, context.Context) {
 	bc := &BroadcastChannel{
 		subscribers: Map[string, chan *Job]{},
 	}
-	return bc, context.WithValue(context.Background(), "broadcast", bc)
+	return bc, context.WithValue(context.Background(), BroadcastKey, bc)
 }
 
 func (c *BroadcastChannel) Broadcast(v *Job) {

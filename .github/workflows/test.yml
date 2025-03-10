@@ -1,0 +1,41 @@
+name: Go Lint and Test
+
+on:
+  push:
+    tags:
+      - 'v*'  # match tags that start with v (like v1.0.0)
+    branches:
+      - dev
+      - master
+    paths:
+      - 'src/**'
+
+jobs:
+  lint-test:
+    name: lint and test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+          cache: true
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: v1.64
+
+      # docker setup
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Install dependencies
+        run: go mod download
+
+      - name: Run test
+        run: |
+          go test ./service/jobs/ -v -run Test500Jobs

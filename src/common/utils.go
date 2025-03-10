@@ -169,7 +169,6 @@ func TarDir(src string, fileMode int64) (*bytes.Buffer, error) {
 // I think I don't really know
 func TarFile(filePath string) (*bytes.Reader, string, error) {
 	dockerFile := filepath.Base(filePath)
-	log.Debug().Msgf("file: %s: from path %s", dockerFile, filePath)
 
 	buf := new(bytes.Buffer)
 	tw := tar.NewWriter(buf)

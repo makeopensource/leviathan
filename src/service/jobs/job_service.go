@@ -221,10 +221,12 @@ func (job *JobService) ListenToJobLogs(ctx context.Context, jobInfo *models.Job)
 	logChannel := make(chan string, 2)
 	go func() {
 		prevLength := 0
+		ticker := time.NewTicker(2 * time.Second)
+		defer ticker.Stop()
 		// keep reading until ctx is done
 		for {
 			select {
-			case <-time.After(2 * time.Second):
+			case <-ticker.C:
 				content := com.ReadLogFile(jobInfo.OutputLogFilePath)
 				// send if content changed
 				if len(content) > prevLength {

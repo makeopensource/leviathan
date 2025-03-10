@@ -17,22 +17,25 @@ import (
 	"github.com/rs/zerolog/log"
 	"io"
 	"net/http"
-	"os"
 	"path/filepath"
-	"sync"
+	"time"
 )
+
+type ImageMap = models.Map[string, *models.CountingMutex]
 
 // DkClient a wrapper for the docker client struct, that exposes the commands leviathan needs
 type DkClient struct {
-	Client     *client.Client
-	imageQueue *models.Map[string, *sync.Mutex]
+	Client *client.Client
+	imgMap *ImageMap
 }
 
 func NewDkClient(client *client.Client) *DkClient {
-	return &DkClient{
-		Client:     client,
-		imageQueue: &models.Map[string, *sync.Mutex]{},
+	cli := &DkClient{
+		Client: client,
+		imgMap: &ImageMap{},
 	}
+	go cleanupImageTagLocks(cli.imgMap)
+	return cli
 }
 
 func NewSSHClient(connectionString string) (*DkClient, error) {
@@ -79,24 +82,9 @@ func NewLocalClient() (*DkClient, error) {
 // BuildImageFromDockerfile Build image
 func (c *DkClient) BuildImageFromDockerfile(dockerfilePath string, tagName string) error {
 	// prevent concurrent duplicate image builds
-	// todo memory leak since tags are never removed from the image map
-	tagLock, ok := c.imageQueue.Load(tagName)
-	if !ok {
-		c.imageQueue.Store(tagName, &sync.Mutex{})
-		tagLock, ok = c.imageQueue.Load(tagName)
-		if !ok {
-			log.Warn().Msgf("docker image %s not found in imageQueue", tagName)
-			return fmt.Errorf("unable to find image: %s in queue", tagName)
-		}
-	}
+	tagLock, _ := c.imgMap.LoadOrStore(tagName, models.NewCountMutex())
 	tagLock.Lock()
 	defer tagLock.Unlock()
-
-	_, err := os.Stat(dockerfilePath)
-	if err != nil {
-		log.Error().Err(err).Msgf("failed to stat path %s", dockerfilePath)
-		return err
-	}
 
 	dockerfileTar, dockerfile, err := common.TarFile(dockerfilePath)
 	if err != nil {
@@ -324,4 +312,28 @@ func (c *DkClient) GetContainerStatus(ctx context.Context, contId string) (*type
 	}
 
 	return &inspect, nil
+}
+
+// cleanup function to run indefinitely, removes locks which have 0 routines waiting on them
+func cleanupImageTagLocks(cli *ImageMap) {
+	ticker := time.NewTicker(30 * time.Minute)
+	defer ticker.Stop()
+	for {
+		<-ticker.C
+		cli.Range(func(key string, value *models.CountingMutex) bool {
+			checkImageLockStatus(key, value, cli)
+			// always return true to continue iterating
+			return true
+		})
+	}
+}
+
+func checkImageLockStatus(tagName string, mut *models.CountingMutex, imageMap *ImageMap) {
+	c := mut.WaitingCount()
+	if c == 0 {
+		log.Debug().Msgf("removing unused tag: %s from image queue", tagName)
+		imageMap.Delete(tagName)
+	} else {
+		log.Debug().Msgf("tag: %s has locks waiting: %d from image queue", tagName, c)
+	}
 }

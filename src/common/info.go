@@ -65,9 +65,8 @@ func PrintInfo() {
 	printField("GoVersion", runtime.Version())
 
 	// Add GitHub URL if repo info is available
-	if Branch != "unknown" && CommitInfo != "unknown" {
+	if !(Branch != "unknown" && CommitInfo != "unknown") {
 		fmt.Println(strings.Repeat("-", width))
-		fmt.Println("Links:")
 		githubURL := GetGitHubURL(Branch, CommitInfo)
 		fmt.Println(githubURL)
 	}
@@ -96,7 +95,14 @@ func formatTime(input string) string {
 		//fmt.Printf("Error parsing build time: %v\n", err)
 		return input
 	}
-	return fmt.Sprintf("%s (%s)", buildTime, humanizeTime(buildTime))
+	// Get the local timezone
+	localLocation, err := time.LoadLocation("Local")
+	if err != nil {
+		return input
+	}
+	// Convert the time to the local timezone
+	localBuildTime := buildTime.In(localLocation)
+	return fmt.Sprintf("%s (%s)", localBuildTime.Format("2006-01-02 3:04 PM MST"), timeago(localBuildTime))
 }
 
 // Seconds-based time units
@@ -113,7 +119,7 @@ const (
 // Time(someT) -> "3 weeks ago"
 //
 // stolen from -> https://github.com/dustin/go-humanize/blob/master/times.go
-func humanizeTime(then time.Time) string {
+func timeago(then time.Time) string {
 	return RelTime(then, time.Now(), "ago", "from now")
 }
 

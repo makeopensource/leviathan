@@ -51,4 +51,4 @@ You can see the test files [here](./example/simple-addition)
 > Before submitting
 > Rename student_*.py files to student.py, since the grader expects student.py as the filename
 
-![img.png](./docs/test-example.png)
+![img.png](./docs/static/test-example.png)

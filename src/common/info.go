@@ -25,6 +25,7 @@ var Version = "dev"
 var CommitInfo = "unknown"
 var BuildDate = "unknown"
 var Branch = "unknown" // Git branch
+var SourceHash = "unknown"
 var GoVersion = runtime.Version()
 
 func PrintInfo() {
@@ -100,11 +101,13 @@ func PrintInfo() {
 	}
 
 	printField("Version", Version)
-	printField("CommitInfo", CommitInfo)
 	printField("BuildDate", formatTime(BuildDate))
 	printField("Branch", Branch)
-	printField("GoVersion", runtime.Version())
+	printField("CommitInfo", CommitInfo)
+	printField("Source Hash", SourceHash)
+	printField("GoVersion", GoVersion)
 
+	//nolint
 	if Branch != "unknown" && CommitInfo != "unknown" {
 		fmt.Println(nord10 + strings.Repeat("-", width) + colorReset)
 		githubURL := GetGitHubURL(Branch, CommitInfo)
@@ -160,7 +163,7 @@ const (
 //
 // stolen from -> https://github.com/dustin/go-humanize/blob/master/times.go
 func timeago(then time.Time) string {
-	return RelTime(then, time.Now(), "ago", "from now")
+	return CustomRelTime(then, time.Now(), "ago", "from now", defaultMagnitudes)
 }
 
 type RelTimeMagnitude struct {
@@ -187,10 +190,6 @@ var defaultMagnitudes = []RelTimeMagnitude{
 	{2 * Year, "2 years %s", 1},
 	{LongTime, "%d years %s", Year},
 	{math.MaxInt64, "a long while %s", 1},
-}
-
-func RelTime(a, b time.Time, albl, blbl string) string {
-	return CustomRelTime(a, b, albl, blbl, defaultMagnitudes)
 }
 
 func CustomRelTime(a, b time.Time, albl, blbl string, magnitudes []RelTimeMagnitude) string {

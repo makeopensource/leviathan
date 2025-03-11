@@ -6,10 +6,11 @@ import (
 )
 
 const (
-	concurrentJobsKey = "concurrent_jobs"
+	concurrentJobsKey = "jobs.concurrent_jobs"
 
 	apiKeyKey     = "server.apikey"
 	serverPortKey = "server.port"
+	loglevelKey   = "server.log_level"
 
 	// folders
 	logDirKey        = "folder.log_dir"
@@ -17,6 +18,7 @@ const (
 	outputDirKey     = "folder.log_output_dir"
 	// docker config
 	enableLocalDockerKey = "clients.enable_local_docker"
+	ClientSSHKey         = "clients.ssh"
 
 	sqliteDbPathKey = "db.sqlite.db_path"
 	// postgres
@@ -31,7 +33,7 @@ const (
 
 var (
 	// internal use
-
+	LogLevel     = Config{loglevelKey}
 	LogDir       = Config{logDirKey}
 	SqliteDbPath = Config{sqliteDbPathKey}
 

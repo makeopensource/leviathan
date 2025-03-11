@@ -125,7 +125,7 @@ func (q *JobQueue) runJob(job *models.Job) {
 
 	statusCh, errCh := client.Client.ContainerWait(context.Background(), contId, cont.WaitConditionNotRunning)
 	select {
-	case _ = <-statusCh:
+	case <-statusCh:
 		wg.Wait() // for logs to complete writing
 		q.verifyLogs(job)
 		return
@@ -142,7 +142,7 @@ func (q *JobQueue) runJob(job *models.Job) {
 }
 
 func (q *JobQueue) writeLogs(client *docker.DkClient, msg *models.Job) {
-	outputFile, err := os.OpenFile(msg.OutputLogFilePath, os.O_RDWR|os.O_CREATE, 660)
+	outputFile, err := os.OpenFile(msg.OutputLogFilePath, os.O_RDWR|os.O_CREATE, 0660)
 	if err != nil {
 		q.bigProblem(msg, "unable to open output file", err)
 		return

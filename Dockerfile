@@ -40,7 +40,9 @@ WORKDIR /app/
 
 COPY --from=builder /app/leviathan .
 
-ENV IS_DOCKER=true
+ENV LEVIATHAN_IS_DOCKER=true
+# default level info when running in docker
+ENV LEVIATHAN_LOG_LEVEL=info
 
 EXPOSE 9221
 

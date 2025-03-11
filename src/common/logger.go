@@ -25,12 +25,18 @@ func CreateJobSubLoggerCtx(ctx context.Context, jobID string) context.Context {
 }
 
 func FileConsoleLogger() zerolog.Logger {
+	level, err := zerolog.ParseLevel(LogLevel.GetStr())
+	if err != nil {
+		log.Fatal().Err(err).Msg("unable to parse log level")
+	}
+	log.Info().Msgf("log level is now set to %s, this can be changed by using the LEVIATHAN_LOG_LEVEL env", level)
+
 	return baseLogger.Output(
 		zerolog.MultiLevelWriter(
 			GetFileLogger(LogDir.GetStr()),
 			consoleWriter,
 		),
-	)
+	).Level(level)
 }
 
 func ConsoleLogger() zerolog.Logger {

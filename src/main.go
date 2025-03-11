@@ -7,6 +7,7 @@ import (
 )
 
 func main() {
+	common.PrintInfo()
 	log.Logger = common.ConsoleLogger()
 	common.InitConfig()
 	api.StartGrpcServer()

@@ -28,8 +28,10 @@ func InitServices() (*docker.DkService, *jobs.JobService) {
 	return dkService, jobService
 }
 
-// removes any job left in am 'active' state before application start,
-// fail any jobs that were running before leviathan was killed (for whatever reason)
+// removes any job left in an 'active' state before application start,
+// fail any jobs that were running before leviathan was able to process them (for whatever reason)
+//
+// for example machine running leviathan shutdown unexpectedly or leviathan had an unrecoverable error
 func cleanupOrphanJobs(db *gorm.DB, dk *docker.DkService) {
 	var orphanJobs []*models.Job
 	res := db.
@@ -63,6 +65,7 @@ func cleanupOrphanJobs(db *gorm.DB, dk *docker.DkService) {
 		}
 
 		orphan.Status = models.Failed
+		orphan.StatusMessage = "job was unable to be processed due to an internal server error"
 		res = db.Save(orphan)
 		if res.Error == nil {
 			log.Warn().Err(res.Error).Msg("unable to update orphan job status")

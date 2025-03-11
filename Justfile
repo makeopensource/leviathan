@@ -44,11 +44,21 @@ bdrn:
     just dk
     docker run --rm --network=host -v /var/run/docker.sock:/var/run/docker.sock -v appdata:/app/appdata/ {{imageName}}
 
+alias dc := dclean
+dclean:
+    docker rm -f $(docker ps -aq)
+    docker image prune -ay
+
 dkrn:
 	docker compose up --build
 
 post:
     docker compose --profile post up
+
+# update all go deps
+[working-directory: 'src']
+get:
+    go get -v -u all
 
 # lint go files
 [working-directory: 'src']
@@ -63,3 +73,13 @@ tidy:
 [working-directory: 'src']
 vet:
     go vet ./...
+
+# go build and run
+[working-directory: 'src']
+gb:
+    go build -o ../bin/leviathan.exe
+
+# go build
+gr:
+    just gb
+    ./bin/leviathan.exe

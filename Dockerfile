@@ -27,11 +27,13 @@ ENV BUILD_DATE=${BUILD_DATE}
 ENV BRANCH=${BRANCH}
 
 # build optimized binary without debugging symbols
-RUN go build -ldflags "-s -w \
+RUN SOURCE_HASH=$(find . -type f -name "*.go" -print0 | sort -z | xargs -0 cat | sha256sum | cut -d ' ' -f1) && \
+    go build -ldflags "-s -w \
       -X github.com/makeopensource/leviathan/common.Version=${VERSION} \
       -X github.com/makeopensource/leviathan/common.CommitInfo=${COMMIT_INFO} \
       -X github.com/makeopensource/leviathan/common.BuildDate=${BUILD_DATE} \
-      -X github.com/makeopensource/leviathan/common.Branch=${BRANCH}" \
+      -X github.com/makeopensource/leviathan/common.Branch=${BRANCH} \
+      -X github.com/makeopensource/leviathan/common.SourceHash=${SOURCE_HASH}" \
     -o leviathan
 
 FROM alpine:latest

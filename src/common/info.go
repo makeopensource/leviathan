@@ -43,15 +43,21 @@ func PrintInfo() {
 		colorReset  = "\033[0m"
 		colorGreen  = "\033[32m"
 		colorYellow = "\033[33m"
+		colorPurple = "\033[35;49m"
+		colorCyan   = "\033[36;49m"
+		textBold    = "\033[1m"
 	)
 
 	// Get terminal width
-	width := 60
+	width := 90
 
 	// Print header
-	fmt.Println(strings.Repeat("=", width))
+	dividerContent := strings.Repeat("=", width)
+	divider := colorGreen + dividerContent + colorReset
+
+	fmt.Println(divider)
 	fmt.Printf("%s%s %s %s\n", colorYellow, strings.Repeat(" ", (width-24)/2), headers[rand.IntN(len(headers))], colorReset)
-	fmt.Println(strings.Repeat("=", width))
+	fmt.Println(divider)
 
 	// Print app info with aligned values
 	printField := func(name, value string) {
@@ -65,13 +71,13 @@ func PrintInfo() {
 	printField("GoVersion", runtime.Version())
 
 	// Add GitHub URL if repo info is available
-	if !(Branch != "unknown" && CommitInfo != "unknown") {
+	if Branch != "unknown" && CommitInfo != "unknown" {
 		fmt.Println(strings.Repeat("-", width))
 		githubURL := GetGitHubURL(Branch, CommitInfo)
 		fmt.Println(githubURL)
 	}
 
-	fmt.Println(strings.Repeat("=", width))
+	fmt.Println(divider)
 }
 
 func GetGitHubURL(branch, commitHash string) string {

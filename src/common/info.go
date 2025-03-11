@@ -110,26 +110,16 @@ func PrintInfo() {
 	//nolint
 	if Branch != "unknown" && CommitInfo != "unknown" {
 		fmt.Println(nord10 + strings.Repeat("-", width) + colorReset)
-		githubURL := GetGitHubURL(Branch, CommitInfo)
-		fmt.Printf("%s%s%s\n", nord15, githubURL, colorReset)
+		var baserepo = fmt.Sprintf("https://github.com/makeopensource/leviathan")
+		branchURL := fmt.Sprintf("%s/tree/%s", baserepo, Branch)
+		commitURL := fmt.Sprintf("%s/commit/%s", baserepo, CommitInfo)
+
+		printField("Repo", baserepo)
+		printField("Branch", branchURL)
+		printField("Commit", commitURL)
 	}
 
 	fmt.Println(divider)
-}
-
-func GetGitHubURL(branch, commitHash string) string {
-	const (
-		repoOwner = "makeopensource"
-		repoName  = "leviathan"
-	)
-	// For browsing at the specific branch
-	branchURL := fmt.Sprintf("https://github.com/%s/%s/tree/%s",
-		repoOwner, repoName, branch)
-	// For viewing the specific commit
-	commitURL := fmt.Sprintf("https://github.com/%s/%s/commit/%s",
-		repoOwner, repoName, commitHash)
-
-	return fmt.Sprintf("Branch: %s\nCommit: %s", branchURL, commitURL)
 }
 
 func formatTime(input string) string {

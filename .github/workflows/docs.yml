@@ -1,14 +1,15 @@
 name: Deploy leviathan docusaurus to GitHub Pages
+# todo gh pages are disabled for leviathan
 
 on:
   # Trigger deployment on pushes to main branch
-  push:
-    branches:
-      - master
-      - dev
-    paths:
-        - '.github/workflows/docs.yml'
-        - 'docs/**'
+  #  push:
+  #    branches:
+  #      - master
+  #      - dev
+  #    paths:
+  #        - '.github/workflows/docs.yml'
+  #        - 'docs/**'
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:

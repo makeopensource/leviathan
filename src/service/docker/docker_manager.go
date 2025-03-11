@@ -43,13 +43,14 @@ func GetClientList() []models.MachineOptions {
 			log.Warn().Err(err).Msgf("Error decoding configuration structure for %s", name)
 			continue
 		}
-
 		// Set the name manually since it's not part of the nested structure
 		options.Name = name
-
-		// Append to the list
-		allMachines = append(allMachines, options)
-		log.Info().Any("options", options).Msgf("Loaded Machine: %s", name)
+		if options.Enable {
+			allMachines = append(allMachines, options)
+			log.Info().Any("options", options).Msgf("found machine config: %s", name)
+		} else {
+			log.Debug().Any("options", options).Msgf("found machine config: %s, but it was disabled", name)
+		}
 	}
 
 	return allMachines

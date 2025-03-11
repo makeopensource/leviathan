@@ -73,3 +73,13 @@ tidy:
 [working-directory: 'src']
 vet:
     go vet ./...
+
+# go build and run
+[working-directory: 'src']
+gb:
+    go build -o ../bin/leviathan.exe
+
+# go build
+gr:
+    just gb
+    ./bin/leviathan.exe

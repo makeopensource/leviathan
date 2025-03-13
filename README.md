@@ -1,4 +1,4 @@
-# leviathan
+# Leviathan
 
 Container Orchestrator/Job Runner replacement for Autolab Tango
 

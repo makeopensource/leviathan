@@ -223,7 +223,7 @@ func testJob(t *testing.T, jobId string, correctOutput string, correctStatus mod
 		return
 	}
 
-	log.Debug().Msgf("Job ID: %s, Logs: %s", jobId, logs)
+	t.Log("Job ID: ", jobId, " Logs: %s", logs)
 
 	returned := strings.TrimSpace(jobInfo.StatusMessage)
 	expected := strings.TrimSpace(correctOutput)
@@ -250,5 +250,4 @@ func initServices() {
 
 	dkTestService = docker.NewDockerService(clientList)
 	jobTestService = NewJobService(db, bc, dkTestService) // depends on docker service
-
 }

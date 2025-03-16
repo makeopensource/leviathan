@@ -260,6 +260,7 @@ func (q *JobQueue) cleanupJob(msg *models.Job, client *docker.DkClient) {
 	}
 
 	q.dkSrv.ClientManager.DecreaseJobCount(msg.MachineId)
+	q.contextMap.Delete(msg.JobId)
 
 	tmpFold := filepath.Dir(msg.TmpJobFolderPath) // get the dir above autolab subdir
 	err := os.RemoveAll(tmpFold)

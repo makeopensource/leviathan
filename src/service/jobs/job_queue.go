@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	cont "github.com/docker/docker/api/types/container"
+	dkDeamon "github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/makeopensource/leviathan/common"
 	"github.com/makeopensource/leviathan/models"
@@ -19,7 +19,6 @@ import (
 
 type JobQueue struct {
 	jobChannel chan *models.Job
-	totalJobs  uint
 	db         *gorm.DB
 	dkSrv      *docker.DkService
 	contextMap *models.Map[string, func()]
@@ -28,18 +27,17 @@ type JobQueue struct {
 func NewJobQueue(totalJobs uint, db *gorm.DB, dk *docker.DkService) *JobQueue {
 	queue := &JobQueue{
 		jobChannel: make(chan *models.Job, totalJobs),
-		totalJobs:  totalJobs,
+		contextMap: &models.Map[string, func()]{},
 		db:         db,
 		dkSrv:      dk,
-		contextMap: &models.Map[string, func()]{},
 	}
 
-	queue.CreateJobProcessors()
+	queue.spawnWorkers(int(totalJobs))
 	return queue
 }
 
-func (q *JobQueue) CreateJobProcessors() {
-	for i := 1; i < int(q.totalJobs); i++ {
+func (q *JobQueue) spawnWorkers(workerCount int) {
+	for i := 0; i < workerCount; i++ {
 		go q.worker()
 	}
 }
@@ -79,20 +77,27 @@ func (q *JobQueue) CancelJob(messageId string) {
 }
 
 func (q *JobQueue) worker() {
-	for msg := range q.jobChannel {
-		if msg == nil {
-			log.Error().Msg("job received was nil, this should NEVER HAPPEN")
-			continue
-		}
+	for {
+		select {
+		case msg, ok := <-q.jobChannel:
+			if !ok {
+				log.Warn().Msg("job channel was closed, THIS SHOULD NEVER HAPPEN")
+				return
+			}
+			if msg == nil {
+				log.Error().Msg("job received was nil, THIS SHOULD NEVER HAPPEN")
+				continue
+			}
 
-		if errors.Is(msg.JobCtx.Err(), context.Canceled) {
-			q.setJobAsCancelled(msg)
-			jog(msg.JobCtx).Warn().Msgf("job context was canceled before queue could process")
-			continue
-		}
+			if errors.Is(msg.JobCtx.Err(), context.Canceled) {
+				q.setJobAsCancelled(msg)
+				jog(msg.JobCtx).Warn().Msgf("job context was canceled before queue could process")
+				continue
+			}
 
-		jog(msg.JobCtx).Info().Msgf("worker is now processing job")
-		q.runJob(msg)
+			jog(msg.JobCtx).Info().Msgf("worker is now processing job")
+			q.runJob(msg)
+		}
 	}
 }
 
@@ -123,7 +128,7 @@ func (q *JobQueue) runJob(job *models.Job) {
 		q.writeLogs(client, job)
 	}()
 
-	statusCh, errCh := client.Client.ContainerWait(context.Background(), contId, cont.WaitConditionNotRunning)
+	statusCh, errCh := client.Client.ContainerWait(context.Background(), contId, dkDeamon.WaitConditionNotRunning)
 	select {
 	case <-statusCh:
 		wg.Wait() // for logs to complete writing
@@ -192,7 +197,7 @@ func (q *JobQueue) setupJob(msg *models.Job) (*docker.DkClient, string, error, s
 		}
 	}
 
-	resources := cont.Resources{
+	resources := dkDeamon.Resources{
 		NanoCPUs:  msg.JobLimits.NanoCPU * models.CPUQuota,
 		Memory:    msg.JobLimits.Memory * models.MB,
 		PidsLimit: &msg.JobLimits.PidsLimit,

@@ -4,8 +4,8 @@ go 1.24
 
 require (
 	connectrpc.com/connect v1.18.1
-	github.com/docker/cli v28.0.1+incompatible
-	github.com/docker/docker v28.0.1+incompatible
+	github.com/docker/cli v28.0.2+incompatible
+	github.com/docker/docker v28.0.2+incompatible
 	github.com/go-viper/mapstructure/v2 v2.2.1
 	github.com/google/uuid v1.6.0
 	github.com/joho/godotenv v1.5.1

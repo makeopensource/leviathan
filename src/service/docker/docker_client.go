@@ -158,18 +158,6 @@ func (c *DkClient) ListContainers(machineId string) ([]*dktypes.ContainerMetaDat
 	log.Debug().Msgf("Docker images listed: %d", len(containerInfos))
 
 	var containerInfoList []*dktypes.ContainerMetaData
-	for _, item := range containerInfos {
-		info := dktypes.ContainerMetaData{
-			Id:             common.EncodeID(machineId, item.ID),
-			ContainerNames: item.Names,
-			Image:          item.Image,
-			Status:         item.Status,
-			State:          item.State,
-		}
-
-		containerInfoList = append(containerInfoList, &info)
-	}
-
 	return containerInfoList, nil
 }
 

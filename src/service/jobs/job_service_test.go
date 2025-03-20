@@ -7,6 +7,7 @@ import (
 	v1 "github.com/makeopensource/leviathan/generated/types/v1"
 	"github.com/makeopensource/leviathan/models"
 	"github.com/makeopensource/leviathan/service/docker"
+	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/stretchr/testify/assert"
 	"path/filepath"
@@ -234,20 +235,23 @@ func testJob(t *testing.T, jobId string, correctOutput string, correctStatus mod
 
 func setupTest() {
 	setupOnce.Do(func() {
-		common.InitConfig()
 		initServices()
 	})
 }
 
 func initServices() {
+	common.InitConfig()
 	// common for services
 	db := common.InitDB()
 	bc, ctx := models.NewBroadcastChannel()
 	// inject broadcast channel to database
 	db = db.WithContext(ctx)
+	// no logs for tests
+	log.Logger = log.Logger.Level(zerolog.Disabled)
 
 	clientList := docker.InitDockerClients()
 
 	dkTestService = docker.NewDockerService(clientList)
 	jobTestService = NewJobService(db, bc, dkTestService) // depends on docker service
+
 }

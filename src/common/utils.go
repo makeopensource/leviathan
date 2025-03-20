@@ -2,10 +2,10 @@ package common
 
 import (
 	"archive/tar"
+	"bufio"
 	"bytes"
 	"compress/gzip"
 	"encoding/json"
-	"errors"
 	"fmt"
 	v1 "github.com/makeopensource/leviathan/generated/types/v1"
 	"github.com/rs/zerolog/log"
@@ -260,27 +260,16 @@ func IsValidJSON(s string) bool {
 	return json.Unmarshal([]byte(s), &js) == nil
 }
 
-// ParseCombinedID decode combined id which should contain the machine id and container id
-func ParseCombinedID(combinedId string) (string, string, error) {
-	machineId, containerId, err := DecodeID(combinedId)
+func ReadBufLogfile(logPath string) error {
+	file, err := os.Open(logPath)
 	if err != nil {
-		log.Error().Err(err).Str("ID", combinedId).Msg("Could not decode ID")
-		return "", "", err
+		return err
 	}
 
-	return containerId, machineId, nil
-}
+	reader := bufio.NewScanner(file)
+	reader.Scan()
 
-func EncodeID(id1 string, id2 string) string {
-	return id1 + "#" + id2
-}
-
-func DecodeID(combinedId string) (string, string, error) {
-	strs := strings.Split(combinedId, "#")
-	if len(strs) != 2 {
-		return "", "", errors.New("could not decode ID")
-	}
-	return strs[0], strs[1], nil
+	return nil
 }
 
 func ReadLogFile(logPath string) string {

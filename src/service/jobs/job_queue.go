@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	dkDeamon "github.com/docker/docker/api/types/container"
+	dk "github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/makeopensource/leviathan/common"
 	"github.com/makeopensource/leviathan/models"
@@ -13,7 +13,6 @@ import (
 	"gorm.io/gorm"
 	"os"
 	"path/filepath"
-	"sync"
 	"time"
 )
 
@@ -43,6 +42,7 @@ func (q *JobQueue) spawnWorkers(workerCount int) {
 }
 
 func (q *JobQueue) AddJob(mes *models.Job) error {
+	jog(mes.JobCtx).Info().Msg("sending job to queue")
 	err := mes.ValidateForQueue()
 	if err != nil {
 		jog(mes.JobCtx).Err(err).Msg("job validation failed")
@@ -77,27 +77,21 @@ func (q *JobQueue) CancelJob(messageId string) {
 }
 
 func (q *JobQueue) worker() {
-	for {
-		select {
-		case msg, ok := <-q.jobChannel:
-			if !ok {
-				log.Warn().Msg("job channel was closed, THIS SHOULD NEVER HAPPEN")
-				return
-			}
-			if msg == nil {
-				log.Error().Msg("job received was nil, THIS SHOULD NEVER HAPPEN")
-				continue
-			}
-
-			if errors.Is(msg.JobCtx.Err(), context.Canceled) {
-				q.setJobAsCancelled(msg)
-				jog(msg.JobCtx).Warn().Msgf("job context was canceled before queue could process")
-				continue
-			}
-
-			jog(msg.JobCtx).Info().Msgf("worker is now processing job")
-			q.runJob(msg)
+	for msg := range q.jobChannel {
+		if msg == nil {
+			log.Error().Msg("job received was nil, THIS SHOULD NEVER HAPPEN")
+			continue
 		}
+
+		if errors.Is(msg.JobCtx.Err(), context.Canceled) {
+			q.setJobAsCancelled(msg)
+			q.cleanupJob(msg, nil)
+			jog(msg.JobCtx).Warn().Msgf("job context was canceled before queue could process")
+			continue
+		}
+
+		jog(msg.JobCtx).Info().Msgf("worker is now processing job")
+		q.runJob(msg)
 	}
 }
 
@@ -105,14 +99,15 @@ func (q *JobQueue) worker() {
 func (q *JobQueue) runJob(job *models.Job) {
 	client, contId, err, reason := q.setupJob(job)
 	defer q.cleanupJob(job, client)
-
 	if err != nil {
 		q.bigProblem(job, reason, err)
 		return
 	}
 
-	wg := sync.WaitGroup{}
-	wg.Add(1)
+	logStatusCh := make(chan struct {
+		message string
+		err     error
+	})
 
 	q.setJobInProgress(job)
 	err = client.StartContainer(contId)
@@ -124,15 +119,27 @@ func (q *JobQueue) runJob(job *models.Job) {
 	// start writing to log file so that
 	// we can stream changes to the log file to the user
 	go func() {
-		defer wg.Done()
-		q.writeLogs(client, job)
+		statusMessage, err2 := writeLogs(client, job)
+		logStatusCh <- struct {
+			message string
+			err     error
+		}{message: statusMessage, err: err2}
 	}()
 
-	statusCh, errCh := client.Client.ContainerWait(context.Background(), contId, dkDeamon.WaitConditionNotRunning)
+	statusCh, errCh := client.Client.ContainerWait(context.Background(), contId, dk.WaitConditionNotRunning)
 	select {
 	case <-statusCh:
-		wg.Wait() // for logs to complete writing
-		q.verifyLogs(job)
+		mes := <-logStatusCh
+		if mes.err != nil {
+			q.bigProblem(job, mes.message, mes.err)
+			return
+		}
+		logLine, errMessage, err := verifyLogs(job)
+		if err != nil || errMessage != "" {
+			q.bigProblem(job, errMessage, err)
+			return
+		}
+		q.greatSuccess(job, logLine)
 		return
 	case err := <-errCh:
 		q.bigProblem(job, "error occurred while waiting for job process", err)
@@ -142,33 +149,6 @@ func (q *JobQueue) runJob(job *models.Job) {
 		return
 	case <-job.JobCtx.Done():
 		q.setJobAsCancelled(job)
-		return
-	}
-}
-
-func (q *JobQueue) writeLogs(client *docker.DkClient, msg *models.Job) {
-	outputFile, err := os.OpenFile(msg.OutputLogFilePath, os.O_RDWR|os.O_CREATE, 0660)
-	if err != nil {
-		q.bigProblem(msg, "unable to open output file", err)
-		return
-	}
-
-	defer func() {
-		err := outputFile.Close()
-		if err != nil {
-			log.Error().Err(err).Msg("Error while closing output file")
-		}
-	}()
-
-	logs, err := client.TailContainerLogs(context.Background(), msg.ContainerId)
-	if err != nil {
-		q.bigProblem(msg, "unable to tail job container", err)
-		return
-	}
-
-	_, err = stdcopy.StdCopy(outputFile, outputFile, logs)
-	if err != nil {
-		q.bigProblem(msg, "unable to write to output file", err)
 		return
 	}
 }
@@ -197,7 +177,7 @@ func (q *JobQueue) setupJob(msg *models.Job) (*docker.DkClient, string, error, s
 		}
 	}
 
-	resources := dkDeamon.Resources{
+	resources := dk.Resources{
 		NanoCPUs:  msg.JobLimits.NanoCPU * models.CPUQuota,
 		Memory:    msg.JobLimits.Memory * models.MB,
 		PidsLimit: &msg.JobLimits.PidsLimit,
@@ -222,34 +202,10 @@ func (q *JobQueue) setupJob(msg *models.Job) (*docker.DkClient, string, error, s
 	return machine, contId, nil, ""
 }
 
-// bigProblem job failed, Not good!
-// The publicReason will be displayed to the end user, providing a user-friendly message.
-// The err parameter holds the underlying error, used for debugging purposes.
-func (q *JobQueue) bigProblem(job *models.Job, publicReason string, err error) {
-	jog(job.JobCtx).Error().Err(err).Str("reason", publicReason).Msg("job failed")
-	job.Status = models.Failed
-	job.StatusMessage = publicReason
-}
-
-func (q *JobQueue) setJobAsCancelled(job *models.Job) {
-	jog(job.JobCtx).Info().Msg("job was cancelled")
-	job.Status = models.Canceled
-	job.StatusMessage = "Job was cancelled"
-}
-
-// greatSuccess Very nice!
-// jobResult is the last line expected to be valid json string, returned to the job caller
-func (q *JobQueue) greatSuccess(job *models.Job, jobResult string) {
-	jog(job.JobCtx).Info().Msg("job completed successfully")
-	job.Status = models.Complete
-	job.StatusMessage = jobResult
-}
-
-// cleanupJob clean up job
-// sets job to success, removes the container and associated tmp job data
+// cleanupJob clean up job,
+// updates job in DB, removes the container and associated tmp job data
 func (q *JobQueue) cleanupJob(msg *models.Job, client *docker.DkClient) {
 	jog(msg.JobCtx).Info().Msg("cleaning up job")
-
 	q.updateJobVeryNice(msg)
 
 	if client != nil {
@@ -270,12 +226,49 @@ func (q *JobQueue) cleanupJob(msg *models.Job, client *docker.DkClient) {
 	}
 }
 
+// greatSuccess set job status to models.Complete
+//
+// Very nice!
+//
+// jobResult is the last line expected to be valid json string, returned to the job caller
+func (q *JobQueue) greatSuccess(job *models.Job, jobResult string) {
+	jog(job.JobCtx).Info().Msg("job completed successfully")
+	job.Status = models.Complete
+	job.StatusMessage = jobResult
+}
+
+// bigProblem set job status to models.Failed
+//
+// job failed, Not good!
+//
+// The publicReason will be displayed to the end user, providing a user-friendly message.
+//
+// The err parameter holds the underlying error, used for debugging purposes.
+func (q *JobQueue) bigProblem(job *models.Job, publicReason string, err error) {
+	jog(job.JobCtx).Error().Err(err).Str("reason", publicReason).Msg("job failed")
+	job.Status = models.Failed
+	job.StatusMessage = publicReason
+	if err != nil {
+		job.Error = err.Error()
+	}
+}
+
+func (q *JobQueue) setJobAsCancelled(job *models.Job) {
+	jog(job.JobCtx).Info().Msg("job was cancelled")
+	job.Status = models.Canceled
+	job.StatusMessage = "Job was cancelled"
+}
+
+// setJobInProgress set job status as models.Running
+//
 // Job is in progress, success soon!
 func (q *JobQueue) setJobInProgress(msg *models.Job) {
 	msg.Status = models.Running
 	q.updateJobVeryNice(msg)
 }
 
+// setJobInSetup set job status as models.Preparing
+//
 // job is being setup standby
 func (q *JobQueue) setJobInSetup(msg *models.Job) {
 	msg.Status = models.Preparing
@@ -290,16 +283,39 @@ func (q *JobQueue) updateJobVeryNice(msg *models.Job) {
 	}
 }
 
-func (q *JobQueue) verifyLogs(msg *models.Job) {
+func writeLogs(client *docker.DkClient, msg *models.Job) (string, error) {
+	outputFile, err := os.OpenFile(msg.OutputLogFilePath, os.O_RDWR|os.O_CREATE, 0660)
+	if err != nil {
+		return "unable to open log file", err
+	}
+
+	defer func() {
+		err := outputFile.Close()
+		if err != nil {
+			log.Error().Err(err).Msg("Error while closing output file")
+		}
+	}()
+
+	logs, err := client.TailContainerLogs(context.Background(), msg.ContainerId)
+	if err != nil {
+		return "unable to tail job container", err
+	}
+
+	_, err = stdcopy.StdCopy(outputFile, outputFile, logs)
+	if err != nil {
+		return "unable to write to log file", err
+	}
+	return "", nil
+}
+
+func verifyLogs(msg *models.Job) (string, string, error) {
 	if msg.Status == models.Failed {
-		jog(msg.JobCtx).Warn().Msg("Job failed, skipping parsing log file")
-		return
+		return "", "Job failed, skipping parsing log file", nil
 	}
 
 	outputFile, err := os.Open(msg.OutputLogFilePath)
 	if err != nil {
-		q.bigProblem(msg, "unable to open log file", err)
-		return
+		return "", "unable to open log file", err
 	}
 	defer func(open *os.File) {
 		err := open.Close()
@@ -310,14 +326,11 @@ func (q *JobQueue) verifyLogs(msg *models.Job) {
 
 	line, err := common.GetLastLine(outputFile)
 	if err != nil {
-		q.bigProblem(msg, "unable to get logs", err)
-		return
+		return "", "unable to get logs", err
 	}
-
 	if !common.IsValidJSON(line) {
-		q.bigProblem(msg, "unable to parse log output", err)
-		return
+		return "", "unable to parse log output", nil
 	}
 
-	q.greatSuccess(msg, line)
+	return line, "", nil
 }

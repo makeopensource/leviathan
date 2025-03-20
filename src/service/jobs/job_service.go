@@ -82,7 +82,6 @@ func (job *JobService) NewJob(newJob *models.Job, jobFiles []*v1.FileUpload, doc
 		return "", fmt.Errorf("failed to save job to db")
 	}
 
-	jog(ctx).Info().Msg("sending job to queue")
 	err = job.queue.AddJob(newJob)
 	if err != nil {
 		return "", err

@@ -21,12 +21,12 @@ const darkCodeTheme = require('prism-react-renderer/themes/dracula');
             ({
                 docs: {
                     sidebarPath: require.resolve('./sidebars.js'),
-                    editUrl: 'https://github.com/makeopensource/leviathan/edit/main/website/',
+                    editUrl: 'https://github.com/makeopensource/leviathan/edit/main/',
                 },
                 blog: {
                     showReadingTime: true,
                     editUrl:
-                        'https://github.com/makeopensource/leviathan/edit/main/website/blog/',
+                        'https://github.com/makeopensource/leviathan/edit/main/blog/',
                 },
                 theme: {
                     customCss: require.resolve('./src/css/custom.css'),

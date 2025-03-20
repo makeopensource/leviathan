@@ -10,7 +10,7 @@ import (
 
 type JobStatus string
 
-// Done indicate the job has been tried by the queue, and processed.
+// Done indicate the job has been tried by the queue and processed.
 // i.e: the JobStatus is either Failed, Complete, Canceled
 func (js JobStatus) Done() bool {
 	if js == Failed || js == Complete || js == Canceled {
@@ -19,14 +19,23 @@ func (js JobStatus) Done() bool {
 	return false
 }
 
-// job status enum
+// go way of doing enums
 const (
-	Queued    JobStatus = "queued"
+	// Queued -> job was sent to the job channel waiting to be picked by a worker
+	Queued JobStatus = "queued"
+	// Preparing -> job is picked up by a worker
+	// and the required setup is being done.
 	Preparing JobStatus = "preparing"
-	Running   JobStatus = "running"
-	Complete  JobStatus = "complete"
-	Failed    JobStatus = "failed"
-	Canceled  JobStatus = "canceled"
+	// Running leviathan has successfully started the grading container
+	// and is waiting for it to end
+	Running JobStatus = "running"
+	// Complete -> indicates job is complete and
+	// leviathan was able to parse the log line correctly
+	Complete JobStatus = "complete"
+	// Failed -> job failed for one of the variety of reasons
+	Failed JobStatus = "failed"
+	// Canceled -> job was cancelled by the user
+	Canceled JobStatus = "canceled"
 )
 
 // general resource units for docker
@@ -45,8 +54,10 @@ type Job struct {
 	JobEntryCmd   string
 	Status        JobStatus
 	StatusMessage string
-	LabData       Lab           `gorm:"embedded;embeddedPrefix:lab_"`
-	JobLimits     MachineLimits `gorm:"embedded;embeddedPrefix:machine_limit_"`
+	// to store if an error occurred, otherwise empty,
+	Error     string
+	LabData   Lab           `gorm:"embedded;embeddedPrefix:lab_"`
+	JobLimits MachineLimits `gorm:"embedded;embeddedPrefix:machine_limit_"`
 	// OutputLogFilePath text file contain the container std out
 	OutputLogFilePath string
 	// TmpJobFolderPath holds the path to the tmp dir all files related to the job except the final output

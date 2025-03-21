@@ -32,7 +32,7 @@ func InitConfig() {
 	configDir := getConfigDir(baseDir)
 
 	viper.SetConfigName("config")
-	viper.SetConfigType("toml")
+	viper.SetConfigType("yaml")
 	viper.AddConfigPath(configDir)
 
 	// ignore any error to setup default vals

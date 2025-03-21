@@ -1,7 +1,6 @@
 package jobs
 
 import (
-	"context"
 	"fmt"
 	"github.com/makeopensource/leviathan/common"
 	v1 "github.com/makeopensource/leviathan/generated/types/v1"
@@ -218,7 +217,7 @@ func setupJobProcess(studentCodePath string, timeout time.Duration) string {
 }
 
 func testJob(t *testing.T, jobId string, correctOutput string, correctStatus models.JobStatus) {
-	jobInfo, logs, err := jobTestService.WaitForJobAndLogs(context.Background(), jobId)
+	jobInfo, logs, err := jobTestService.WaitForJobAndLogs(jobId)
 	if err != nil {
 		t.Fatalf("Error waiting for job: %v", err)
 		return
@@ -242,16 +241,12 @@ func setupTest() {
 func initServices() {
 	common.InitConfig()
 	// common for services
-	db := common.InitDB()
-	bc, ctx := models.NewBroadcastChannel()
-	// inject broadcast channel to database
-	db = db.WithContext(ctx)
-	// no logs for tests
-	log.Logger = log.Logger.Level(zerolog.Disabled)
-
+	db, bc := common.InitDB()
 	clientList := docker.InitDockerClients()
 
 	dkTestService = docker.NewDockerService(clientList)
-	jobTestService = NewJobService(db, bc, dkTestService) // depends on docker service
+	jobTestService = NewJobService(db, bc, dkTestService)
 
+	// no logs on tests
+	log.Logger = log.Logger.Level(zerolog.Disabled)
 }

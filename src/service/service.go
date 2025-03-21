@@ -13,15 +13,11 @@ import (
 
 func InitServices() (*docker.DkService, *jobs.JobService) {
 	// common for services
-	db := common.InitDB()
-	bc, ctx := models.NewBroadcastChannel()
-	// inject broadcast channel to database
-	db = db.WithContext(ctx)
-
+	db, bc := common.InitDB()
 	clientList := docker.InitDockerClients()
 
 	dkService := docker.NewDockerService(clientList)
-	jobService := jobs.NewJobService(db, bc, dkService) // depends on docker service
+	jobService := jobs.NewJobService(db, bc, dkService)
 
 	cleanupOrphanJobs(db, dkService)
 

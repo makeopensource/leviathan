@@ -1,12 +1,10 @@
 package jobs
 
 import (
-	"connectrpc.com/connect"
 	"context"
 	"fmt"
 	"github.com/google/uuid"
 	com "github.com/makeopensource/leviathan/common"
-	v2 "github.com/makeopensource/leviathan/generated/jobs/v1"
 	v1 "github.com/makeopensource/leviathan/generated/types/v1"
 	"github.com/makeopensource/leviathan/models"
 	"github.com/makeopensource/leviathan/service/docker"
@@ -94,55 +92,29 @@ func (job *JobService) CancelJob(jobUuid string) {
 	job.queue.CancelJob(jobUuid)
 }
 
-// WaitForJobAndLogs blocks until job reaches, Cancelled, Complete, error
-func (job *JobService) WaitForJobAndLogs(ctx context.Context, jobUuid string) (*models.Job, string, error) {
-	jobInf, complete, content, err := job.checkJob(jobUuid)
-	if err != nil {
-		return nil, "", err
-	}
-	if complete {
-		return jobInf, content, nil
-	}
-
-	jobInfoCh := job.SubToJob(jobUuid)
-	defer job.UnsubToJob(jobUuid)
-
-	logContext, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	logsCh := job.ListenToJobLogs(logContext, jobInf)
-	if err != nil {
-		return nil, "", err
-	}
-
+// WaitForJobAndLogs blocks until job ends
+func (job *JobService) WaitForJobAndLogs(jobUuid string) (*models.Job, string, error) {
 	var jobInfo *models.Job
-	var logs string
-	var jobOk = false
+	var outerLogs string
 
-	// Keep listening until channel closes, implying job is complete
-	for {
-		if jobOk {
-			// read log file one last time
-			content := com.ReadLogFile(jobInfo.OutputLogFilePath)
-			return jobInfo, content, nil
-		}
+	err := job.StreamJobAndLogs(
+		context.Background(),
+		jobUuid,
+		func(jobInf *models.Job, logs string) error {
+			jobInfo = jobInf
+			outerLogs = logs
+			return nil
+		},
+	)
 
-		select {
-		case logsTmp, ok := <-logsCh:
-			if ok && logs != logsTmp {
-				logs = logsTmp
-			}
-		case jobTmp, ok := <-jobInfoCh:
-			jobOk = !ok
-			if ok {
-				jobInfo = jobTmp
-			}
-		case <-ctx.Done():
-			return jobInfo, logs, fmt.Errorf("context canceled")
-		}
-	}
+	return jobInfo, outerLogs, err
 }
 
-func (job *JobService) StreamJobAndLogs(ctx context.Context, jobUuid string, stream *connect.ServerStream[v2.JobLogsResponse]) error {
+func (job *JobService) StreamJobAndLogs(
+	ctx context.Context,
+	jobUuid string,
+	streamFunc func(jobInf *models.Job, logs string) error,
+) error {
 	jobInfo, complete, flogs, err := job.checkJob(jobUuid)
 	if err != nil {
 		return err
@@ -150,8 +122,7 @@ func (job *JobService) StreamJobAndLogs(ctx context.Context, jobUuid string, str
 
 	// send initial job data
 	if jobInfo != nil {
-		err := sendJobToStream(stream, jobInfo, flogs)
-		if err != nil {
+		if err := streamFunc(jobInfo, flogs); err != nil {
 			return err
 		}
 	}
@@ -162,15 +133,11 @@ func (job *JobService) StreamJobAndLogs(ctx context.Context, jobUuid string, str
 	jobInfoCh := job.SubToJob(jobInfo.JobId)
 	defer job.UnsubToJob(jobUuid)
 
-	// since ListenToJobLogs reads logs in an infinite loop,
+	// since job.ListenToJobLogs reads logs in an infinite loop,
 	// always cancel this context, exiting the loop
 	logContext, cancel := context.WithCancel(context.Background())
 	defer cancel()
-
 	logsCh := job.ListenToJobLogs(logContext, jobInfo)
-	if err != nil {
-		return err
-	}
 
 	var logs string
 	var jobOk = false
@@ -178,25 +145,19 @@ func (job *JobService) StreamJobAndLogs(ctx context.Context, jobUuid string, str
 	// Keep listening until channel closes, indicating job is complete
 	for {
 		if jobOk {
-			content := com.ReadLogFile(jobInfo.OutputLogFilePath)
-			if err != nil {
-				log.Warn().Err(err).Str("path", jobInfo.OutputLogFilePath).Msg("Failed to read job log file")
-			}
-			err = sendJobToStream(stream, jobInfo, content)
-			if err != nil {
+			cancel()                                              // stop updating log channel
+			content := com.ReadLogFile(jobInfo.OutputLogFilePath) // final read from the log file
+			if err := streamFunc(jobInfo, content); err != nil {
 				return err
 			}
-			// job done
 			return nil
 		}
-
 		select {
 		case logsTmp, ok := <-logsCh:
 			if ok {
 				log.Debug().Msg("job logs changed")
 				logs = logsTmp
-				err := sendJobToStream(stream, jobInfo, logsTmp)
-				if err != nil {
+				if err := streamFunc(jobInfo, logsTmp); err != nil {
 					return err
 				}
 			}
@@ -205,8 +166,7 @@ func (job *JobService) StreamJobAndLogs(ctx context.Context, jobUuid string, str
 			if ok && jobInfo != nil && jobTmp.Status != jobInfo.Status {
 				log.Debug().Msgf("job status changed from %s to %s", jobInfo.Status, jobTmp.Status)
 				jobInfo = jobTmp
-				err := sendJobToStream(stream, jobInfo, logs)
-				if err != nil {
+				if err := streamFunc(jobInfo, logs); err != nil {
 					return err
 				}
 			}
@@ -218,7 +178,7 @@ func (job *JobService) StreamJobAndLogs(ctx context.Context, jobUuid string, str
 
 func (job *JobService) ListenToJobLogs(ctx context.Context, jobInfo *models.Job) chan string {
 	logChannel := make(chan string, 2)
-	go func() {
+	go func(ctx context.Context) {
 		prevLength := 0
 		ticker := time.NewTicker(2 * time.Second)
 		defer ticker.Stop()
@@ -227,18 +187,19 @@ func (job *JobService) ListenToJobLogs(ctx context.Context, jobInfo *models.Job)
 			select {
 			case <-ticker.C:
 				content := com.ReadLogFile(jobInfo.OutputLogFilePath)
-				// send if content changed
-				if len(content) > prevLength {
-					log.Debug().Str(com.JobLogKey, jobInfo.JobId).Msgf("sending log, length changed from %d to %d", prevLength, len(content))
-					prevLength = len(content)
+				contLen := len(content)
+				if contLen > prevLength { // send if content changed
+					log.Debug().Str(com.JobLogKey, jobInfo.JobId).Msgf("sending log, length changed from %d to %d", prevLength, contLen)
+					prevLength = contLen
 					logChannel <- content
 				}
 			case <-ctx.Done():
+				close(logChannel)
 				log.Debug().Str(com.JobLogKey, jobInfo.JobId).Msg("stopping listening for logs")
 				return
 			}
 		}
-	}()
+	}(ctx)
 
 	return logChannel
 }
@@ -296,21 +257,6 @@ func setupLogFile(jobId string) (string, error, string) {
 	}
 
 	return full, nil, ""
-}
-
-func sendJobToStream(stream *connect.ServerStream[v2.JobLogsResponse], jobInfo *models.Job, logs string) error {
-	err := stream.Send(&v2.JobLogsResponse{
-		JobInfo: &v2.JobStatus{
-			JobId:         jobInfo.JobId,
-			Status:        string(jobInfo.Status),
-			StatusMessage: jobInfo.StatusMessage,
-		},
-		Logs: logs,
-	})
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 // zerolog log with context, intended for job logs

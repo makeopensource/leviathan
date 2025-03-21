@@ -1,12 +1,10 @@
 package jobs
 
 import (
-	"connectrpc.com/connect"
 	"context"
 	"fmt"
 	"github.com/google/uuid"
 	com "github.com/makeopensource/leviathan/common"
-	v2 "github.com/makeopensource/leviathan/generated/jobs/v1"
 	v1 "github.com/makeopensource/leviathan/generated/types/v1"
 	"github.com/makeopensource/leviathan/models"
 	"github.com/makeopensource/leviathan/service/docker"
@@ -142,7 +140,11 @@ func (job *JobService) WaitForJobAndLogs(ctx context.Context, jobUuid string) (*
 	}
 }
 
-func (job *JobService) StreamJobAndLogs(ctx context.Context, jobUuid string, stream *connect.ServerStream[v2.JobLogsResponse]) error {
+func (job *JobService) StreamJobAndLogs(
+	ctx context.Context,
+	jobUuid string,
+	streamFunc func(jobInf *models.Job, logs string) error,
+) error {
 	jobInfo, complete, flogs, err := job.checkJob(jobUuid)
 	if err != nil {
 		return err
@@ -150,7 +152,7 @@ func (job *JobService) StreamJobAndLogs(ctx context.Context, jobUuid string, str
 
 	// send initial job data
 	if jobInfo != nil {
-		err := sendJobToStream(stream, jobInfo, flogs)
+		err := streamFunc(jobInfo, flogs)
 		if err != nil {
 			return err
 		}
@@ -182,7 +184,7 @@ func (job *JobService) StreamJobAndLogs(ctx context.Context, jobUuid string, str
 			if err != nil {
 				log.Warn().Err(err).Str("path", jobInfo.OutputLogFilePath).Msg("Failed to read job log file")
 			}
-			err = sendJobToStream(stream, jobInfo, content)
+			err = streamFunc(jobInfo, content)
 			if err != nil {
 				return err
 			}
@@ -195,7 +197,7 @@ func (job *JobService) StreamJobAndLogs(ctx context.Context, jobUuid string, str
 			if ok {
 				log.Debug().Msg("job logs changed")
 				logs = logsTmp
-				err := sendJobToStream(stream, jobInfo, logsTmp)
+				err := streamFunc(jobInfo, logsTmp)
 				if err != nil {
 					return err
 				}
@@ -205,7 +207,7 @@ func (job *JobService) StreamJobAndLogs(ctx context.Context, jobUuid string, str
 			if ok && jobInfo != nil && jobTmp.Status != jobInfo.Status {
 				log.Debug().Msgf("job status changed from %s to %s", jobInfo.Status, jobTmp.Status)
 				jobInfo = jobTmp
-				err := sendJobToStream(stream, jobInfo, logs)
+				err := streamFunc(jobInfo, logs)
 				if err != nil {
 					return err
 				}
@@ -296,21 +298,6 @@ func setupLogFile(jobId string) (string, error, string) {
 	}
 
 	return full, nil, ""
-}
-
-func sendJobToStream(stream *connect.ServerStream[v2.JobLogsResponse], jobInfo *models.Job, logs string) error {
-	err := stream.Send(&v2.JobLogsResponse{
-		JobInfo: &v2.JobStatus{
-			JobId:         jobInfo.JobId,
-			Status:        string(jobInfo.Status),
-			StatusMessage: jobInfo.StatusMessage,
-		},
-		Logs: logs,
-	})
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 // zerolog log with context, intended for job logs

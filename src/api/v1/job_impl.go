@@ -59,7 +59,18 @@ func (job *JobServer) NewJob(ctx context.Context, req *connect.Request[v1.NewJob
 }
 
 func (job *JobServer) StreamStatus(ctx context.Context, req *connect.Request[v1.JobLogRequest], stream *connect.ServerStream[v1.JobLogsResponse]) error {
-	err := job.Service.StreamJobAndLogs(ctx, req.Msg.GetJobId(), stream)
+	streamFunc := func(jobInfo *models.Job, logs string) error {
+		return stream.Send(&v1.JobLogsResponse{
+			JobInfo: &v1.JobStatus{
+				JobId:         jobInfo.JobId,
+				Status:        string(jobInfo.Status),
+				StatusMessage: jobInfo.StatusMessage,
+			},
+			Logs: logs,
+		})
+	}
+
+	err := job.Service.StreamJobAndLogs(ctx, req.Msg.GetJobId(), streamFunc)
 	if err != nil {
 		return err
 	}

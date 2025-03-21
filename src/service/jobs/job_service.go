@@ -122,8 +122,7 @@ func (job *JobService) StreamJobAndLogs(
 
 	// send initial job data
 	if jobInfo != nil {
-		err := streamFunc(jobInfo, flogs)
-		if err != nil {
+		if err := streamFunc(jobInfo, flogs); err != nil {
 			return err
 		}
 	}
@@ -134,15 +133,11 @@ func (job *JobService) StreamJobAndLogs(
 	jobInfoCh := job.SubToJob(jobInfo.JobId)
 	defer job.UnsubToJob(jobUuid)
 
-	// since ListenToJobLogs reads logs in an infinite loop,
+	// since job.ListenToJobLogs reads logs in an infinite loop,
 	// always cancel this context, exiting the loop
 	logContext, cancel := context.WithCancel(context.Background())
 	defer cancel()
-
 	logsCh := job.ListenToJobLogs(logContext, jobInfo)
-	if err != nil {
-		return err
-	}
 
 	var logs string
 	var jobOk = false
@@ -150,25 +145,19 @@ func (job *JobService) StreamJobAndLogs(
 	// Keep listening until channel closes, indicating job is complete
 	for {
 		if jobOk {
-			content := com.ReadLogFile(jobInfo.OutputLogFilePath)
-			if err != nil {
-				log.Warn().Err(err).Str("path", jobInfo.OutputLogFilePath).Msg("Failed to read job log file")
-			}
-			err = streamFunc(jobInfo, content)
-			if err != nil {
+			cancel()                                              // stop updating log channel
+			content := com.ReadLogFile(jobInfo.OutputLogFilePath) // final read from the log file
+			if err := streamFunc(jobInfo, content); err != nil {
 				return err
 			}
-			// job done
 			return nil
 		}
-
 		select {
 		case logsTmp, ok := <-logsCh:
 			if ok {
 				log.Debug().Msg("job logs changed")
 				logs = logsTmp
-				err := streamFunc(jobInfo, logsTmp)
-				if err != nil {
+				if err := streamFunc(jobInfo, logsTmp); err != nil {
 					return err
 				}
 			}
@@ -177,8 +166,7 @@ func (job *JobService) StreamJobAndLogs(
 			if ok && jobInfo != nil && jobTmp.Status != jobInfo.Status {
 				log.Debug().Msgf("job status changed from %s to %s", jobInfo.Status, jobTmp.Status)
 				jobInfo = jobTmp
-				err := streamFunc(jobInfo, logs)
-				if err != nil {
+				if err := streamFunc(jobInfo, logs); err != nil {
 					return err
 				}
 			}
@@ -190,7 +178,7 @@ func (job *JobService) StreamJobAndLogs(
 
 func (job *JobService) ListenToJobLogs(ctx context.Context, jobInfo *models.Job) chan string {
 	logChannel := make(chan string, 2)
-	go func() {
+	go func(ctx context.Context) {
 		prevLength := 0
 		ticker := time.NewTicker(2 * time.Second)
 		defer ticker.Stop()
@@ -199,18 +187,19 @@ func (job *JobService) ListenToJobLogs(ctx context.Context, jobInfo *models.Job)
 			select {
 			case <-ticker.C:
 				content := com.ReadLogFile(jobInfo.OutputLogFilePath)
-				// send if content changed
-				if len(content) > prevLength {
-					log.Debug().Str(com.JobLogKey, jobInfo.JobId).Msgf("sending log, length changed from %d to %d", prevLength, len(content))
-					prevLength = len(content)
+				contLen := len(content)
+				if contLen > prevLength { // send if content changed
+					log.Debug().Str(com.JobLogKey, jobInfo.JobId).Msgf("sending log, length changed from %d to %d", prevLength, contLen)
+					prevLength = contLen
 					logChannel <- content
 				}
 			case <-ctx.Done():
+				close(logChannel)
 				log.Debug().Str(com.JobLogKey, jobInfo.JobId).Msg("stopping listening for logs")
 				return
 			}
 		}
-	}()
+	}(ctx)
 
 	return logChannel
 }

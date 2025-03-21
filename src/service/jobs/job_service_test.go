@@ -241,16 +241,12 @@ func setupTest() {
 func initServices() {
 	common.InitConfig()
 	// common for services
-	db := common.InitDB()
-	bc, ctx := models.NewBroadcastChannel()
-	// inject broadcast channel to database
-	db = db.WithContext(ctx)
-	// no logs for tests
-	log.Logger = log.Logger.Level(zerolog.Disabled)
-
+	db, bc := common.InitDB()
 	clientList := docker.InitDockerClients()
 
 	dkTestService = docker.NewDockerService(clientList)
-	jobTestService = NewJobService(db, bc, dkTestService) // depends on docker service
+	jobTestService = NewJobService(db, bc, dkTestService)
 
+	// no logs on tests
+	log.Logger = log.Logger.Level(zerolog.Disabled)
 }

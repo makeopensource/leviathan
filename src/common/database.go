@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 )
 
-func InitDB() *gorm.DB {
+func InitDB() (*gorm.DB, *models.BroadcastChannel) {
 	var connection gorm.Dialector
 	var config *gorm.Config
 
@@ -30,7 +30,10 @@ func InitDB() *gorm.DB {
 		log.Fatal().Err(err).Msgf("failed to migrate database")
 	}
 
-	return db
+	bc, ctx := models.NewBroadcastChannel()
+	db = db.WithContext(ctx) // inject broadcast channel to database
+
+	return db, bc
 }
 
 func useSqlite() (gorm.Dialector, *gorm.Config) {

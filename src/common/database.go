@@ -8,6 +8,7 @@ import (
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"path/filepath"
+	"time"
 )
 
 func InitDB() (*gorm.DB, *models.BroadcastChannel) {
@@ -23,6 +24,16 @@ func InitDB() (*gorm.DB, *models.BroadcastChannel) {
 	db, err := gorm.Open(connection, config)
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to connect to database")
+	}
+
+	if EnablePostgres.GetBool() {
+		sqlDB, err := db.DB()
+		if err != nil {
+			log.Fatal().Err(err).Msg("failed to connect to database")
+		}
+		sqlDB.SetMaxIdleConns(10)           // SetMaxIdleConns sets the maximum number of connections in the idle connection pool.
+		sqlDB.SetMaxOpenConns(100)          // SetMaxOpenConns sets the maximum number of open connections to the database.
+		sqlDB.SetConnMaxLifetime(time.Hour) // SetConnMaxLifetime sets the maximum amount of time a connection may be reused.
 	}
 
 	err = db.AutoMigrate(&models.Job{})

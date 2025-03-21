@@ -42,7 +42,7 @@ dev:
 
 bdrn:
     just dk
-    docker run --rm --network=host -v /var/run/docker.sock:/var/run/docker.sock -v appdata:/app/appdata/ {{imageName}}
+    docker run --rm --network=host -v /var/run/docker.sock:/var/run/docker.sock {{imageName}}
 
 alias dc := dclean
 dclean:

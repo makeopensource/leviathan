@@ -1,7 +1,6 @@
 package jobs
 
 import (
-	"context"
 	"fmt"
 	"github.com/makeopensource/leviathan/common"
 	v1 "github.com/makeopensource/leviathan/generated/types/v1"
@@ -218,7 +217,7 @@ func setupJobProcess(studentCodePath string, timeout time.Duration) string {
 }
 
 func testJob(t *testing.T, jobId string, correctOutput string, correctStatus models.JobStatus) {
-	jobInfo, logs, err := jobTestService.WaitForJobAndLogs(context.Background(), jobId)
+	jobInfo, logs, err := jobTestService.WaitForJobAndLogs(jobId)
 	if err != nil {
 		t.Fatalf("Error waiting for job: %v", err)
 		return

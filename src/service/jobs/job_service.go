@@ -92,52 +92,22 @@ func (job *JobService) CancelJob(jobUuid string) {
 	job.queue.CancelJob(jobUuid)
 }
 
-// WaitForJobAndLogs blocks until job reaches, Cancelled, Complete, error
-func (job *JobService) WaitForJobAndLogs(ctx context.Context, jobUuid string) (*models.Job, string, error) {
-	jobInf, complete, content, err := job.checkJob(jobUuid)
-	if err != nil {
-		return nil, "", err
-	}
-	if complete {
-		return jobInf, content, nil
-	}
-
-	jobInfoCh := job.SubToJob(jobUuid)
-	defer job.UnsubToJob(jobUuid)
-
-	logContext, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	logsCh := job.ListenToJobLogs(logContext, jobInf)
-	if err != nil {
-		return nil, "", err
-	}
-
+// WaitForJobAndLogs blocks until job ends
+func (job *JobService) WaitForJobAndLogs(jobUuid string) (*models.Job, string, error) {
 	var jobInfo *models.Job
-	var logs string
-	var jobOk = false
+	var outerLogs string
 
-	// Keep listening until channel closes, implying job is complete
-	for {
-		if jobOk {
-			// read log file one last time
-			content := com.ReadLogFile(jobInfo.OutputLogFilePath)
-			return jobInfo, content, nil
-		}
+	err := job.StreamJobAndLogs(
+		context.Background(),
+		jobUuid,
+		func(jobInf *models.Job, logs string) error {
+			jobInfo = jobInf
+			outerLogs = logs
+			return nil
+		},
+	)
 
-		select {
-		case logsTmp, ok := <-logsCh:
-			if ok && logs != logsTmp {
-				logs = logsTmp
-			}
-		case jobTmp, ok := <-jobInfoCh:
-			jobOk = !ok
-			if ok {
-				jobInfo = jobTmp
-			}
-		case <-ctx.Done():
-			return jobInfo, logs, fmt.Errorf("context canceled")
-		}
-	}
+	return jobInfo, outerLogs, err
 }
 
 func (job *JobService) StreamJobAndLogs(

@@ -82,7 +82,7 @@ func NewLocalClient() (*DkClient, error) {
 // BuildImageFromDockerfile Build image
 func (c *DkClient) BuildImageFromDockerfile(dockerfilePath string, tagName string) error {
 	// prevent concurrent duplicate image builds
-	tagLock, _ := c.imgMap.LoadOrStore(tagName, models.NewCountMutex())
+	tagLock := c.imgMap.LoadOrStore(tagName, models.NewCountMutex())
 	tagLock.Lock()
 	defer tagLock.Unlock()
 

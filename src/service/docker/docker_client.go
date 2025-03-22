@@ -9,7 +9,6 @@ import (
 	"github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/client"
-	"github.com/makeopensource/leviathan/common"
 	dktypes "github.com/makeopensource/leviathan/generated/docker_rpc/v1"
 	"github.com/makeopensource/leviathan/models"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
@@ -43,7 +42,7 @@ func (c *DkClient) BuildImageFromDockerfile(dockerfilePath string, tagName strin
 	tagLock.Lock()
 	defer tagLock.Unlock()
 
-	dockerfileTar, dockerfile, err := common.TarFile(dockerfilePath)
+	dockerfileTar, dockerfile, err := tarFile(dockerfilePath)
 	if err != nil {
 		return fmt.Errorf("failed to tar file %s", dockerfilePath)
 	}
@@ -69,7 +68,7 @@ func (c *DkClient) BuildImageFromDockerfile(dockerfilePath string, tagName strin
 		}
 	}(resp.Body)
 
-	logWriter := &common.LogWriter{LoggerFunc: func(s string) {
+	logWriter := &LogWriter{LoggerFunc: func(s string) {
 		log.Debug().Str("image", tagName).Msgf("%s", s)
 	}}
 	// Print the build output
@@ -201,9 +200,7 @@ func (c *DkClient) RemoveContainer(containerID string, force bool, removeVolumes
 // CopyToContainer copies a specific dir directly into the container
 // stolen from https://github.com/testcontainers/testcontainers-go/blob/f09b3af2cb985a17bd2b2eaaa5d384882ded8e28/docker.go#L633
 func (c *DkClient) CopyToContainer(containerID string, submissionDirPath string) error {
-	//log.Debug().Msgf("Copying files to container %s", containerDirectory)
-
-	jobBytes, err := common.TarDir(submissionDirPath, 775)
+	jobBytes, err := tarDir(submissionDirPath, 775)
 	if err != nil {
 		log.Error().Err(err).Msgf("failed to convert files to tar")
 		return fmt.Errorf("failed to convert files to tar")
@@ -281,4 +278,15 @@ func checkImageLockStatus(tagName string, mut *models.CountingMutex, imageMap *I
 	} else {
 		log.Debug().Msgf("tag: %s has locks waiting: %d from image queue", tagName, c)
 	}
+}
+
+// LogWriter writer for logger
+// used to print debug logs from a dockerfile build
+type LogWriter struct {
+	LoggerFunc func(string)
+}
+
+func (z *LogWriter) Write(p []byte) (n int, err error) {
+	z.LoggerFunc(string(p))
+	return len(p), nil
 }

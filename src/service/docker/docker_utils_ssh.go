@@ -1,5 +1,7 @@
 package docker
 
+// ssh utils for docker connection
+
 import (
 	"context"
 	"crypto/rand"

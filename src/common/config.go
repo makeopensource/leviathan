@@ -12,6 +12,8 @@ import (
 	"strconv"
 )
 
+const DefaultFilePerm = 0o775
+
 func InitConfig() {
 	_, ok := os.LookupEnv("LEVIATHAN_IS_DOCKER")
 	if !ok {

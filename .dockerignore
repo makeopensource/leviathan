@@ -25,3 +25,4 @@ appdata
 /spec/generated/
 /**/node_modules
 /**/.parcel-cache
+/**/appdata*

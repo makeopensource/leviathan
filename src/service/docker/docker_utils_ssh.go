@@ -55,26 +55,26 @@ func sshDialer(sshClient *ssh.Client) func(ctx context.Context, network string, 
 
 func saveHostKey(machine models.MachineOptions) func(hostname string, remote net.Addr, key ssh.PublicKey) error {
 	return func(hostname string, remote net.Addr, key ssh.PublicKey) error {
-		log.Debug().Msgf("Empty public key for %s, public key will be saved on connect", machine.Name)
+		log.Debug().Msgf("Empty public key for %s, public key will be saved on connect", machine.Name())
 
-		comment := fmt.Sprintf("added by leviathan for machine %s on %s", machine.Name, time.Now().String())
+		comment := fmt.Sprintf("added by leviathan for machine %s on %s", machine.Name(), time.Now().String())
 		stringKey, err := publicKeyToString(key, comment)
 		if err != nil {
-			return fmt.Errorf("unable to convert public key for machine %s ", machine.Name)
+			return fmt.Errorf("unable to convert public key for machine %s ", machine.Name())
 		}
 
-		machine.Publickey = stringKey
+		machine.RemotePublickey = stringKey
 		writeMachineToConfigFile(machine)
 		return nil
 	}
 }
 
 func writeMachineToConfigFile(machine models.MachineOptions) {
-	machineKey := fmt.Sprintf("%s.%s", common.ClientsSSH.ConfigKey, machine.Name)
+	machineKey := fmt.Sprintf("%s.%s", common.ClientsSSH.ConfigKey, machine.Name())
 	viper.Set(machineKey, machine)
 	err := viper.WriteConfig()
 	if err != nil {
-		log.Warn().Err(err).Msgf("failed to update machine %s public key to config", machine.Name)
+		log.Warn().Err(err).Msgf("failed to update machine %s public key to config", machine.Name())
 	}
 }
 
@@ -104,15 +104,31 @@ func GenerateKeyPair() (privateKey []byte, publicKey []byte, err error) {
 	return privatePEM, pubKeyBytes, nil
 }
 
-func InitKeyPairFile() (priv string, pub string) {
+// initKeyPairFile creates RSA key-pair files,
+// if they do not exist, otherwise skips generation
+//
+// the generated keys can be found in common.SSHConfigFolder
+func initKeyPairFile() {
+	basePath := common.SSHConfigFolder.GetStr()
+	privateKeyPath := fmt.Sprintf("%s/%s", basePath, "id_rsa")
+	publicKeyPath := fmt.Sprintf("%s/%s", basePath, "id_rsa.pub")
+
+	defer log.Info().
+		Msgf("to add the public key to other hosts use\nssh-copy-id -i %s <user>@<remote_host>\n", publicKeyPath)
+
+	logF := log.Info().
+		Str("private_key_file", privateKeyPath).
+		Str("public_key_file", publicKeyPath)
+
+	if fileExists(privateKeyPath) && fileExists(publicKeyPath) {
+		logF.Msg("found existing keys... skipping generation")
+		return
+	}
+
 	privateKey, publicKey, err := GenerateKeyPair()
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to generate key pair")
 	}
-
-	basePath := common.SSHConfigFolder.GetStr()
-	privateKeyPath := fmt.Sprintf("%s/%s", basePath, "id_rsa")
-	publicKeyPath := fmt.Sprintf("%s/%s", basePath, "id_rsa.pub")
 
 	if err := os.WriteFile(privateKeyPath, privateKey, 0600); err != nil {
 		log.Fatal().Err(err).Msg("Failed to save private key")
@@ -121,12 +137,15 @@ func InitKeyPairFile() (priv string, pub string) {
 		log.Fatal().Err(err).Msg("Failed to save public key")
 	}
 
-	log.Info().
-		Str("private_key_file", privateKeyPath).
-		Str("public_key_file", publicKeyPath).
-		Msg("Generated new SSH key pair")
+	logF.Msg("Generated new SSH key pair")
+}
 
-	return privateKeyPath, publicKeyPath
+func fileExists(filename string) bool {
+	info, err := os.Stat(filename)
+	if os.IsNotExist(err) {
+		return false
+	}
+	return !info.IsDir()
 }
 
 func LoadPrivateKey() ([]byte, error) {

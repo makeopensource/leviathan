@@ -62,7 +62,7 @@ func InitConfig() {
 	sshFolderPath := setIfEnvPresentOrDefault(
 		sshDirKey,
 		"SSH_CONFIG_DIR",
-		fmt.Sprintf("%s/%s", baseDir, "ssh_config"),
+		fmt.Sprintf("%s/%s", configDir, "ssh_config"),
 	)
 
 	err = makeDirectories([]string{submissionFolderPath, outputFolderPath, sshFolderPath})
@@ -162,11 +162,13 @@ func setupDefaultOptions(configDir string) {
 	viper.SetDefault(concurrentJobsKey, 50)
 	viper.SetDefault(clientSSHKey, map[string]models.MachineOptions{
 		"example": {
-			Name:   "example",
-			Enable: false,
-			Host:   "http://localhost:8080",
-			User:   "test",
-			Port:   22,
+			Enable:           false,
+			Host:             "192.168.1.69",
+			Port:             22,
+			User:             "test",
+			Password:         "",
+			RemotePublickey:  "",
+			UsePublicKeyAuth: false,
 		},
 	})
 }

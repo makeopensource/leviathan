@@ -99,7 +99,7 @@ func TestRemoteClientManager_GetLeastJobCountMachineId(t *testing.T) {
 
 func TestNewSSHClientWithPasswordAuth(t *testing.T) {
 	common.InitConfig()
-	InitKeyPairFile()
+	initKeyPairFile()
 
 	// when running this test update the config.yaml with the test machine info
 	cli := getClientList()
@@ -111,6 +111,36 @@ func TestNewSSHClientWithPasswordAuth(t *testing.T) {
 	}
 
 	client, err := NewSSHClientWithPasswordAuth(machine)
+	if err != nil {
+		t.Fatalf("failed create remote docker client %v", err)
+		return
+	}
+
+	images, err := client.ListImages()
+	if err != nil {
+		t.Fatalf("failed list images %v", err)
+		return
+	}
+
+	for _, image := range images {
+		t.Log(image)
+	}
+}
+
+func TestNewSSHClientWithPublicKeyAuth(t *testing.T) {
+	common.InitConfig()
+	initKeyPairFile()
+
+	// when running this test update the config.yaml with the test machine info
+	cli := getClientList()
+	mName := "test"
+	machine, ok := cli[mName]
+	if !ok {
+		t.Fatalf("machine %s not configured", mName)
+		return
+	}
+
+	client, err := NewSSHClientWithPublicKeyAuth(machine)
 	if err != nil {
 		t.Fatalf("failed create remote docker client %v", err)
 		return

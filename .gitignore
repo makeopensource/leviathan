@@ -27,3 +27,4 @@ appdata
 /spec/generated/
 /**/student.py
 .idea/*
+/**/appdata*

@@ -9,6 +9,7 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/stretchr/testify/assert"
+	"os"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -161,22 +162,22 @@ func testJobProcessor(t *testing.T, studentCodePath string, correctOutput string
 }
 
 func setupJobProcess(studentCodePath string, timeout time.Duration) string {
-	graderBytes, err := common.ReadFileBytes(graderFilePath)
+	graderBytes, err := os.ReadFile(graderFilePath)
 	if err != nil {
 		log.Fatal().Err(err).Msg("Error reading grader.py")
 	}
 
-	makefileBytes, err := common.ReadFileBytes(makeFilePath)
+	makefileBytes, err := os.ReadFile(makeFilePath)
 	if err != nil {
 		log.Fatal().Err(err).Msg("Error reading grader.py")
 	}
 
-	studentBytes, err := common.ReadFileBytes(studentCodePath)
+	studentBytes, err := os.ReadFile(studentCodePath)
 	if err != nil {
 		log.Fatal().Err(err).Msg("Error reading student")
 	}
 
-	dockerBytes, err := common.ReadFileBytes(dockerFilePath)
+	dockerBytes, err := os.ReadFile(dockerFilePath)
 	if err != nil {
 		log.Fatal().Err(err).Msg("Error reading docker file")
 	}

@@ -240,13 +240,8 @@ func setupTest() {
 
 func initServices() {
 	common.InitConfig()
-	// common for services
-	db, bc := common.InitDB()
-	clientList := docker.InitDockerClients()
-
-	dkTestService = docker.NewDockerService(clientList)
-	jobTestService = NewJobService(db, bc, dkTestService)
-
+	dkTestService = docker.NewDockerServiceWithClients()
+	jobTestService = NewJobServiceWithDeps(dkTestService)
 	// no logs on tests
 	log.Logger = log.Logger.Level(zerolog.Disabled)
 }

@@ -1,13 +1,10 @@
-package common
+package docker
 
 import (
 	"archive/tar"
-	"bufio"
 	"bytes"
 	"compress/gzip"
-	"encoding/json"
 	"fmt"
-	v1 "github.com/makeopensource/leviathan/generated/types/v1"
 	"github.com/rs/zerolog/log"
 	"io"
 	"os"
@@ -16,69 +13,9 @@ import (
 	"time"
 )
 
-const DefaultFilePerm = 0o775
-
-// CreateTmpJobDir sets up a throwaway dir to store submission files
-// you might be wondering why the '/autolab' subdir, TarDir untars it under its parent dir,
-// so in container this will unpack with 'autolab' as the parent folder
-// why not modify TarDir I tried and, this was easier than modifying whatever is going in that function
-func CreateTmpJobDir(uuid, baseFolder string, files ...*v1.FileUpload) (string, error) {
-	tmpFolder, err := os.MkdirTemp(baseFolder, uuid)
-	if err != nil {
-		return "", err
-	}
-	tmpFolder = fmt.Sprintf("%s/autolab", tmpFolder)
-	err = os.MkdirAll(tmpFolder, os.ModePerm)
-	if err != nil {
-		return "", err
-	}
-
-	for _, file := range files {
-		err := os.WriteFile(
-			fmt.Sprintf("%s/%s", tmpFolder, file.Filename),
-			file.Content,
-			DefaultFilePerm,
-		)
-		if err != nil {
-			return "", err
-		}
-	}
-
-	return tmpFolder, nil
-}
-
-// ReadFileBytes reads a file at the given filepath and returns its content as a byte slice.
-// It handles errors and returns an error if the file cannot be read.
-func ReadFileBytes(filepath string) ([]byte, error) {
-	// Check if the file exists
-	if _, err := os.Stat(filepath); os.IsNotExist(err) {
-		return nil, fmt.Errorf("file not found: %s", filepath)
-	}
-
-	// Open the file for reading
-	file, err := os.Open(filepath)
-	if err != nil {
-		return nil, fmt.Errorf("error opening file: %w", err) // Wrap the error
-	}
-	defer func(file *os.File) {
-		err := file.Close()
-		if err != nil {
-			log.Error().Err(err).Msgf("error closing file: %s", filepath)
-		}
-	}(file) // Important: Close the file when done
-
-	// Read all bytes from the file
-	fileBytes, err := io.ReadAll(file)
-	if err != nil {
-		return nil, fmt.Errorf("error reading file: %w", err) // Wrap the error
-	}
-
-	return fileBytes, nil
-}
-
-// TarDir
+// tarDir
 // stolen from https://github.com/testcontainers/testcontainers-go/blob/f09b3af2cb985a17bd2b2eaaa5d384882ded8e28/docker.go#L633
-func TarDir(src string, fileMode int64) (*bytes.Buffer, error) {
+func tarDir(src string, fileMode int64) (*bytes.Buffer, error) {
 	// always pass src as absolute path
 	abs, err := filepath.Abs(src)
 	if err != nil {
@@ -163,11 +100,11 @@ func TarDir(src string, fileMode int64) (*bytes.Buffer, error) {
 	return buffer, nil
 }
 
-// TarFile make input tar file from file path
+// tarFile make input tar file from file path
 // stolen from https://stackoverflow.com/a/46518557/23258902
 // should not be used in CopyToContainer, which requires different file headers,
 // I think I don't really know
-func TarFile(filePath string) (*bytes.Reader, string, error) {
+func tarFile(filePath string) (*bytes.Reader, string, error) {
 	dockerFile := filepath.Base(filePath)
 
 	buf := new(bytes.Buffer)
@@ -213,70 +150,4 @@ func TarFile(filePath string) (*bytes.Reader, string, error) {
 	}
 
 	return bytes.NewReader(buf.Bytes()), dockerFile, nil
-}
-
-func GetLastLine(file *os.File) (string, error) {
-	stat, err := file.Stat()
-	if err != nil {
-		return "", err
-	}
-
-	var lastLine string
-	buf := make([]byte, 1)
-	offset := stat.Size() - 1
-
-	for {
-		if offset < 0 {
-			break
-		}
-
-		_, err := file.Seek(offset, 0)
-		if err != nil {
-			return "", err
-		}
-
-		_, err = file.Read(buf)
-		if err != nil {
-			return "", err
-		}
-
-		if buf[0] == '\n' && lastLine != "" {
-			break
-		}
-
-		lastLine = string(buf) + lastLine
-		offset--
-	}
-
-	if lastLine == "" {
-		return "", fmt.Errorf("last line is empty")
-	}
-
-	return lastLine, nil
-}
-
-func IsValidJSON(s string) bool {
-	var js json.RawMessage
-	return json.Unmarshal([]byte(s), &js) == nil
-}
-
-func ReadBufLogfile(logPath string) error {
-	file, err := os.Open(logPath)
-	if err != nil {
-		return err
-	}
-
-	reader := bufio.NewScanner(file)
-	reader.Scan()
-
-	return nil
-}
-
-func ReadLogFile(logPath string) string {
-	content, err := os.ReadFile(logPath)
-	if err != nil {
-		log.Warn().Err(err).Msgf("Failed to read job log file at %s", logPath)
-		return ""
-	}
-	return string(content)
 }

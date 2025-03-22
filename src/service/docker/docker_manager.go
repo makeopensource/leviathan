@@ -3,68 +3,43 @@ package docker
 import (
 	"context"
 	"fmt"
+	"github.com/docker/cli/cli/connhelper"
 	"github.com/docker/docker/api/types/system"
 	"github.com/docker/docker/client"
 	"github.com/go-viper/mapstructure/v2"
 	"github.com/makeopensource/leviathan/common"
 	"github.com/makeopensource/leviathan/models"
 	"github.com/rs/zerolog/log"
-	"github.com/spf13/viper"
+	"golang.org/x/crypto/ssh"
+	"net/http"
 	"sync"
 )
 
-type MachineStatus struct {
+type Machine struct {
 	Client     *DkClient
 	ActiveJobs uint64
 }
 
+type MachineMap = map[string]*Machine
+
 type RemoteClientManager struct {
-	Clients map[string]*MachineStatus
+	Clients MachineMap
 	mu      sync.RWMutex
 }
 
-func GetClientList() []models.MachineOptions {
-	var allMachines []models.MachineOptions
-
-	// Get all settings
-	allSettings := viper.Get("clients.ssh")
-	clients, ok := allSettings.(map[string]interface{})
-	if !ok {
-		log.Warn().Msg("clients.ssh not configured, ssh docker clients will not be used")
-		return allMachines
-	}
-
-	for name, info := range clients {
-		var options models.MachineOptions
-
-		// Decode using mapstructure
-		err := mapstructure.Decode(info, &options)
-		if err != nil {
-			log.Warn().Err(err).Msgf("Error decoding configuration structure for %s", name)
-			continue
-		}
-		// Set the name manually since it's not part of the nested structure
-		options.Name = name
-		if options.Enable {
-			allMachines = append(allMachines, options)
-			log.Info().Any("options", options).Msgf("found machine config: %s", name)
-		} else {
-			log.Debug().Any("options", options).Msgf("found machine config: %s, but it was disabled", name)
-		}
-	}
-
-	return allMachines
-}
-
-func InitDockerClients() *RemoteClientManager {
-	// contains clients loaded from config
-	untestedClientList := GetClientList()
-	// contains final connected list
-	clientList := map[string]*MachineStatus{}
+func NewRemoteClientManager() *RemoteClientManager {
+	untestedClientList := getClientList()
+	clientList := MachineMap{} // contains final connected list
 
 	for _, machine := range untestedClientList {
-		connStr := fmt.Sprintf("%s@%s:%d", machine.User, machine.Host, machine.Port)
-		remoteClient, err := NewSSHClient(connStr)
+		var remoteClient *DkClient
+		var err error
+
+		if machine.Password != "" {
+			remoteClient, err = NewSSHClientWithPasswordAuth(machine)
+		} else {
+			remoteClient, err = NewSSHClient(machine)
+		}
 		if err != nil {
 			log.Error().Err(err).Msgf("Failed to setup remote docker client: %s", machine.Name)
 			continue
@@ -72,11 +47,11 @@ func InitDockerClients() *RemoteClientManager {
 
 		info, err := testClientConn(remoteClient.Client)
 		if err != nil {
-			log.Warn().Err(err).Msgf("Client failed to connect: %s", machine.Name)
+			log.Warn().Err(err).Msgf("Remote docker client failed to connect: %s", machine.Name)
 			continue
 		}
 
-		clientList[info.ID] = &MachineStatus{
+		clientList[info.ID] = &Machine{
 			Client:     remoteClient,
 			ActiveJobs: 0,
 		}
@@ -92,21 +67,115 @@ func InitDockerClients() *RemoteClientManager {
 		if err != nil {
 			log.Warn().Err(err).Msgf("Client failed to connect: localdocker")
 		} else {
-			clientList[info.ID] = &MachineStatus{
+			clientList[info.ID] = &Machine{
 				Client:     localClient,
 				ActiveJobs: 0,
 			}
 		}
 	} else {
-		log.Warn().Msgf("Local docker is disabled in config")
+		log.Info().Msgf("Local docker is disabled in config")
 	}
 
-	if len(clientList) == 0 {
-		// machines should always be available
+	if len(clientList) < 1 {
+		// at least a single machine should always be available
 		log.Fatal().Msgf("No docker clients connected, check your config")
 	}
 
 	return &RemoteClientManager{Clients: clientList, mu: sync.RWMutex{}}
+}
+
+// NewSSHClient connects to a remote docker host using a public private auth.
+//
+// It is assumed host running leviathan has done the necessary SSH setup, via sshd or other ssh programs
+// and the remote host loaded is accessible via SSH
+func NewSSHClient(machine models.MachineOptions) (*DkClient, error) {
+	connectionString := fmt.Sprintf("%s@%s:%d", machine.User, machine.Host, machine.Port)
+	helper, err := connhelper.GetConnectionHelper(fmt.Sprintf("ssh://%s", connectionString))
+	if err != nil {
+		log.Error().Err(err).Msgf("connection string: %s", connectionString)
+		return nil, err
+	}
+
+	httpClient := &http.Client{
+		Transport: &http.Transport{
+			DialContext: helper.Dialer,
+		},
+	}
+
+	newClient, err := client.NewClientWithOpts(
+		client.WithHTTPClient(httpClient),
+		client.WithHost(helper.Host),
+		client.WithDialContext(helper.Dialer),
+		client.WithAPIVersionNegotiation(),
+	)
+
+	if err != nil {
+		log.Error().Err(err).Msgf("failed create remote docker client with connectionString %s", connectionString)
+		return nil, fmt.Errorf("unable to connect to docker client")
+	}
+
+	return NewDkClient(newClient), nil
+}
+
+// NewSSHClientWithPasswordAuth connects to a remote docker host using a password.
+//
+// It is assumed machine models.MachineOptions has the correct password set.
+//
+// if the public key is empty then leviathan will save the public key on connection
+// else it will verify the set public key
+func NewSSHClientWithPasswordAuth(machine models.MachineOptions) (*DkClient, error) {
+	sshHost := fmt.Sprintf("%s:%d", machine.Host, machine.Port)
+	// Create an SSH client configuration.
+	config := &ssh.ClientConfig{
+		User: machine.User,
+		Auth: []ssh.AuthMethod{
+			ssh.Password(machine.Password),
+		},
+		HostKeyCallback: saveHostKey(machine),
+	}
+
+	if machine.Publickey != "" {
+		log.Debug().Msgf("Verifying public key for %s", machine.Name)
+		pubkey, err := stringToPublicKey(machine.Publickey)
+		if err != nil {
+			return nil, err
+		}
+
+		config.HostKeyCallback = ssh.FixedHostKey(pubkey)
+	}
+
+	sshClient, err := ssh.Dial("tcp", sshHost, config)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create ssh client: %v", err)
+	}
+
+	// Create a Docker client using the custom dialer.
+	newClient, err := client.NewClientWithOpts(
+		client.WithHost("tcp://"+sshHost), //use the remote host.
+		client.WithDialContext(sshDialer(sshClient)),
+		client.WithAPIVersionNegotiation(),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("unable to connect to docker client")
+	}
+
+	return NewDkClient(newClient), nil
+}
+
+// NewLocalClient connects to the local docker host.
+//
+// It is assumed the docker daemon is running and is accessible by leviathan
+func NewLocalClient() (*DkClient, error) {
+	cli, err := client.NewClientWithOpts(
+		client.FromEnv,
+		client.WithAPIVersionNegotiation(),
+	)
+	if err != nil {
+		log.Error().Err(err).Msgf("failed create local docker client")
+		return nil, fmt.Errorf("unable to create docker client")
+	}
+
+	return NewDkClient(cli), nil
 }
 
 // GetLeastJobCountMachineId decides which machine the job run on
@@ -176,6 +245,38 @@ func (man *RemoteClientManager) DecreaseJobCount(id string) {
 	if mac.ActiveJobs > 0 {
 		mac.ActiveJobs--
 	}
+}
+
+// getClientList loads clients from config, if client has 'enable: false' it will be skipped
+func getClientList() map[string]models.MachineOptions {
+	var machineMap = map[string]models.MachineOptions{}
+
+	// Get all settings
+	allSettings := common.ClientsSSH.GetAny()
+	clients, ok := allSettings.(map[string]interface{})
+	if !ok {
+		log.Warn().Msg("clients.ssh not configured, ssh docker clients will not be used")
+		return machineMap
+	}
+
+	for name, info := range clients {
+		var options models.MachineOptions
+		err := mapstructure.Decode(info, &options)
+		if err != nil {
+			log.Warn().Err(err).Msgf("Error decoding configuration structure for %s", name)
+			continue
+		}
+
+		options.Name = name // Set the name manually since it's not part of the nested structure
+		if options.Enable {
+			machineMap[name] = options
+			log.Info().Any("options", options).Msgf("found machine config: %s", name)
+		} else {
+			log.Debug().Any("options", options).Msgf("found machine config: %s, but it was disabled", name)
+		}
+	}
+
+	return machineMap
 }
 
 func testClientConn(client *client.Client) (system.Info, error) {

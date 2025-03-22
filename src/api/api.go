@@ -37,7 +37,7 @@ func setupEndpoints() *http.ServeMux {
 	endpoints := []func() (string, http.Handler){
 		// jobs endpoints
 		func() (string, http.Handler) {
-			jobSrv := &v1.JobServer{Service: job}
+			jobSrv := v1.NewJobServer(job)
 			return jobClient.NewJobServiceHandler(jobSrv)
 		},
 		// docker endpoints

@@ -32,6 +32,13 @@ func NewJobService(db *gorm.DB, bc *models.BroadcastChannel, dockerService *dock
 	}
 }
 
+func NewJobServiceWithDeps(dockerService *docker.DkService) *JobService {
+	db, bc := com.InitDB()
+	srv := NewJobService(db, bc, dockerService)
+	srv.cleanupOrphanJobs()
+	return srv
+}
+
 func (job *JobService) NewJob(newJob *models.Job, jobFiles []*v1.FileUpload, dockerfile *v1.FileUpload) (string, error) {
 	jobId, err := uuid.NewUUID()
 	if err != nil {
@@ -46,13 +53,13 @@ func (job *JobService) NewJob(newJob *models.Job, jobFiles []*v1.FileUpload, doc
 	ctx := job.queue.NewJobContext(newJob.JobId)
 
 	// "" implies randomly named tmp folder
-	dockerFileDir, err := com.CreateTmpJobDir(newJob.JobId, "", dockerfile)
+	dockerFileDir, err := CreateTmpJobDir(newJob.JobId, "", dockerfile)
 	if err != nil {
 		jog(ctx).Error().Err(err).Msg("failed to create dockerfile dir")
 		return "", fmt.Errorf("failed to create dockerfile dir")
 	}
 
-	jobDir, err := com.CreateTmpJobDir(newJob.JobId, com.SubmissionFolder.GetStr(), jobFiles...)
+	jobDir, err := CreateTmpJobDir(newJob.JobId, com.SubmissionFolder.GetStr(), jobFiles...)
 	if err != nil {
 		jog(ctx).Error().Err(err).Msg("failed to create job dir")
 		return "", fmt.Errorf("failed to create job dir")
@@ -145,8 +152,8 @@ func (job *JobService) StreamJobAndLogs(
 	// Keep listening until channel closes, indicating job is complete
 	for {
 		if jobOk {
-			cancel()                                              // stop updating log channel
-			content := com.ReadLogFile(jobInfo.OutputLogFilePath) // final read from the log file
+			cancel()                                          // stop updating log channel
+			content := ReadLogFile(jobInfo.OutputLogFilePath) // final read from the log file
 			if err := streamFunc(jobInfo, content); err != nil {
 				return err
 			}
@@ -186,7 +193,7 @@ func (job *JobService) ListenToJobLogs(ctx context.Context, jobInfo *models.Job)
 		for {
 			select {
 			case <-ticker.C:
-				content := com.ReadLogFile(jobInfo.OutputLogFilePath)
+				content := ReadLogFile(jobInfo.OutputLogFilePath)
 				contLen := len(content)
 				if contLen > prevLength { // send if content changed
 					log.Debug().Str(com.JobLogKey, jobInfo.JobId).Msgf("sending log, length changed from %d to %d", prevLength, contLen)
@@ -221,7 +228,7 @@ func (job *JobService) checkJob(jobUuid string) (*models.Job, bool, string, erro
 	if jobInf.Status.Done() {
 		log.Debug().Str(com.JobLogKey, jobUuid).Msg("job is already done")
 
-		content := com.ReadLogFile(jobInf.OutputLogFilePath)
+		content := ReadLogFile(jobInf.OutputLogFilePath)
 		return jobInf, true, content, nil
 	} else {
 		return jobInf, false, "", nil
@@ -235,6 +242,65 @@ func (job *JobService) getJobFromDB(jobUuid string) (*models.Job, error) {
 		return nil, fmt.Errorf("failed to get job info from db")
 	}
 	return jobInfo, nil
+}
+
+// removes any job left in an 'active' state before application start,
+// fail any jobs that were running before leviathan was able to process them (for whatever reason)
+//
+// for example machine running leviathan shutdown unexpectedly or leviathan had an unrecoverable error
+func (job *JobService) cleanupOrphanJobs() {
+	var orphanJobs []*models.Job
+	res := job.db.
+		Where("status = ?", string(models.Queued)).
+		Or("status = ?", string(models.Running)).
+		Or("status = ?", string(models.Preparing)).
+		Find(&orphanJobs)
+	if res.Error != nil {
+		log.Warn().Err(res.Error).Msgf("Failed to query database for orphan jobs")
+		return
+	}
+
+	for _, orphan := range orphanJobs {
+		if orphan.ContainerId != "" {
+			client, err := job.dockerSrv.ClientManager.GetClientById(orphan.MachineId)
+			if err != nil {
+				log.Warn().Err(err).
+					Msgf("unable to find machine: %s ,job: %s was running on", orphan.MachineId, orphan.JobId)
+				continue
+			}
+			err = client.RemoveContainer(orphan.ContainerId, true, true)
+			if err != nil {
+				log.Warn().Err(err).Str("containerID", orphan.ContainerId).Msg("unable to remove orphan container")
+			}
+		}
+
+		dkFp := orphan.LabData.DockerFilePath
+		if dkFp != "" {
+			err := os.RemoveAll(dkFp)
+			if err != nil {
+				log.Warn().Err(err).Str("dir", dkFp).Msg("unable to remove orphan dockerfile")
+			}
+		}
+
+		if orphan.TmpJobFolderPath != "" {
+			tmpFold := filepath.Dir(orphan.TmpJobFolderPath) // get the dir above autolab subdir
+			err := os.RemoveAll(tmpFold)
+			if err != nil {
+				log.Warn().Err(err).Str("dir", tmpFold).Msg("unable to remove orphan tmp job directory")
+			}
+		}
+
+		orphan.Status = models.Failed
+		orphan.StatusMessage = "job was unable to be processed due to an internal server error"
+		res = job.db.Save(orphan)
+		if res.Error != nil {
+			log.Warn().Err(res.Error).Msg("unable to update orphan job status")
+		}
+	}
+
+	if len(orphanJobs) != 0 {
+		log.Info().Msgf("Cleaned up %d orphan jobs", len(orphanJobs))
+	}
 }
 
 // setupLogFile store grader output

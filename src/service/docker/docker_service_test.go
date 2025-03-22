@@ -78,6 +78,6 @@ func setupTest() {
 }
 
 func initServices() {
-	clientList := InitDockerClients()
+	clientList := NewRemoteClientManager()
 	DkTestService = NewDockerService(clientList)
 }

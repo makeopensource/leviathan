@@ -2,6 +2,7 @@ package docker
 
 import (
 	"fmt"
+	"github.com/makeopensource/leviathan/common"
 	"github.com/stretchr/testify/assert"
 	"sync"
 	"testing"
@@ -9,13 +10,13 @@ import (
 
 func TestGetLeastJobCountMachineId_100Clients(t *testing.T) {
 	manager := &RemoteClientManager{
-		Clients: make(map[string]*MachineStatus),
+		Clients: make(map[string]*Machine),
 	}
 
 	// Initialize 100 clients
 	for i := 0; i < 100; i++ {
 		machineID := fmt.Sprintf("machine%d", i)
-		manager.Clients[machineID] = &MachineStatus{
+		manager.Clients[machineID] = &Machine{
 			Client:     &DkClient{},
 			ActiveJobs: uint64(i % 5), // Distribute jobs a bit (0-4)
 		}
@@ -42,7 +43,7 @@ func TestGetLeastJobCountMachineId_100Clients(t *testing.T) {
 }
 
 func TestRemoteClientManager_DecreaseJobCount(t *testing.T) {
-	clients := map[string]*MachineStatus{
+	clients := map[string]*Machine{
 		"id1": {ActiveJobs: 1},
 	}
 	manager := &RemoteClientManager{Clients: clients, mu: sync.RWMutex{}}
@@ -59,7 +60,7 @@ func TestRemoteClientManager_DecreaseJobCount(t *testing.T) {
 }
 
 func TestRemoteClientManager_GetClientById(t *testing.T) {
-	clients := map[string]*MachineStatus{
+	clients := map[string]*Machine{
 		"id1": {Client: &DkClient{}}, // Dummy DkClient
 	}
 	manager := &RemoteClientManager{Clients: clients, mu: sync.RWMutex{}}
@@ -74,7 +75,7 @@ func TestRemoteClientManager_GetClientById(t *testing.T) {
 }
 
 func TestRemoteClientManager_GetLeastJobCountMachineId(t *testing.T) {
-	clients := map[string]*MachineStatus{
+	clients := map[string]*Machine{
 		"id1": {ActiveJobs: 2},
 		"id2": {ActiveJobs: 0},
 		"id3": {ActiveJobs: 1},
@@ -85,7 +86,7 @@ func TestRemoteClientManager_GetLeastJobCountMachineId(t *testing.T) {
 	assert.Equal(t, "id2", id)
 
 	// Test case: All machines have the same job count.
-	clients = map[string]*MachineStatus{
+	clients = map[string]*Machine{
 		"id1": {ActiveJobs: 0},
 		"id2": {ActiveJobs: 0},
 		"id3": {ActiveJobs: 0},
@@ -94,4 +95,34 @@ func TestRemoteClientManager_GetLeastJobCountMachineId(t *testing.T) {
 	id = manager.GetLeastJobCountMachineId()
 	assert.NotEmpty(t, id, "Should return an ID even if all counts are equal")
 	assert.Contains(t, []string{"id1", "id2", "id3"}, id, "Returned ID should be one of the available IDs")
+}
+
+func TestNewSSHClientWithPasswordAuth(t *testing.T) {
+	common.InitConfig()
+	InitKeyPairFile()
+
+	// when running this test update the config.yaml with the test machine info
+	cli := getClientList()
+	mName := "test"
+	machine, ok := cli[mName]
+	if !ok {
+		t.Fatalf("machine %s not configured", mName)
+		return
+	}
+
+	client, err := NewSSHClientWithPasswordAuth(machine)
+	if err != nil {
+		t.Fatalf("failed create remote docker client %v", err)
+		return
+	}
+
+	images, err := client.ListImages()
+	if err != nil {
+		t.Fatalf("failed list images %v", err)
+		return
+	}
+
+	for _, image := range images {
+		t.Log(image)
+	}
 }

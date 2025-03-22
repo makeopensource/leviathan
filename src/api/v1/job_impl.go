@@ -12,7 +12,11 @@ import (
 )
 
 type JobServer struct {
-	Service *jobs.JobService
+	srv *jobs.JobService
+}
+
+func NewJobServer(srv *jobs.JobService) *JobServer {
+	return &JobServer{srv: srv}
 }
 
 func (job *JobServer) NewJob(ctx context.Context, req *connect.Request[v1.NewJobRequest]) (*connect.Response[v1.NewJobResponse], error) {
@@ -49,7 +53,7 @@ func (job *JobServer) NewJob(ctx context.Context, req *connect.Request[v1.NewJob
 		},
 	}
 
-	jobId, err := job.Service.NewJob(&newJob, jobFiles, dockerfile)
+	jobId, err := job.srv.NewJob(&newJob, jobFiles, dockerfile)
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +74,7 @@ func (job *JobServer) StreamStatus(ctx context.Context, req *connect.Request[v1.
 		})
 	}
 
-	err := job.Service.StreamJobAndLogs(ctx, req.Msg.GetJobId(), streamFunc)
+	err := job.srv.StreamJobAndLogs(ctx, req.Msg.GetJobId(), streamFunc)
 	if err != nil {
 		return err
 	}
@@ -83,6 +87,6 @@ func (job *JobServer) CancelJob(ctx context.Context, req *connect.Request[v1.Can
 		return nil, fmt.Errorf("job Id is empty")
 	}
 
-	job.Service.CancelJob(msgId)
+	job.srv.CancelJob(msgId)
 	return connect.NewResponse(&v1.CancelJobResponse{}), nil
 }

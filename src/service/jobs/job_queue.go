@@ -324,11 +324,11 @@ func verifyLogs(msg *models.Job) (string, string, error) {
 		}
 	}(outputFile)
 
-	line, err := common.GetLastLine(outputFile)
+	line, err := GetLastLine(outputFile)
 	if err != nil {
 		return "", "unable to get logs", err
 	}
-	if !common.IsValidJSON(line) {
+	if !IsValidJSON(line) {
 		return "", "unable to parse log output", nil
 	}
 

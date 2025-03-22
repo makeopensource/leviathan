@@ -18,6 +18,15 @@ krn:
 dk:
 	docker build . -t {{imageName}}
 
+lrn:
+    just dk
+    docker run --rm --network=host -v /var/run/docker.sock:/var/run/docker.sock {{imageName}}
+
+# docker compose up
+lrc:
+    docker compose --profile lev up --build
+
+
 # build leviathan with version and other metadata
 dkv:
     docker build \
@@ -39,10 +48,6 @@ down:
 # start required services for levithan
 dev:
     docker compose --profile dev up
-
-bdrn:
-    just dk
-    docker run --rm --network=host -v /var/run/docker.sock:/var/run/docker.sock {{imageName}}
 
 alias dc := dclean
 dclean:

@@ -10,14 +10,12 @@ services:
       - .env
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - ./appdata/:/app/appdata
+      - ./appdata2/:/app/appdata
       # warning mounting ssh will not work in windows hosts https://nickjanetakis.com/blog/docker-tip-56-volume-mounting-ssh-keys-into-a-docker-container
       - ~/.ssh:/root/.ssh:ro  # Read-only for security
-
     restart: "no"
-    depends_on:
-      - db
     profiles:
+      - lev
       - '' # so it starts with normal docker compose
 
   db:

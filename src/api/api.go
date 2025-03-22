@@ -1,6 +1,7 @@
 package api
 
 import (
+	"connectrpc.com/connect"
 	"fmt"
 	v1 "github.com/makeopensource/leviathan/api/v1"
 	"github.com/makeopensource/leviathan/common"
@@ -34,16 +35,22 @@ func StartGrpcServer() {
 func setupEndpoints() *http.ServeMux {
 	docker, job := service.InitServices()
 
+	interceptor := connect.WithInterceptors()
+	if common.ApiKey.GetStr() != "" {
+		log.Info().Msg("ApiKey is set, endpoints now require authentication")
+		interceptor = connect.WithInterceptors(&authInterceptor{common.ApiKey.GetStr()})
+	}
+
 	endpoints := []func() (string, http.Handler){
 		// jobs endpoints
 		func() (string, http.Handler) {
 			jobSrv := v1.NewJobServer(job)
-			return jobClient.NewJobServiceHandler(jobSrv)
+			return jobClient.NewJobServiceHandler(jobSrv, interceptor)
 		},
 		// docker endpoints
 		func() (string, http.Handler) {
 			dkSrv := &v1.DockerServer{Service: docker}
-			return dkclient.NewDockerServiceHandler(dkSrv)
+			return dkclient.NewDockerServiceHandler(dkSrv, interceptor)
 		},
 	}
 

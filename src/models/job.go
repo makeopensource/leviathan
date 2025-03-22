@@ -32,7 +32,7 @@ const (
 	// Complete -> indicates job is complete and
 	// leviathan was able to parse the log line correctly
 	Complete JobStatus = "complete"
-	// Failed -> job failed for one of the variety of reasons
+	// Failed -> job failed or the log line was unable to be parsed as json
 	Failed JobStatus = "failed"
 	// Canceled -> job was cancelled by the user
 	Canceled JobStatus = "canceled"

@@ -57,8 +57,13 @@ func InitConfig() {
 		"SUBMISSION_OUTPUT_DIR",
 		fmt.Sprintf("%s/%s", baseDir, "output"),
 	)
+	sshFolderPath := setIfEnvPresentOrDefault(
+		sshDirKey,
+		"SSH_CONFIG_DIR",
+		fmt.Sprintf("%s/%s", baseDir, "ssh_config"),
+	)
 
-	err = makeDirectories([]string{submissionFolderPath, outputFolderPath})
+	err = makeDirectories([]string{submissionFolderPath, outputFolderPath, sshFolderPath})
 	if err != nil {
 		log.Fatal().Err(err).Msg("unable to make required directories")
 	}
@@ -153,10 +158,10 @@ func setupDefaultOptions(configDir string) {
 	viper.SetDefault(serverPortKey, "9221")
 	viper.SetDefault(enableLocalDockerKey, true)
 	viper.SetDefault(concurrentJobsKey, 50)
-	viper.SetDefault(ClientSSHKey, map[string]models.MachineOptions{
+	viper.SetDefault(clientSSHKey, map[string]models.MachineOptions{
 		"example": {
-			Enable: false,
 			Name:   "example",
+			Enable: false,
 			Host:   "http://localhost:8080",
 			User:   "test",
 			Port:   22,

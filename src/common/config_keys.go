@@ -14,11 +14,12 @@ const (
 
 	// folders
 	logDirKey        = "folder.log_dir"
-	submissionDirKey = "folder.submission_dir"
-	outputDirKey     = "folder.log_output_dir"
+	submissionDirKey = "folder.tmp_submission_dir"
+	outputDirKey     = "folder.job_output_dir"
+	sshDirKey        = "folder.ssh_config"
 	// docker config
 	enableLocalDockerKey = "clients.enable_local_docker"
-	ClientSSHKey         = "clients.ssh"
+	clientSSHKey         = "clients.ssh"
 
 	sqliteDbPathKey = "db.sqlite.db_path"
 	// postgres
@@ -33,24 +34,24 @@ const (
 
 var (
 	// internal use
-	LogLevel     = Config{loglevelKey}
-	LogDir       = Config{logDirKey}
-	SqliteDbPath = Config{sqliteDbPathKey}
+	LogLevel = Config{loglevelKey}
+	LogDir   = Config{logDirKey}
 
 	// general
-
 	ApiKey         = Config{apiKeyKey}
 	ServerPort     = Config{serverPortKey}
 	ConcurrentJobs = Config{concurrentJobsKey}
 
-	// folderstuff
+	// folders
+	SSHConfigFolder  = Config{sshDirKey}
+	SubmissionFolder = Config{submissionDirKey}
+	OutputFolder     = Config{outputDirKey}
 
-	SubmissionFolder  = Config{submissionDirKey}
-	OutputFolder      = Config{outputDirKey}
+	// docker config
 	EnableLocalDocker = Config{enableLocalDockerKey}
+	ClientsSSH        = Config{clientSSHKey}
 
 	// postgres
-
 	EnablePostgres = Config{enablePostgresKey}
 	postgresHost   = Config{postgresHostKey}
 	postgresPort   = Config{postgresPortKey}
@@ -58,6 +59,9 @@ var (
 	postgresPass   = Config{postgresPassKey}
 	postgresDB     = Config{postgresDBKey}
 	postgresSsl    = Config{postgresSslKey}
+
+	// sqlite
+	SqliteDbPath = Config{sqliteDbPathKey}
 )
 
 type Config struct {
@@ -86,4 +90,8 @@ func (c Config) GetBool() bool {
 
 func (c Config) GetUint64() uint64 {
 	return viper.GetUint64(c.ConfigKey)
+}
+
+func (c Config) GetAny() any {
+	return viper.Get(c.ConfigKey)
 }

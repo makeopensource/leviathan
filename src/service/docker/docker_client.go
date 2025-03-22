@@ -3,7 +3,6 @@ package docker
 import (
 	"context"
 	"fmt"
-	"github.com/docker/cli/cli/connhelper"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
@@ -16,7 +15,6 @@ import (
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/rs/zerolog/log"
 	"io"
-	"net/http"
 	"path/filepath"
 	"time"
 )
@@ -36,47 +34,6 @@ func NewDkClient(client *client.Client) *DkClient {
 	}
 	go cleanupImageTagLocks(cli.imgMap)
 	return cli
-}
-
-func NewSSHClient(connectionString string) (*DkClient, error) {
-	helper, err := connhelper.GetConnectionHelper(fmt.Sprintf("ssh://%s", connectionString))
-	if err != nil {
-		log.Error().Err(err).Msgf("connection string: %s", connectionString)
-		return nil, err
-	}
-
-	httpClient := &http.Client{
-		Transport: &http.Transport{
-			DialContext: helper.Dialer,
-		},
-	}
-
-	newClient, err := client.NewClientWithOpts(
-		client.WithHTTPClient(httpClient),
-		client.WithHost(helper.Host),
-		client.WithDialContext(helper.Dialer),
-		client.WithAPIVersionNegotiation(),
-	)
-
-	if err != nil {
-		log.Error().Err(err).Msgf("failed create remote docker client with connectionString %s", connectionString)
-		return nil, fmt.Errorf("unable to connect to docker client")
-	}
-
-	return NewDkClient(newClient), nil
-}
-
-func NewLocalClient() (*DkClient, error) {
-	cli, err := client.NewClientWithOpts(
-		client.FromEnv,
-		client.WithAPIVersionNegotiation(),
-	)
-	if err != nil {
-		log.Error().Err(err).Msgf("failed create local docker client")
-		return nil, fmt.Errorf("unable to create docker client")
-	}
-
-	return NewDkClient(cli), nil
 }
 
 // BuildImageFromDockerfile Build image

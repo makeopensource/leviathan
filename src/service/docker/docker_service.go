@@ -15,7 +15,7 @@ func NewDockerService(clientList *RemoteClientManager) *DkService {
 }
 
 func NewDockerServiceWithClients() *DkService {
-	return &DkService{ClientManager: InitDockerClients()}
+	return &DkService{ClientManager: NewRemoteClientManager()}
 }
 
 func (service *DkService) BuildNewImageOnAllClients(dockerfilePath string, imageTag string) error {

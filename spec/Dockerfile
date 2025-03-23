@@ -38,15 +38,6 @@ RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | b
 ENV NODE_PATH=$NVM_DIR/v$NODE_VERSION/lib/node_modules
 ENV PATH=$NVM_DIR/versions/node/v$NODE_VERSION/bin:$PATH
 
-# Install Dart SDK
-RUN apt-get update && apt-get  --no-install-recommends -y install apt-transport-https
-RUN wget -qO- https://dl-ssl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/dart.gpg
-RUN echo 'deb [signed-by=/usr/share/keyrings/dart.gpg arch=amd64] https://storage.googleapis.com/download.dartlang.org/linux/debian stable main' | tee /etc/apt/sources.list.d/dart_stable.list
-RUN apt-get update && apt-get install -y dart
-
-# Install Dart gRPC tools
-RUN dart pub global activate protoc_plugin
-
 # Install Node.js dependencies globally
 # @bufbuild/buf depends on
 # @bufbuild/protobuf

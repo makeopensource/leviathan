@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file types/v1/types.proto.
  */
 export const file_types_v1_types: GenFile = /*@__PURE__*/
-  fileDesc("ChR0eXBlcy92MS90eXBlcy5wcm90bxIIdHlwZXMudjEiLwoKRmlsZVVwbG9hZBIQCghmaWxlbmFtZRgBIAEoCRIPCgdjb250ZW50GAIgASgMQpMBCgxjb20udHlwZXMudjFCClR5cGVzUHJvdG9QAVo2Z2l0aHViLmNvbS9tYWtlb3BlbnNvdXJjZS9sZXZpYXRoYW4vZ2VuZXJhdGVkL3R5cGVzL3YxogIDVFhYqgIIVHlwZXMuVjHKAghUeXBlc1xWMeICFFR5cGVzXFYxXEdQQk1ldGFkYXRh6gIJVHlwZXM6OlYxYgZwcm90bzM");
+  fileDesc("ChR0eXBlcy92MS90eXBlcy5wcm90bxIIdHlwZXMudjEiLwoKRmlsZVVwbG9hZBIQCghmaWxlbmFtZRgBIAEoCRIPCgdjb250ZW50GAIgASgMIkcKDU1hY2hpbmVMaW1pdHMSEAoIQ1BVQ29yZXMYASABKAUSEgoKbWVtb3J5SW5NYhgCIAEoBRIQCghQaWRMaW1pdBgDIAEoBUKTAQoMY29tLnR5cGVzLnYxQgpUeXBlc1Byb3RvUAFaNmdpdGh1Yi5jb20vbWFrZW9wZW5zb3VyY2UvbGV2aWF0aGFuL2dlbmVyYXRlZC90eXBlcy92MaICA1RYWKoCCFR5cGVzLlYxygIIVHlwZXNcVjHiAhRUeXBlc1xWMVxHUEJNZXRhZGF0YeoCCVR5cGVzOjpWMWIGcHJvdG8z");
 
 /**
  * @generated from message types.v1.FileUpload
@@ -33,4 +33,31 @@ export type FileUpload = Message<"types.v1.FileUpload"> & {
  */
 export const FileUploadSchema: GenMessage<FileUpload> = /*@__PURE__*/
   messageDesc(file_types_v1_types, 0);
+
+/**
+ * @generated from message types.v1.MachineLimits
+ */
+export type MachineLimits = Message<"types.v1.MachineLimits"> & {
+  /**
+   * @generated from field: int32 CPUCores = 1;
+   */
+  CPUCores: number;
+
+  /**
+   * @generated from field: int32 memoryInMb = 2;
+   */
+  memoryInMb: number;
+
+  /**
+   * @generated from field: int32 PidLimit = 3;
+   */
+  PidLimit: number;
+};
+
+/**
+ * Describes the message types.v1.MachineLimits.
+ * Use `create(MachineLimitsSchema)` to create a new message.
+ */
+export const MachineLimitsSchema: GenMessage<MachineLimits> = /*@__PURE__*/
+  messageDesc(file_types_v1_types, 1);
 

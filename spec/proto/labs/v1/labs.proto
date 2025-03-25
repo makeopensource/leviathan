@@ -13,17 +13,27 @@ service LabService {
 }
 
 message LabRequest {
-  string LabName = 1;
-  types.v1.FileUpload makeFile = 2;
-  types.v1.FileUpload graderFile = 3;
+  string labName = 1;
+  string entryCommand = 2;
+  uint64 timeLimitInSeconds = 4;
+  types.v1.MachineLimits machineLimits = 5;
+  types.v1.FileUpload dockerFile = 6;
+  repeated types.v1.FileUpload jobFiles = 7;
 }
 
-message NewLabResponse {}
+message NewLabResponse {
+  int64 labId = 1;
+}
+
+message EditLabRequest {
+  int64 labId = 1;
+  LabRequest labInfo = 2;
+}
 
 message EditLabResponse {}
 
 message DeleteLabRequest {
-  string LabName = 1;
+  int64 LabID = 1;
 }
 
 message DeleteLabResponse {}

@@ -36,7 +36,7 @@ func InitDB() (*gorm.DB, *models.BroadcastChannel) {
 		sqlDB.SetConnMaxLifetime(time.Hour) // SetConnMaxLifetime sets the maximum amount of time a connection may be reused.
 	}
 
-	err = db.AutoMigrate(&models.Job{})
+	err = db.AutoMigrate(&models.Lab{}, &models.Job{})
 	if err != nil {
 		log.Fatal().Err(err).Msgf("failed to migrate database")
 	}

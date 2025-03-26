@@ -11,7 +11,7 @@ import (
 )
 
 type LabServer struct {
-	srv *labs.LabService
+	Srv *labs.LabService
 }
 
 func (l LabServer) NewLab(ctx context.Context, req *connect.Request[v1.LabRequest]) (*connect.Response[v1.NewLabResponse], error) {
@@ -34,7 +34,7 @@ func (l LabServer) NewLab(ctx context.Context, req *connect.Request[v1.LabReques
 		JobEntryCmd: req.Msg.EntryCommand,
 	}
 
-	labID, err := l.srv.CreateLab(lab, req.Msg.DockerFile, req.Msg.JobFiles)
+	labID, err := l.Srv.CreateLab(lab, req.Msg.DockerFile, req.Msg.JobFiles)
 	if err != nil {
 		return nil, err
 	}

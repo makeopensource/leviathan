@@ -32,7 +32,7 @@ This will:
 * This will build the Dockerfile, which installs all the required dependencies for code gen 
 * Runs the [gen-stubs.sh](./gen-stubs.sh) script, which calls the code gen CLI 
 * The go files will be moved to the [go src](../src)
-* The node files will be moved to [web_client](./leviathan_node), which is npm package that can be used by any typescript project.
+* The node files will be moved to [leviathan_node](./leviathan_node), which is npm package that can be used by any typescript project.
 
 ## Installing clients
 
@@ -41,7 +41,7 @@ This will:
 To use the node TS code install via:
 
 ```
-npm install 'https://gitpkg.vercel.app/makeopensource/leviathan/spec/web_client?master'
+npm install 'https://gitpkg.vercel.app/makeopensource/leviathan/spec/leviathan_node?master'
 ```
 
 This install the generated code on the ```master``` branch.
@@ -55,5 +55,5 @@ The folder contains the following folders and files
 * [Dockerfile](Dockerfile) - Dockerfile that installs all dependencies for code gen
 * [gen-stub.sh](gen-stubs.sh) - Script to run the connect rpc code gen cli 
 * [Justfile](Justfile) - Justfile to run helpful commands
-* [web_client](leviathan_node) - node web client
+* [leviathan_node](leviathan_node) - node web client
 * [proto](proto) - Contains the protocol definitions 

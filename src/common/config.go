@@ -64,8 +64,13 @@ func InitConfig() {
 		"SSH_CONFIG_DIR",
 		fmt.Sprintf("%s/%s", configDir, "ssh_config"),
 	)
+	labsFolderPath := setIfEnvPresentOrDefault(
+		labDirKey,
+		"LABS_DIR",
+		fmt.Sprintf("%s/%s", baseDir, "labs"),
+	)
 
-	err = makeDirectories([]string{submissionFolderPath, outputFolderPath, sshFolderPath})
+	err = makeDirectories([]string{submissionFolderPath, outputFolderPath, sshFolderPath, labsFolderPath})
 	if err != nil {
 		log.Fatal().Err(err).Msg("unable to make required directories")
 	}

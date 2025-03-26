@@ -144,8 +144,8 @@ func (q *JobQueue) runJob(job *models.Job) {
 	case err := <-errCh:
 		q.bigProblem(job, "error occurred while waiting for job process", err)
 		return
-	case <-time.After(job.JobTimeout):
-		q.bigProblem(job, fmt.Sprintf("Maximum timeout reached for job, job ran for %s", job.JobTimeout), nil)
+	case <-time.After(job.LabData.JobTimeout):
+		q.bigProblem(job, fmt.Sprintf("Maximum timeout reached for job, job ran for %s", job.LabData.JobTimeout), nil)
 		return
 	case <-job.JobCtx.Done():
 		q.setJobAsCancelled(job)
@@ -171,19 +171,22 @@ func (q *JobQueue) setupJob(msg *models.Job) (*docker.DkClient, string, error, s
 			return nil, "", err, "Failed to create image"
 		}
 		// folder structure is '/<id>/autolab/Dockerfile, get the <random id> folder path
-		err = os.RemoveAll(filepath.Dir(filepath.Dir(msg.LabData.DockerFilePath)))
-		if err != nil {
-			return nil, "", err, "failed to delete dockerfile"
+		parent := filepath.Base(filepath.Dir(filepath.Dir(msg.LabData.DockerFilePath)))
+
+		if parent != "labs" { // do not delete if job is from a saved lab
+			if err = os.RemoveAll(parent); err != nil {
+				return nil, "", err, "failed to delete dockerfile"
+			}
 		}
 	}
 
 	resources := dk.Resources{
-		NanoCPUs:  msg.JobLimits.NanoCPU * models.CPUQuota,
-		Memory:    msg.JobLimits.Memory * models.MB,
-		PidsLimit: &msg.JobLimits.PidsLimit,
+		NanoCPUs:  msg.LabData.JobLimits.NanoCPU * models.CPUQuota,
+		Memory:    msg.LabData.JobLimits.Memory * models.MB,
+		PidsLimit: &msg.LabData.JobLimits.PidsLimit,
 	}
 
-	contId, err := machine.CreateNewContainer(msg.JobId, msg.LabData.ImageTag, filepath.Base(msg.TmpJobFolderPath), msg.JobEntryCmd, resources)
+	contId, err := machine.CreateNewContainer(msg.JobId, msg.LabData.ImageTag, filepath.Base(msg.TmpJobFolderPath), msg.LabData.JobEntryCmd, resources)
 	if err != nil {
 		return nil, "", err, "unable to create job container"
 	}
@@ -209,8 +212,7 @@ func (q *JobQueue) cleanupJob(msg *models.Job, client *docker.DkClient) {
 	q.updateJobVeryNice(msg)
 
 	if client != nil {
-		err := client.RemoveContainer(msg.ContainerId, true, true)
-		if err != nil {
+		if err := client.RemoveContainer(msg.ContainerId, true, true); err != nil {
 			jog(msg.JobCtx).Warn().Err(err).Str("containerID", msg.ContainerId).Msg("unable to remove container")
 		}
 	}
@@ -219,8 +221,7 @@ func (q *JobQueue) cleanupJob(msg *models.Job, client *docker.DkClient) {
 	q.contextMap.Delete(msg.JobId)
 
 	tmpFold := filepath.Dir(msg.TmpJobFolderPath) // get the dir above autolab subdir
-	err := os.RemoveAll(tmpFold)
-	if err != nil {
+	if err := os.RemoveAll(tmpFold); err != nil {
 		jog(msg.JobCtx).Warn().Err(err).Str("dir", tmpFold).Msg("unable to remove tmp job directory")
 		return
 	}

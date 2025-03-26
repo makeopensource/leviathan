@@ -33,8 +33,8 @@ const (
 // reflection-formatted method names, remove the leading slash and convert the remaining slash to a
 // period.
 const (
-	// JobServiceNewJobProcedure is the fully-qualified name of the JobService's NewJob RPC.
-	JobServiceNewJobProcedure = "/jobs.v1.JobService/NewJob"
+	// JobServiceNewJobProcedure is the fully-qualified name of the JobService's NewJobFromRPC RPC.
+	JobServiceNewJobProcedure = "/jobs.v1.JobService/NewJobFromRPC"
 	// JobServiceStreamStatusProcedure is the fully-qualified name of the JobService's StreamStatus RPC.
 	JobServiceStreamStatusProcedure = "/jobs.v1.JobService/StreamStatus"
 	// JobServiceCancelJobProcedure is the fully-qualified name of the JobService's CancelJob RPC.
@@ -62,7 +62,7 @@ func NewJobServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...
 		newJob: connect.NewClient[v1.NewJobRequest, v1.NewJobResponse](
 			httpClient,
 			baseURL+JobServiceNewJobProcedure,
-			connect.WithSchema(jobServiceMethods.ByName("NewJob")),
+			connect.WithSchema(jobServiceMethods.ByName("NewJobFromRPC")),
 			connect.WithClientOptions(opts...),
 		),
 		streamStatus: connect.NewClient[v1.JobLogRequest, v1.JobLogsResponse](
@@ -87,7 +87,7 @@ type jobServiceClient struct {
 	cancelJob    *connect.Client[v1.CancelJobRequest, v1.CancelJobResponse]
 }
 
-// NewJob calls jobs.v1.JobService.NewJob.
+// NewJob calls jobs.v1.JobService.NewJobFromRPC.
 func (c *jobServiceClient) NewJob(ctx context.Context, req *connect.Request[v1.NewJobRequest]) (*connect.Response[v1.NewJobResponse], error) {
 	return c.newJob.CallUnary(ctx, req)
 }
@@ -119,7 +119,7 @@ func NewJobServiceHandler(svc JobServiceHandler, opts ...connect.HandlerOption) 
 	jobServiceNewJobHandler := connect.NewUnaryHandler(
 		JobServiceNewJobProcedure,
 		svc.NewJob,
-		connect.WithSchema(jobServiceMethods.ByName("NewJob")),
+		connect.WithSchema(jobServiceMethods.ByName("NewJobFromRPC")),
 		connect.WithHandlerOptions(opts...),
 	)
 	jobServiceStreamStatusHandler := connect.NewServerStreamHandler(
@@ -152,7 +152,7 @@ func NewJobServiceHandler(svc JobServiceHandler, opts ...connect.HandlerOption) 
 type UnimplementedJobServiceHandler struct{}
 
 func (UnimplementedJobServiceHandler) NewJob(context.Context, *connect.Request[v1.NewJobRequest]) (*connect.Response[v1.NewJobResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("jobs.v1.JobService.NewJob is not implemented"))
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("jobs.v1.JobService.NewJobFromRPC is not implemented"))
 }
 
 func (UnimplementedJobServiceHandler) StreamStatus(context.Context, *connect.Request[v1.JobLogRequest], *connect.ServerStream[v1.JobLogsResponse]) error {

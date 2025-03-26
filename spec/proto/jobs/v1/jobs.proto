@@ -18,7 +18,7 @@ message NewJobRequest {
   string imageName = 3;
   uint64 jobTimeoutInSeconds = 4;
   string entryCmd = 5;
-  MachineLimits limits = 6;
+  types.v1.MachineLimits limits = 6;
 }
 
 message NewJobResponse {
@@ -48,8 +48,3 @@ message JobStatus {
   string status_message = 3;
 }
 
-message MachineLimits {
-  int32 CPUCores = 1;
-  int32 memoryInMb = 2;
-  int32 PidLimit = 3;
-}

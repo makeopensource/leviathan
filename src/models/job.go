@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
-	"time"
 )
 
 type JobStatus string
@@ -51,18 +50,16 @@ type Job struct {
 	JobId         string `gorm:"uniqueIndex"`
 	MachineId     string
 	ContainerId   string
-	JobEntryCmd   string
 	Status        JobStatus
 	StatusMessage string
 	// to store if an error occurred, otherwise empty,
-	Error     string
-	LabData   Lab           `gorm:"embedded;embeddedPrefix:lab_"`
-	JobLimits MachineLimits `gorm:"embedded;embeddedPrefix:machine_limit_"`
+	Error   string
+	LabID   uint
+	LabData *Lab `gorm:"foreignKey:LabID;references:ID"`
 	// OutputLogFilePath text file contain the container std out
 	OutputLogFilePath string
 	// TmpJobFolderPath holds the path to the tmp dir all files related to the job except the final output
 	TmpJobFolderPath string
-	JobTimeout       time.Duration
 	JobCtx           context.Context `gorm:"-"`
 }
 
@@ -77,10 +74,10 @@ func (j *Job) ValidateForQueue() error {
 	if j.MachineId == "" {
 		return fmt.Errorf("machine id is empty")
 	}
-	if j.JobEntryCmd == "" {
+	if j.LabData.JobEntryCmd == "" {
 		return fmt.Errorf("job entry cmd is empty")
 	}
-	if j.JobTimeout == 0 {
+	if j.LabData.JobTimeout == 0 {
 		return fmt.Errorf("job timeout is 0")
 	}
 	if j.JobCtx == nil {
@@ -99,20 +96,6 @@ func (j *Job) ValidateForQueue() error {
 	return nil
 }
 
-// VerifyJobLimits checks if job limits are provided,
-// and sets fields that are missing with default values
-func (j *Job) VerifyJobLimits() {
-	if j.JobLimits.PidsLimit == 0 {
-		j.JobLimits.PidsLimit = 100 // Default value
-	}
-	if j.JobLimits.NanoCPU == 0 {
-		j.JobLimits.NanoCPU = 1 // Default value
-	}
-	if j.JobLimits.Memory == 0 {
-		j.JobLimits.Memory = 512 // Default value in MB
-	}
-}
-
 // AfterUpdate adds hooks for job streaming, updates a go channel everytime a job is updated
 // the consumer is responsible if it wants to use the job
 func (j *Job) AfterUpdate(tx *gorm.DB) (err error) {
@@ -125,12 +108,4 @@ func (j *Job) AfterUpdate(tx *gorm.DB) (err error) {
 	// prevent null ptr deref
 	go ch.(*BroadcastChannel).Broadcast(j)
 	return
-}
-
-type MachineLimits struct {
-	PidsLimit int64
-	// NanoCPU will be multiplied by CPUQuota
-	NanoCPU int64
-	// Memory in MB
-	Memory int64
 }

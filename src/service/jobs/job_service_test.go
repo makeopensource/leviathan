@@ -6,6 +6,7 @@ import (
 	v1 "github.com/makeopensource/leviathan/generated/types/v1"
 	"github.com/makeopensource/leviathan/models"
 	"github.com/makeopensource/leviathan/service/docker"
+	"github.com/makeopensource/leviathan/service/labs"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/stretchr/testify/assert"
@@ -182,13 +183,15 @@ func setupJobProcess(studentCodePath string, timeout time.Duration) string {
 		log.Fatal().Err(err).Msg("Error reading docker file")
 	}
 
-	newJob := &models.Job{
-		LabData:     models.Lab{ImageTag: imageName},
+	newLab := models.Lab{
 		JobTimeout:  timeout,
 		JobEntryCmd: "make grade",
+		ImageTag:    imageName,
 	}
 
-	jobId, err := jobTestService.NewJob(
+	newJob := &models.Job{LabData: &newLab}
+
+	jobId, err := jobTestService.NewJobFromRPC(
 		newJob,
 		[]*v1.FileUpload{
 			{
@@ -241,8 +244,13 @@ func setupTest() {
 
 func initServices() {
 	common.InitConfig()
+
+	db, bc := common.InitDB()
+
 	dkTestService = docker.NewDockerServiceWithClients()
-	jobTestService = NewJobServiceWithDeps(dkTestService)
+	lab := labs.NewLabService(db, dkTestService)
+	jobTestService = NewJobService(db, bc, dkTestService, lab)
+
 	// no logs on tests
 	log.Logger = log.Logger.Level(zerolog.Disabled)
 }

@@ -8,6 +8,7 @@ import (
 	v1 "github.com/makeopensource/leviathan/generated/types/v1"
 	"github.com/makeopensource/leviathan/models"
 	"github.com/makeopensource/leviathan/service/docker"
+	"github.com/makeopensource/leviathan/service/labs"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
@@ -21,25 +22,27 @@ type JobService struct {
 	dockerSrv   *docker.DkService
 	queue       *JobQueue
 	broadcastCh *models.BroadcastChannel
+	labSrv      *labs.LabService
 }
 
-func NewJobService(db *gorm.DB, bc *models.BroadcastChannel, dockerService *docker.DkService) *JobService {
+func NewJobService(db *gorm.DB, bc *models.BroadcastChannel, dockerService *docker.DkService, labService *labs.LabService) *JobService {
 	return &JobService{
 		db:          db,
 		broadcastCh: bc,
 		dockerSrv:   dockerService,
 		queue:       NewJobQueue(uint(com.ConcurrentJobs.GetUint64()), db, dockerService),
+		labSrv:      labService,
 	}
 }
 
-func NewJobServiceWithDeps(dockerService *docker.DkService) *JobService {
+func NewJobServiceWithDeps(dockerService *docker.DkService, labService *labs.LabService) *JobService {
 	db, bc := com.InitDB()
-	srv := NewJobService(db, bc, dockerService)
+	srv := NewJobService(db, bc, dockerService, labService)
 	srv.cleanupOrphanJobs()
 	return srv
 }
 
-func (job *JobService) NewJob(newJob *models.Job, jobFiles []*v1.FileUpload, dockerfile *v1.FileUpload) (string, error) {
+func (job *JobService) NewJobFromRPC(newJob *models.Job, jobFiles []*v1.FileUpload, dockerfile *v1.FileUpload) (string, error) {
 	jobId, err := uuid.NewUUID()
 	if err != nil {
 		log.Error().Err(err).Msg("failed to generate job ID")
@@ -78,8 +81,71 @@ func (job *JobService) NewJob(newJob *models.Job, jobFiles []*v1.FileUpload, doc
 	newJob.TmpJobFolderPath = jobDir
 	newJob.LabData.DockerFilePath = fmt.Sprintf("%s/%s", dockerFileDir, dockerfile.Filename)
 	newJob.JobCtx = ctx
-	newJob.VerifyJobLimits()
-	jog(newJob.JobCtx).Debug().Any("limits", newJob.JobLimits).Msg("job limits")
+	newJob.LabData.VerifyJobLimits()
+	jog(newJob.JobCtx).Debug().Any("limits", newJob.LabData.JobLimits).Msg("job limits")
+
+	res := job.db.Create(newJob)
+	if res.Error != nil {
+		jog(ctx).Error().Err(res.Error).Msg("Failed to save job to db")
+		return "", fmt.Errorf("failed to save job to db")
+	}
+
+	err = job.queue.AddJob(newJob)
+	if err != nil {
+		return "", err
+	}
+
+	return jobId.String(), nil
+}
+
+func (job *JobService) NewJobFromLab(newJob *models.Job, studentFiles []*v1.FileUpload) (string, error) {
+	if newJob.LabID == 0 {
+		return "", fmt.Errorf("invalid lab ID %d", newJob.LabID)
+	}
+
+	labData, err := job.labSrv.GetLabFromDB(newJob.LabID)
+	if err != nil {
+		return "", err
+	}
+	newJob.LabData = labData
+
+	jobId, err := uuid.NewUUID()
+	if err != nil {
+		log.Error().Err(err).Msg("failed to generate job ID")
+		return "", fmt.Errorf("failed to generate job ID")
+	}
+	newJob.JobId = jobId.String()
+
+	mId := job.dockerSrv.ClientManager.GetLeastJobCountMachineId()
+
+	// job context, so that it can be cancelled, and store sub logger
+	ctx := job.queue.NewJobContext(newJob.JobId)
+
+	jobDir, err := CreateTmpJobDir(newJob.JobId, com.SubmissionFolder.GetStr(), studentFiles...)
+	if err != nil {
+		jog(ctx).Error().Err(err).Msg("failed to create job dir")
+		return "", fmt.Errorf("failed to create job dir")
+	}
+
+	if err = HardLinkFolder(newJob.LabData.JobFilesDirPath, jobDir); err != nil {
+		jog(ctx).Error().Err(err).Msg("unable to copy files to job dir")
+		return "", fmt.Errorf("unable to copy files to job dir")
+	}
+
+	logPath, err, reason := setupLogFile(newJob.JobId)
+	if err != nil {
+		jog(ctx).Error().Err(err).Str("reason", reason).Msg("failed to setup log file")
+		return "", fmt.Errorf("failed to setup log file")
+	}
+
+	// setup job metadata
+	newJob.MachineId = mId
+	newJob.Status = models.Queued
+	newJob.OutputLogFilePath = logPath
+	newJob.TmpJobFolderPath = jobDir
+	newJob.JobCtx = ctx
+	newJob.LabData.VerifyJobLimits()
+	jog(newJob.JobCtx).Debug().Any("limits", newJob.LabData.JobLimits).Msg("job limits")
 
 	res := job.db.Create(newJob)
 	if res.Error != nil {

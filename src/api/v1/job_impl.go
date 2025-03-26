@@ -63,15 +63,24 @@ func (job *JobServer) NewJob(ctx context.Context, req *connect.Request[v1.NewJob
 	return res, nil
 }
 
+func (job *JobServer) GetStatus(_ context.Context, req *connect.Request[v1.JobLogRequest]) (*connect.Response[v1.JobLogsResponse], error) {
+	status, logs, err := job.srv.GetJobStatusAndLogs(req.Msg.GetJobId())
+	if err != nil {
+		return nil, err
+	}
+
+	res := connect.NewResponse(&v1.JobLogsResponse{
+		JobInfo: status.ToProto(),
+		Logs:    logs,
+	})
+	return res, nil
+}
+
 func (job *JobServer) StreamStatus(ctx context.Context, req *connect.Request[v1.JobLogRequest], stream *connect.ServerStream[v1.JobLogsResponse]) error {
 	streamFunc := func(jobInfo *models.Job, logs string) error {
 		return stream.Send(&v1.JobLogsResponse{
-			JobInfo: &v1.JobStatus{
-				JobId:         jobInfo.JobId,
-				Status:        string(jobInfo.Status),
-				StatusMessage: jobInfo.StatusMessage,
-			},
-			Logs: logs,
+			JobInfo: jobInfo.ToProto(),
+			Logs:    logs,
 		})
 	}
 

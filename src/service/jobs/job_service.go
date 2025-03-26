@@ -249,6 +249,15 @@ func (job *JobService) StreamJobAndLogs(
 	}
 }
 
+// GetJobStatusAndLogs gets the status once whatever it may be and current logs
+func (job *JobService) GetJobStatusAndLogs(jobUuid string) (*models.Job, string, error) {
+	jobInfo, _, logs, err := job.checkJob(jobUuid)
+	if err != nil {
+		return nil, "", err
+	}
+	return jobInfo, logs, nil
+}
+
 func (job *JobService) ListenToJobLogs(ctx context.Context, jobInfo *models.Job) chan string {
 	logChannel := make(chan string, 2)
 	go func(ctx context.Context) {

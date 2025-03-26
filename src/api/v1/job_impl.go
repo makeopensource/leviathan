@@ -42,9 +42,9 @@ func (job *JobServer) NewJob(ctx context.Context, req *connect.Request[v1.NewJob
 		return nil, fmt.Errorf("entry cmd is empty")
 	}
 
-	newJob := models.Job{
+	lab := models.Lab{
+		ImageTag:    strings.ToLower(strings.TrimSpace(tag)),
 		JobEntryCmd: entryCmd,
-		LabData:     models.Lab{ImageTag: strings.ToLower(strings.TrimSpace(tag))},
 		JobTimeout:  time.Second * time.Duration(req.Msg.JobTimeoutInSeconds),
 		JobLimits: models.MachineLimits{
 			PidsLimit: int64(req.Msg.GetLimits().PidLimit),
@@ -52,8 +52,9 @@ func (job *JobServer) NewJob(ctx context.Context, req *connect.Request[v1.NewJob
 			Memory:    int64(req.Msg.GetLimits().MemoryInMb),
 		},
 	}
+	newJob := &models.Job{LabData: &lab}
 
-	jobId, err := job.srv.NewJob(&newJob, jobFiles, dockerfile)
+	jobId, err := job.srv.NewJobFromRPC(newJob, jobFiles, dockerfile)
 	if err != nil {
 		return nil, err
 	}

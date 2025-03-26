@@ -33,8 +33,10 @@ const (
 // reflection-formatted method names, remove the leading slash and convert the remaining slash to a
 // period.
 const (
-	// JobServiceNewJobProcedure is the fully-qualified name of the JobService's NewJobFromRPC RPC.
-	JobServiceNewJobProcedure = "/jobs.v1.JobService/NewJobFromRPC"
+	// JobServiceNewJobProcedure is the fully-qualified name of the JobService's NewJob RPC.
+	JobServiceNewJobProcedure = "/jobs.v1.JobService/NewJob"
+	// JobServiceGetStatusProcedure is the fully-qualified name of the JobService's GetStatus RPC.
+	JobServiceGetStatusProcedure = "/jobs.v1.JobService/GetStatus"
 	// JobServiceStreamStatusProcedure is the fully-qualified name of the JobService's StreamStatus RPC.
 	JobServiceStreamStatusProcedure = "/jobs.v1.JobService/StreamStatus"
 	// JobServiceCancelJobProcedure is the fully-qualified name of the JobService's CancelJob RPC.
@@ -44,6 +46,9 @@ const (
 // JobServiceClient is a client for the jobs.v1.JobService service.
 type JobServiceClient interface {
 	NewJob(context.Context, *connect.Request[v1.NewJobRequest]) (*connect.Response[v1.NewJobResponse], error)
+	// Gets job status at call time, whatever it may be
+	GetStatus(context.Context, *connect.Request[v1.JobLogRequest]) (*connect.Response[v1.JobLogsResponse], error)
+	// Streams job status until it is complete
 	StreamStatus(context.Context, *connect.Request[v1.JobLogRequest]) (*connect.ServerStreamForClient[v1.JobLogsResponse], error)
 	CancelJob(context.Context, *connect.Request[v1.CancelJobRequest]) (*connect.Response[v1.CancelJobResponse], error)
 }
@@ -62,7 +67,13 @@ func NewJobServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...
 		newJob: connect.NewClient[v1.NewJobRequest, v1.NewJobResponse](
 			httpClient,
 			baseURL+JobServiceNewJobProcedure,
-			connect.WithSchema(jobServiceMethods.ByName("NewJobFromRPC")),
+			connect.WithSchema(jobServiceMethods.ByName("NewJob")),
+			connect.WithClientOptions(opts...),
+		),
+		getStatus: connect.NewClient[v1.JobLogRequest, v1.JobLogsResponse](
+			httpClient,
+			baseURL+JobServiceGetStatusProcedure,
+			connect.WithSchema(jobServiceMethods.ByName("GetStatus")),
 			connect.WithClientOptions(opts...),
 		),
 		streamStatus: connect.NewClient[v1.JobLogRequest, v1.JobLogsResponse](
@@ -83,13 +94,19 @@ func NewJobServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...
 // jobServiceClient implements JobServiceClient.
 type jobServiceClient struct {
 	newJob       *connect.Client[v1.NewJobRequest, v1.NewJobResponse]
+	getStatus    *connect.Client[v1.JobLogRequest, v1.JobLogsResponse]
 	streamStatus *connect.Client[v1.JobLogRequest, v1.JobLogsResponse]
 	cancelJob    *connect.Client[v1.CancelJobRequest, v1.CancelJobResponse]
 }
 
-// NewJob calls jobs.v1.JobService.NewJobFromRPC.
+// NewJob calls jobs.v1.JobService.NewJob.
 func (c *jobServiceClient) NewJob(ctx context.Context, req *connect.Request[v1.NewJobRequest]) (*connect.Response[v1.NewJobResponse], error) {
 	return c.newJob.CallUnary(ctx, req)
+}
+
+// GetStatus calls jobs.v1.JobService.GetStatus.
+func (c *jobServiceClient) GetStatus(ctx context.Context, req *connect.Request[v1.JobLogRequest]) (*connect.Response[v1.JobLogsResponse], error) {
+	return c.getStatus.CallUnary(ctx, req)
 }
 
 // StreamStatus calls jobs.v1.JobService.StreamStatus.
@@ -105,6 +122,9 @@ func (c *jobServiceClient) CancelJob(ctx context.Context, req *connect.Request[v
 // JobServiceHandler is an implementation of the jobs.v1.JobService service.
 type JobServiceHandler interface {
 	NewJob(context.Context, *connect.Request[v1.NewJobRequest]) (*connect.Response[v1.NewJobResponse], error)
+	// Gets job status at call time, whatever it may be
+	GetStatus(context.Context, *connect.Request[v1.JobLogRequest]) (*connect.Response[v1.JobLogsResponse], error)
+	// Streams job status until it is complete
 	StreamStatus(context.Context, *connect.Request[v1.JobLogRequest], *connect.ServerStream[v1.JobLogsResponse]) error
 	CancelJob(context.Context, *connect.Request[v1.CancelJobRequest]) (*connect.Response[v1.CancelJobResponse], error)
 }
@@ -119,7 +139,13 @@ func NewJobServiceHandler(svc JobServiceHandler, opts ...connect.HandlerOption) 
 	jobServiceNewJobHandler := connect.NewUnaryHandler(
 		JobServiceNewJobProcedure,
 		svc.NewJob,
-		connect.WithSchema(jobServiceMethods.ByName("NewJobFromRPC")),
+		connect.WithSchema(jobServiceMethods.ByName("NewJob")),
+		connect.WithHandlerOptions(opts...),
+	)
+	jobServiceGetStatusHandler := connect.NewUnaryHandler(
+		JobServiceGetStatusProcedure,
+		svc.GetStatus,
+		connect.WithSchema(jobServiceMethods.ByName("GetStatus")),
 		connect.WithHandlerOptions(opts...),
 	)
 	jobServiceStreamStatusHandler := connect.NewServerStreamHandler(
@@ -138,6 +164,8 @@ func NewJobServiceHandler(svc JobServiceHandler, opts ...connect.HandlerOption) 
 		switch r.URL.Path {
 		case JobServiceNewJobProcedure:
 			jobServiceNewJobHandler.ServeHTTP(w, r)
+		case JobServiceGetStatusProcedure:
+			jobServiceGetStatusHandler.ServeHTTP(w, r)
 		case JobServiceStreamStatusProcedure:
 			jobServiceStreamStatusHandler.ServeHTTP(w, r)
 		case JobServiceCancelJobProcedure:
@@ -152,7 +180,11 @@ func NewJobServiceHandler(svc JobServiceHandler, opts ...connect.HandlerOption) 
 type UnimplementedJobServiceHandler struct{}
 
 func (UnimplementedJobServiceHandler) NewJob(context.Context, *connect.Request[v1.NewJobRequest]) (*connect.Response[v1.NewJobResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("jobs.v1.JobService.NewJobFromRPC is not implemented"))
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("jobs.v1.JobService.NewJob is not implemented"))
+}
+
+func (UnimplementedJobServiceHandler) GetStatus(context.Context, *connect.Request[v1.JobLogRequest]) (*connect.Response[v1.JobLogsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("jobs.v1.JobService.GetStatus is not implemented"))
 }
 
 func (UnimplementedJobServiceHandler) StreamStatus(context.Context, *connect.Request[v1.JobLogRequest], *connect.ServerStream[v1.JobLogsResponse]) error {

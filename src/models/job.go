@@ -3,6 +3,7 @@ package models
 import (
 	"context"
 	"fmt"
+	v1 "github.com/makeopensource/leviathan/generated/jobs/v1"
 	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
 )
@@ -61,6 +62,14 @@ type Job struct {
 	// TmpJobFolderPath holds the path to the tmp dir all files related to the job except the final output
 	TmpJobFolderPath string
 	JobCtx           context.Context `gorm:"-"`
+}
+
+func (j *Job) ToProto() *v1.JobStatus {
+	return &v1.JobStatus{
+		JobId:         j.JobId,
+		Status:        string(j.Status),
+		StatusMessage: j.StatusMessage,
+	}
 }
 
 // ValidateForQueue checks for fields required before sending job to queue

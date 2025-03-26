@@ -8,6 +8,9 @@ import "types/v1/types.proto";
 
 service JobService {
   rpc NewJob(NewJobRequest) returns (NewJobResponse) {}
+  // Gets job status at call time, whatever it may be
+  rpc GetStatus (JobLogRequest) returns (JobLogsResponse) {}
+  // Streams job status until it is complete
   rpc StreamStatus(JobLogRequest) returns (stream JobLogsResponse) {}
   rpc CancelJob(CancelJobRequest) returns (CancelJobResponse) {}
 }

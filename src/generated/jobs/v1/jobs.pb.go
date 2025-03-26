@@ -413,10 +413,11 @@ const file_jobs_v1_jobs_proto_rawDesc = "" +
 	"\tJobStatus\x12\x15\n" +
 	"\x06job_id\x18\x01 \x01(\tR\x05jobId\x12\x16\n" +
 	"\x06status\x18\x02 \x01(\tR\x06status\x12%\n" +
-	"\x0estatus_message\x18\x03 \x01(\tR\rstatusMessage2\xd5\x01\n" +
+	"\x0estatus_message\x18\x03 \x01(\tR\rstatusMessage2\x96\x02\n" +
 	"\n" +
 	"JobService\x12;\n" +
-	"\x06NewJob\x12\x16.jobs.v1.NewJobRequest\x1a\x17.jobs.v1.NewJobResponse\"\x00\x12D\n" +
+	"\x06NewJob\x12\x16.jobs.v1.NewJobRequest\x1a\x17.jobs.v1.NewJobResponse\"\x00\x12?\n" +
+	"\tGetStatus\x12\x16.jobs.v1.JobLogRequest\x1a\x18.jobs.v1.JobLogsResponse\"\x00\x12D\n" +
 	"\fStreamStatus\x12\x16.jobs.v1.JobLogRequest\x1a\x18.jobs.v1.JobLogsResponse\"\x000\x01\x12D\n" +
 	"\tCancelJob\x12\x19.jobs.v1.CancelJobRequest\x1a\x1a.jobs.v1.CancelJobResponse\"\x00B\x8c\x01\n" +
 	"\vcom.jobs.v1B\tJobsProtoP\x01Z5github.com/makeopensource/leviathan/generated/jobs/v1\xa2\x02\x03JXX\xaa\x02\aJobs.V1\xca\x02\aJobs\\V1\xe2\x02\x13Jobs\\V1\\GPBMetadata\xea\x02\bJobs::V1b\x06proto3"
@@ -450,14 +451,16 @@ var file_jobs_v1_jobs_proto_depIdxs = []int32{
 	7, // 1: jobs.v1.NewJobRequest.dockerFile:type_name -> types.v1.FileUpload
 	8, // 2: jobs.v1.NewJobRequest.limits:type_name -> types.v1.MachineLimits
 	6, // 3: jobs.v1.JobLogsResponse.jobInfo:type_name -> jobs.v1.JobStatus
-	0, // 4: jobs.v1.JobService.NewJobFromRPC:input_type -> jobs.v1.NewJobRequest
-	4, // 5: jobs.v1.JobService.StreamStatus:input_type -> jobs.v1.JobLogRequest
-	2, // 6: jobs.v1.JobService.CancelJob:input_type -> jobs.v1.CancelJobRequest
-	1, // 7: jobs.v1.JobService.NewJobFromRPC:output_type -> jobs.v1.NewJobResponse
-	5, // 8: jobs.v1.JobService.StreamStatus:output_type -> jobs.v1.JobLogsResponse
-	3, // 9: jobs.v1.JobService.CancelJob:output_type -> jobs.v1.CancelJobResponse
-	7, // [7:10] is the sub-list for method output_type
-	4, // [4:7] is the sub-list for method input_type
+	0, // 4: jobs.v1.JobService.NewJob:input_type -> jobs.v1.NewJobRequest
+	4, // 5: jobs.v1.JobService.GetStatus:input_type -> jobs.v1.JobLogRequest
+	4, // 6: jobs.v1.JobService.StreamStatus:input_type -> jobs.v1.JobLogRequest
+	2, // 7: jobs.v1.JobService.CancelJob:input_type -> jobs.v1.CancelJobRequest
+	1, // 8: jobs.v1.JobService.NewJob:output_type -> jobs.v1.NewJobResponse
+	5, // 9: jobs.v1.JobService.GetStatus:output_type -> jobs.v1.JobLogsResponse
+	5, // 10: jobs.v1.JobService.StreamStatus:output_type -> jobs.v1.JobLogsResponse
+	3, // 11: jobs.v1.JobService.CancelJob:output_type -> jobs.v1.CancelJobResponse
+	8, // [8:12] is the sub-list for method output_type
+	4, // [4:8] is the sub-list for method input_type
 	4, // [4:4] is the sub-list for extension type_name
 	4, // [4:4] is the sub-list for extension extendee
 	0, // [0:4] is the sub-list for field type_name

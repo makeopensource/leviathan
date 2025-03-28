@@ -227,7 +227,7 @@ func testJob(t *testing.T, jobId string, correctOutput string, correctStatus mod
 		return
 	}
 
-	t.Log("Job ID: ", jobId, " Logs: %s", logs)
+	t.Log("Job ID: ", jobId, " Logs:\n", logs)
 
 	returned := strings.TrimSpace(jobInfo.StatusMessage)
 	expected := strings.TrimSpace(correctOutput)

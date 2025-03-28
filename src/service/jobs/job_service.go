@@ -26,23 +26,24 @@ type JobService struct {
 }
 
 func NewJobService(db *gorm.DB, bc *models.BroadcastChannel, dockerService *docker.DkService, labService *labs.LabService) *JobService {
-	return &JobService{
+	srv := &JobService{
 		db:          db,
 		broadcastCh: bc,
 		dockerSrv:   dockerService,
 		queue:       NewJobQueue(uint(com.ConcurrentJobs.GetUint64()), db, dockerService),
 		labSrv:      labService,
 	}
+	srv.cleanupOrphanJobs()
+	return srv
 }
 
 func NewJobServiceWithDeps(dockerService *docker.DkService, labService *labs.LabService) *JobService {
 	db, bc := com.InitDB()
 	srv := NewJobService(db, bc, dockerService, labService)
-	srv.cleanupOrphanJobs()
 	return srv
 }
 
-func (job *JobService) NewJobFromRPC(newJob *models.Job, jobFiles []*v1.FileUpload, dockerfile *v1.FileUpload) (string, error) {
+func (job *JobService) NewJobFromRPC(newJob *models.Job, jobFiles []*v1.FileUpload, dockerfile *v1.FileUpload, isTangoCompatible ...bool) (string, error) {
 	jobId, err := uuid.NewUUID()
 	if err != nil {
 		log.Error().Err(err).Msg("failed to generate job ID")
@@ -83,6 +84,11 @@ func (job *JobService) NewJobFromRPC(newJob *models.Job, jobFiles []*v1.FileUplo
 	newJob.JobCtx = ctx
 	newJob.LabData.VerifyJobLimits()
 	jog(newJob.JobCtx).Debug().Any("limits", newJob.LabData.JobLimits).Msg("job limits")
+
+	if len(isTangoCompatible) > 0 && isTangoCompatible[0] {
+		// todo maybe let entry command be compatible
+		newJob.LabData.JobEntryCmd = createTangoEntryCommand(nil)
+	}
 
 	res := job.db.Create(newJob)
 	if res.Error != nil {
@@ -325,7 +331,7 @@ func (job *JobService) getJobFromDB(jobUuid string) (*models.Job, error) {
 // for example machine running leviathan shutdown unexpectedly or leviathan had an unrecoverable error
 func (job *JobService) cleanupOrphanJobs() {
 	var orphanJobs []*models.Job
-	res := job.db.
+	res := job.db.Preload("labs").
 		Where("status = ?", string(models.Queued)).
 		Or("status = ?", string(models.Running)).
 		Or("status = ?", string(models.Preparing)).

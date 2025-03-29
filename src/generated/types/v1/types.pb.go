@@ -21,28 +21,31 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type FileUpload struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Filename      string                 `protobuf:"bytes,1,opt,name=filename,proto3" json:"filename,omitempty"`
-	Content       []byte                 `protobuf:"bytes,2,opt,name=content,proto3" json:"content,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+type LabData struct {
+	state                    protoimpl.MessageState `protogen:"open.v1"`
+	Labname                  string                 `protobuf:"bytes,1,opt,name=labname,proto3" json:"labname,omitempty"`
+	EntryCmd                 string                 `protobuf:"bytes,2,opt,name=entryCmd,proto3" json:"entryCmd,omitempty"`
+	JobTimeoutInSeconds      uint64                 `protobuf:"varint,3,opt,name=jobTimeoutInSeconds,proto3" json:"jobTimeoutInSeconds,omitempty"`
+	AutolabCompatibilityMode bool                   `protobuf:"varint,4,opt,name=autolabCompatibilityMode,proto3" json:"autolabCompatibilityMode,omitempty"`
+	Limits                   *MachineLimits         `protobuf:"bytes,5,opt,name=limits,proto3" json:"limits,omitempty"`
+	unknownFields            protoimpl.UnknownFields
+	sizeCache                protoimpl.SizeCache
 }
 
-func (x *FileUpload) Reset() {
-	*x = FileUpload{}
+func (x *LabData) Reset() {
+	*x = LabData{}
 	mi := &file_types_v1_types_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *FileUpload) String() string {
+func (x *LabData) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*FileUpload) ProtoMessage() {}
+func (*LabData) ProtoMessage() {}
 
-func (x *FileUpload) ProtoReflect() protoreflect.Message {
+func (x *LabData) ProtoReflect() protoreflect.Message {
 	mi := &file_types_v1_types_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -54,21 +57,42 @@ func (x *FileUpload) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use FileUpload.ProtoReflect.Descriptor instead.
-func (*FileUpload) Descriptor() ([]byte, []int) {
+// Deprecated: Use LabData.ProtoReflect.Descriptor instead.
+func (*LabData) Descriptor() ([]byte, []int) {
 	return file_types_v1_types_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *FileUpload) GetFilename() string {
+func (x *LabData) GetLabname() string {
 	if x != nil {
-		return x.Filename
+		return x.Labname
 	}
 	return ""
 }
 
-func (x *FileUpload) GetContent() []byte {
+func (x *LabData) GetEntryCmd() string {
 	if x != nil {
-		return x.Content
+		return x.EntryCmd
+	}
+	return ""
+}
+
+func (x *LabData) GetJobTimeoutInSeconds() uint64 {
+	if x != nil {
+		return x.JobTimeoutInSeconds
+	}
+	return 0
+}
+
+func (x *LabData) GetAutolabCompatibilityMode() bool {
+	if x != nil {
+		return x.AutolabCompatibilityMode
+	}
+	return false
+}
+
+func (x *LabData) GetLimits() *MachineLimits {
+	if x != nil {
+		return x.Limits
 	}
 	return nil
 }
@@ -137,11 +161,13 @@ var File_types_v1_types_proto protoreflect.FileDescriptor
 
 const file_types_v1_types_proto_rawDesc = "" +
 	"\n" +
-	"\x14types/v1/types.proto\x12\btypes.v1\"B\n" +
-	"\n" +
-	"FileUpload\x12\x1a\n" +
-	"\bfilename\x18\x01 \x01(\tR\bfilename\x12\x18\n" +
-	"\acontent\x18\x02 \x01(\fR\acontent\"g\n" +
+	"\x14types/v1/types.proto\x12\btypes.v1\"\xde\x01\n" +
+	"\aLabData\x12\x18\n" +
+	"\alabname\x18\x01 \x01(\tR\alabname\x12\x1a\n" +
+	"\bentryCmd\x18\x02 \x01(\tR\bentryCmd\x120\n" +
+	"\x13jobTimeoutInSeconds\x18\x03 \x01(\x04R\x13jobTimeoutInSeconds\x12:\n" +
+	"\x18autolabCompatibilityMode\x18\x04 \x01(\bR\x18autolabCompatibilityMode\x12/\n" +
+	"\x06limits\x18\x05 \x01(\v2\x17.types.v1.MachineLimitsR\x06limits\"g\n" +
 	"\rMachineLimits\x12\x1a\n" +
 	"\bCPUCores\x18\x01 \x01(\x05R\bCPUCores\x12\x1e\n" +
 	"\n" +
@@ -165,15 +191,16 @@ func file_types_v1_types_proto_rawDescGZIP() []byte {
 
 var file_types_v1_types_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_types_v1_types_proto_goTypes = []any{
-	(*FileUpload)(nil),    // 0: types.v1.FileUpload
+	(*LabData)(nil),       // 0: types.v1.LabData
 	(*MachineLimits)(nil), // 1: types.v1.MachineLimits
 }
 var file_types_v1_types_proto_depIdxs = []int32{
-	0, // [0:0] is the sub-list for method output_type
-	0, // [0:0] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	1, // 0: types.v1.LabData.limits:type_name -> types.v1.MachineLimits
+	1, // [1:1] is the sub-list for method output_type
+	1, // [1:1] is the sub-list for method input_type
+	1, // [1:1] is the sub-list for extension type_name
+	1, // [1:1] is the sub-list for extension extendee
+	0, // [0:1] is the sub-list for field type_name
 }
 
 func init() { file_types_v1_types_proto_init() }

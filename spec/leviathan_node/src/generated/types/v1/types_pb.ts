@@ -10,28 +10,43 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file types/v1/types.proto.
  */
 export const file_types_v1_types: GenFile = /*@__PURE__*/
-  fileDesc("ChR0eXBlcy92MS90eXBlcy5wcm90bxIIdHlwZXMudjEiLwoKRmlsZVVwbG9hZBIQCghmaWxlbmFtZRgBIAEoCRIPCgdjb250ZW50GAIgASgMIkcKDU1hY2hpbmVMaW1pdHMSEAoIQ1BVQ29yZXMYASABKAUSEgoKbWVtb3J5SW5NYhgCIAEoBRIQCghQaWRMaW1pdBgDIAEoBUKTAQoMY29tLnR5cGVzLnYxQgpUeXBlc1Byb3RvUAFaNmdpdGh1Yi5jb20vbWFrZW9wZW5zb3VyY2UvbGV2aWF0aGFuL2dlbmVyYXRlZC90eXBlcy92MaICA1RYWKoCCFR5cGVzLlYxygIIVHlwZXNcVjHiAhRUeXBlc1xWMVxHUEJNZXRhZGF0YeoCCVR5cGVzOjpWMWIGcHJvdG8z");
+  fileDesc("ChR0eXBlcy92MS90eXBlcy5wcm90bxIIdHlwZXMudjEilAEKB0xhYkRhdGESDwoHbGFibmFtZRgBIAEoCRIQCghlbnRyeUNtZBgCIAEoCRIbChNqb2JUaW1lb3V0SW5TZWNvbmRzGAMgASgEEiAKGGF1dG9sYWJDb21wYXRpYmlsaXR5TW9kZRgEIAEoCBInCgZsaW1pdHMYBSABKAsyFy50eXBlcy52MS5NYWNoaW5lTGltaXRzIkcKDU1hY2hpbmVMaW1pdHMSEAoIQ1BVQ29yZXMYASABKAUSEgoKbWVtb3J5SW5NYhgCIAEoBRIQCghQaWRMaW1pdBgDIAEoBUKTAQoMY29tLnR5cGVzLnYxQgpUeXBlc1Byb3RvUAFaNmdpdGh1Yi5jb20vbWFrZW9wZW5zb3VyY2UvbGV2aWF0aGFuL2dlbmVyYXRlZC90eXBlcy92MaICA1RYWKoCCFR5cGVzLlYxygIIVHlwZXNcVjHiAhRUeXBlc1xWMVxHUEJNZXRhZGF0YeoCCVR5cGVzOjpWMWIGcHJvdG8z");
 
 /**
- * @generated from message types.v1.FileUpload
+ * @generated from message types.v1.LabData
  */
-export type FileUpload = Message<"types.v1.FileUpload"> & {
+export type LabData = Message<"types.v1.LabData"> & {
   /**
-   * @generated from field: string filename = 1;
+   * @generated from field: string labname = 1;
    */
-  filename: string;
+  labname: string;
 
   /**
-   * @generated from field: bytes content = 2;
+   * @generated from field: string entryCmd = 2;
    */
-  content: Uint8Array;
+  entryCmd: string;
+
+  /**
+   * @generated from field: uint64 jobTimeoutInSeconds = 3;
+   */
+  jobTimeoutInSeconds: bigint;
+
+  /**
+   * @generated from field: bool autolabCompatibilityMode = 4;
+   */
+  autolabCompatibilityMode: boolean;
+
+  /**
+   * @generated from field: types.v1.MachineLimits limits = 5;
+   */
+  limits?: MachineLimits;
 };
 
 /**
- * Describes the message types.v1.FileUpload.
- * Use `create(FileUploadSchema)` to create a new message.
+ * Describes the message types.v1.LabData.
+ * Use `create(LabDataSchema)` to create a new message.
  */
-export const FileUploadSchema: GenMessage<FileUpload> = /*@__PURE__*/
+export const LabDataSchema: GenMessage<LabData> = /*@__PURE__*/
   messageDesc(file_types_v1_types, 0);
 
 /**

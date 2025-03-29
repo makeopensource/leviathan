@@ -4,7 +4,7 @@
 
 import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv1";
 import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv1";
-import type { FileUpload, MachineLimits } from "../../types/v1/types_pb";
+import type { LabData, LabDataSchema } from "../../types/v1/types_pb";
 import { file_types_v1_types } from "../../types/v1/types_pb";
 import type { Message } from "@bufbuild/protobuf";
 
@@ -12,48 +12,28 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file labs/v1/labs.proto.
  */
 export const file_labs_v1_labs: GenFile = /*@__PURE__*/
-  fileDesc("ChJsYWJzL3YxL2xhYnMucHJvdG8SB2xhYnMudjEi0QEKCkxhYlJlcXVlc3QSDwoHbGFiTmFtZRgBIAEoCRIUCgxlbnRyeUNvbW1hbmQYAiABKAkSGgoSdGltZUxpbWl0SW5TZWNvbmRzGAQgASgEEi4KDW1hY2hpbmVMaW1pdHMYBSABKAsyFy50eXBlcy52MS5NYWNoaW5lTGltaXRzEigKCmRvY2tlckZpbGUYBiABKAsyFC50eXBlcy52MS5GaWxlVXBsb2FkEiYKCGpvYkZpbGVzGAcgAygLMhQudHlwZXMudjEuRmlsZVVwbG9hZCIfCg5OZXdMYWJSZXNwb25zZRINCgVsYWJJZBgBIAEoAyJFCg5FZGl0TGFiUmVxdWVzdBINCgVsYWJJZBgBIAEoAxIkCgdsYWJJbmZvGAIgASgLMhMubGFicy52MS5MYWJSZXF1ZXN0IhEKD0VkaXRMYWJSZXNwb25zZSIhChBEZWxldGVMYWJSZXF1ZXN0Eg0KBUxhYklEGAEgASgDIhMKEURlbGV0ZUxhYlJlc3BvbnNlMsgBCgpMYWJTZXJ2aWNlEjgKBk5ld0xhYhITLmxhYnMudjEuTGFiUmVxdWVzdBoXLmxhYnMudjEuTmV3TGFiUmVzcG9uc2UiABI6CgdFZGl0TGFiEhMubGFicy52MS5MYWJSZXF1ZXN0GhgubGFicy52MS5FZGl0TGFiUmVzcG9uc2UiABJECglEZWxldGVMYWISGS5sYWJzLnYxLkRlbGV0ZUxhYlJlcXVlc3QaGi5sYWJzLnYxLkRlbGV0ZUxhYlJlc3BvbnNlIgBCjAEKC2NvbS5sYWJzLnYxQglMYWJzUHJvdG9QAVo1Z2l0aHViLmNvbS9tYWtlb3BlbnNvdXJjZS9sZXZpYXRoYW4vZ2VuZXJhdGVkL2xhYnMvdjGiAgNMWFiqAgdMYWJzLlYxygIHTGFic1xWMeICE0xhYnNcVjFcR1BCTWV0YWRhdGHqAghMYWJzOjpWMWIGcHJvdG8z", [file_types_v1_types]);
+  fileDesc("ChJsYWJzL3YxL2xhYnMucHJvdG8SB2xhYnMudjEiSAoNTmV3TGFiUmVxdWVzdBITCgt0bXBGb2xkZXJJZBgBIAEoCRIiCgdsYWJEYXRhGAIgASgLMhEudHlwZXMudjEuTGFiRGF0YSIfCg5OZXdMYWJSZXNwb25zZRINCgVsYWJJZBgBIAEoAyJDCg5FZGl0TGFiUmVxdWVzdBINCgVsYWJJZBgBIAEoAxIiCgdsYWJJbmZvGAIgASgLMhEudHlwZXMudjEuTGFiRGF0YSIRCg9FZGl0TGFiUmVzcG9uc2UiIQoQRGVsZXRlTGFiUmVxdWVzdBINCgVMYWJJRBgBIAEoAyITChFEZWxldGVMYWJSZXNwb25zZTLJAQoKTGFiU2VydmljZRI7CgZOZXdMYWISFi5sYWJzLnYxLk5ld0xhYlJlcXVlc3QaFy5sYWJzLnYxLk5ld0xhYlJlc3BvbnNlIgASOAoHRWRpdExhYhIRLnR5cGVzLnYxLkxhYkRhdGEaGC5sYWJzLnYxLkVkaXRMYWJSZXNwb25zZSIAEkQKCURlbGV0ZUxhYhIZLmxhYnMudjEuRGVsZXRlTGFiUmVxdWVzdBoaLmxhYnMudjEuRGVsZXRlTGFiUmVzcG9uc2UiAEKMAQoLY29tLmxhYnMudjFCCUxhYnNQcm90b1ABWjVnaXRodWIuY29tL21ha2VvcGVuc291cmNlL2xldmlhdGhhbi9nZW5lcmF0ZWQvbGFicy92MaICA0xYWKoCB0xhYnMuVjHKAgdMYWJzXFYx4gITTGFic1xWMVxHUEJNZXRhZGF0YeoCCExhYnM6OlYxYgZwcm90bzM", [file_types_v1_types]);
 
 /**
- * @generated from message labs.v1.LabRequest
+ * @generated from message labs.v1.NewLabRequest
  */
-export type LabRequest = Message<"labs.v1.LabRequest"> & {
+export type NewLabRequest = Message<"labs.v1.NewLabRequest"> & {
   /**
-   * @generated from field: string labName = 1;
+   * @generated from field: string tmpFolderId = 1;
    */
-  labName: string;
+  tmpFolderId: string;
 
   /**
-   * @generated from field: string entryCommand = 2;
+   * @generated from field: types.v1.LabData labData = 2;
    */
-  entryCommand: string;
-
-  /**
-   * @generated from field: uint64 timeLimitInSeconds = 4;
-   */
-  timeLimitInSeconds: bigint;
-
-  /**
-   * @generated from field: types.v1.MachineLimits machineLimits = 5;
-   */
-  machineLimits?: MachineLimits;
-
-  /**
-   * @generated from field: types.v1.FileUpload dockerFile = 6;
-   */
-  dockerFile?: FileUpload;
-
-  /**
-   * @generated from field: repeated types.v1.FileUpload jobFiles = 7;
-   */
-  jobFiles: FileUpload[];
+  labData?: LabData;
 };
 
 /**
- * Describes the message labs.v1.LabRequest.
- * Use `create(LabRequestSchema)` to create a new message.
+ * Describes the message labs.v1.NewLabRequest.
+ * Use `create(NewLabRequestSchema)` to create a new message.
  */
-export const LabRequestSchema: GenMessage<LabRequest> = /*@__PURE__*/
+export const NewLabRequestSchema: GenMessage<NewLabRequest> = /*@__PURE__*/
   messageDesc(file_labs_v1_labs, 0);
 
 /**
@@ -83,9 +63,9 @@ export type EditLabRequest = Message<"labs.v1.EditLabRequest"> & {
   labId: bigint;
 
   /**
-   * @generated from field: labs.v1.LabRequest labInfo = 2;
+   * @generated from field: types.v1.LabData labInfo = 2;
    */
-  labInfo?: LabRequest;
+  labInfo?: LabData;
 };
 
 /**
@@ -147,7 +127,7 @@ export const LabService: GenService<{
    */
   newLab: {
     methodKind: "unary";
-    input: typeof LabRequestSchema;
+    input: typeof NewLabRequestSchema;
     output: typeof NewLabResponseSchema;
   },
   /**
@@ -155,7 +135,7 @@ export const LabService: GenService<{
    */
   editLab: {
     methodKind: "unary";
-    input: typeof LabRequestSchema;
+    input: typeof LabDataSchema;
     output: typeof EditLabResponseSchema;
   },
   /**

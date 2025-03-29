@@ -7,18 +7,14 @@ option go_package = "github.com/makeopensource/leviathan/generated/labs/v1";
 import "types/v1/types.proto";
 
 service LabService {
-  rpc NewLab(LabRequest) returns (NewLabResponse) {}
-  rpc EditLab(LabRequest) returns (EditLabResponse) {}
+  rpc NewLab(NewLabRequest) returns (NewLabResponse) {}
+  rpc EditLab(types.v1.LabData) returns (EditLabResponse) {}
   rpc DeleteLab(DeleteLabRequest) returns (DeleteLabResponse) {}
 }
 
-message LabRequest {
-  string labName = 1;
-  string entryCommand = 2;
-  uint64 timeLimitInSeconds = 4;
-  types.v1.MachineLimits machineLimits = 5;
-  types.v1.FileUpload dockerFile = 6;
-  repeated types.v1.FileUpload jobFiles = 7;
+message NewLabRequest {
+  string tmpFolderId = 1;
+  types.v1.LabData labData = 2;
 }
 
 message NewLabResponse {
@@ -27,7 +23,7 @@ message NewLabResponse {
 
 message EditLabRequest {
   int64 labId = 1;
-  LabRequest labInfo = 2;
+  types.v1.LabData labInfo = 2;
 }
 
 message EditLabResponse {}

@@ -7,7 +7,7 @@
 package v1
 
 import (
-	v1 "github.com/makeopensource/leviathan/generated/types/v1"
+	_ "github.com/makeopensource/leviathan/generated/types/v1"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -23,15 +23,11 @@ const (
 )
 
 type NewJobRequest struct {
-	state               protoimpl.MessageState `protogen:"open.v1"`
-	JobFiles            []*v1.FileUpload       `protobuf:"bytes,1,rep,name=jobFiles,proto3" json:"jobFiles,omitempty"`
-	DockerFile          *v1.FileUpload         `protobuf:"bytes,2,opt,name=dockerFile,proto3" json:"dockerFile,omitempty"`
-	ImageName           string                 `protobuf:"bytes,3,opt,name=imageName,proto3" json:"imageName,omitempty"`
-	JobTimeoutInSeconds uint64                 `protobuf:"varint,4,opt,name=jobTimeoutInSeconds,proto3" json:"jobTimeoutInSeconds,omitempty"`
-	EntryCmd            string                 `protobuf:"bytes,5,opt,name=entryCmd,proto3" json:"entryCmd,omitempty"`
-	Limits              *v1.MachineLimits      `protobuf:"bytes,6,opt,name=limits,proto3" json:"limits,omitempty"`
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
+	state                 protoimpl.MessageState `protogen:"open.v1"`
+	LabID                 uint64                 `protobuf:"varint,1,opt,name=labID,proto3" json:"labID,omitempty"`
+	TmpSubmissionFolderId string                 `protobuf:"bytes,2,opt,name=tmpSubmissionFolderId,proto3" json:"tmpSubmissionFolderId,omitempty"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
 }
 
 func (x *NewJobRequest) Reset() {
@@ -64,46 +60,18 @@ func (*NewJobRequest) Descriptor() ([]byte, []int) {
 	return file_jobs_v1_jobs_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *NewJobRequest) GetJobFiles() []*v1.FileUpload {
+func (x *NewJobRequest) GetLabID() uint64 {
 	if x != nil {
-		return x.JobFiles
-	}
-	return nil
-}
-
-func (x *NewJobRequest) GetDockerFile() *v1.FileUpload {
-	if x != nil {
-		return x.DockerFile
-	}
-	return nil
-}
-
-func (x *NewJobRequest) GetImageName() string {
-	if x != nil {
-		return x.ImageName
-	}
-	return ""
-}
-
-func (x *NewJobRequest) GetJobTimeoutInSeconds() uint64 {
-	if x != nil {
-		return x.JobTimeoutInSeconds
+		return x.LabID
 	}
 	return 0
 }
 
-func (x *NewJobRequest) GetEntryCmd() string {
+func (x *NewJobRequest) GetTmpSubmissionFolderId() string {
 	if x != nil {
-		return x.EntryCmd
+		return x.TmpSubmissionFolderId
 	}
 	return ""
-}
-
-func (x *NewJobRequest) GetLimits() *v1.MachineLimits {
-	if x != nil {
-		return x.Limits
-	}
-	return nil
 }
 
 type NewJobResponse struct {
@@ -390,16 +358,10 @@ var File_jobs_v1_jobs_proto protoreflect.FileDescriptor
 
 const file_jobs_v1_jobs_proto_rawDesc = "" +
 	"\n" +
-	"\x12jobs/v1/jobs.proto\x12\ajobs.v1\x1a\x14types/v1/types.proto\"\x94\x02\n" +
-	"\rNewJobRequest\x120\n" +
-	"\bjobFiles\x18\x01 \x03(\v2\x14.types.v1.FileUploadR\bjobFiles\x124\n" +
-	"\n" +
-	"dockerFile\x18\x02 \x01(\v2\x14.types.v1.FileUploadR\n" +
-	"dockerFile\x12\x1c\n" +
-	"\timageName\x18\x03 \x01(\tR\timageName\x120\n" +
-	"\x13jobTimeoutInSeconds\x18\x04 \x01(\x04R\x13jobTimeoutInSeconds\x12\x1a\n" +
-	"\bentryCmd\x18\x05 \x01(\tR\bentryCmd\x12/\n" +
-	"\x06limits\x18\x06 \x01(\v2\x17.types.v1.MachineLimitsR\x06limits\"&\n" +
+	"\x12jobs/v1/jobs.proto\x12\ajobs.v1\x1a\x14types/v1/types.proto\"[\n" +
+	"\rNewJobRequest\x12\x14\n" +
+	"\x05labID\x18\x01 \x01(\x04R\x05labID\x124\n" +
+	"\x15tmpSubmissionFolderId\x18\x02 \x01(\tR\x15tmpSubmissionFolderId\"&\n" +
 	"\x0eNewJobResponse\x12\x14\n" +
 	"\x05jobId\x18\x01 \x01(\tR\x05jobId\"(\n" +
 	"\x10CancelJobRequest\x12\x14\n" +
@@ -443,27 +405,22 @@ var file_jobs_v1_jobs_proto_goTypes = []any{
 	(*JobLogRequest)(nil),     // 4: jobs.v1.JobLogRequest
 	(*JobLogsResponse)(nil),   // 5: jobs.v1.JobLogsResponse
 	(*JobStatus)(nil),         // 6: jobs.v1.JobStatus
-	(*v1.FileUpload)(nil),     // 7: types.v1.FileUpload
-	(*v1.MachineLimits)(nil),  // 8: types.v1.MachineLimits
 }
 var file_jobs_v1_jobs_proto_depIdxs = []int32{
-	7, // 0: jobs.v1.NewJobRequest.jobFiles:type_name -> types.v1.FileUpload
-	7, // 1: jobs.v1.NewJobRequest.dockerFile:type_name -> types.v1.FileUpload
-	8, // 2: jobs.v1.NewJobRequest.limits:type_name -> types.v1.MachineLimits
-	6, // 3: jobs.v1.JobLogsResponse.jobInfo:type_name -> jobs.v1.JobStatus
-	0, // 4: jobs.v1.JobService.NewJob:input_type -> jobs.v1.NewJobRequest
-	4, // 5: jobs.v1.JobService.GetStatus:input_type -> jobs.v1.JobLogRequest
-	4, // 6: jobs.v1.JobService.StreamStatus:input_type -> jobs.v1.JobLogRequest
-	2, // 7: jobs.v1.JobService.CancelJob:input_type -> jobs.v1.CancelJobRequest
-	1, // 8: jobs.v1.JobService.NewJob:output_type -> jobs.v1.NewJobResponse
-	5, // 9: jobs.v1.JobService.GetStatus:output_type -> jobs.v1.JobLogsResponse
-	5, // 10: jobs.v1.JobService.StreamStatus:output_type -> jobs.v1.JobLogsResponse
-	3, // 11: jobs.v1.JobService.CancelJob:output_type -> jobs.v1.CancelJobResponse
-	8, // [8:12] is the sub-list for method output_type
-	4, // [4:8] is the sub-list for method input_type
-	4, // [4:4] is the sub-list for extension type_name
-	4, // [4:4] is the sub-list for extension extendee
-	0, // [0:4] is the sub-list for field type_name
+	6, // 0: jobs.v1.JobLogsResponse.jobInfo:type_name -> jobs.v1.JobStatus
+	0, // 1: jobs.v1.JobService.NewJob:input_type -> jobs.v1.NewJobRequest
+	4, // 2: jobs.v1.JobService.GetStatus:input_type -> jobs.v1.JobLogRequest
+	4, // 3: jobs.v1.JobService.StreamStatus:input_type -> jobs.v1.JobLogRequest
+	2, // 4: jobs.v1.JobService.CancelJob:input_type -> jobs.v1.CancelJobRequest
+	1, // 5: jobs.v1.JobService.NewJob:output_type -> jobs.v1.NewJobResponse
+	5, // 6: jobs.v1.JobService.GetStatus:output_type -> jobs.v1.JobLogsResponse
+	5, // 7: jobs.v1.JobService.StreamStatus:output_type -> jobs.v1.JobLogsResponse
+	3, // 8: jobs.v1.JobService.CancelJob:output_type -> jobs.v1.CancelJobResponse
+	5, // [5:9] is the sub-list for method output_type
+	1, // [1:5] is the sub-list for method input_type
+	1, // [1:1] is the sub-list for extension type_name
+	1, // [1:1] is the sub-list for extension extendee
+	0, // [0:1] is the sub-list for field type_name
 }
 
 func init() { file_jobs_v1_jobs_proto_init() }

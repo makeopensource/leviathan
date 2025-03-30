@@ -2,63 +2,65 @@ package labs
 
 import (
 	"fmt"
-	com "github.com/makeopensource/leviathan/common"
-	v1 "github.com/makeopensource/leviathan/generated/types/v1"
+	. "github.com/makeopensource/leviathan/common"
 	"github.com/makeopensource/leviathan/models"
 	"github.com/makeopensource/leviathan/service/docker"
+	. "github.com/makeopensource/leviathan/service/file_manager"
 	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
 	"os"
-	"strconv"
+	"path/filepath"
 	"strings"
 )
 
 type LabService struct {
-	db *gorm.DB
-	dk *docker.DkService
+	db      *gorm.DB
+	dk      *docker.DkService
+	fileMan *FileManagerService
 }
 
-func NewLabService(db *gorm.DB, dk *docker.DkService) *LabService {
+func NewLabService(db *gorm.DB, dk *docker.DkService, service *FileManagerService) *LabService {
 	return &LabService{
-		db: db,
-		dk: dk,
+		db:      db,
+		dk:      dk,
+		fileMan: service,
 	}
 }
 
-func (service *LabService) CreateLab(lab *models.Lab, dockerFile *v1.FileUpload, jobFiles []*v1.FileUpload) (uint, error) {
-	// first save to check lab name uniqueness
-	lab, err := service.SaveLabToDB(lab)
+func (service *LabService) CreateLab(lab *models.Lab, jobDirId string) (uint, error) {
+	tmpDir, err := service.fileMan.GetLabFilePaths(jobDirId)
 	if err != nil {
 		return 0, err
 	}
+	defer service.fileMan.DeleteFolder(jobDirId)
 
-	basePath := fmt.Sprintf("%s/%s", com.LabsFolder.GetStr(), strconv.Itoa(int(lab.ID)))
-	jobDataDirPath := basePath + "/jobData"
-
-	if err = os.MkdirAll(jobDataDirPath, com.DefaultFilePerm); err != nil {
-		log.Error().Err(err).Msgf("unable to create directories for lab: %s", lab.Name)
-		return 0, fmt.Errorf("unable to create directories for lab: %s", lab.Name)
+	jobFolderName := fmt.Sprintf("%s_%s", lab.Name, jobDirId)
+	jobDataDirPath := fmt.Sprintf("%s/%s", LabsFolder.GetStr(), jobFolderName)
+	if err = os.MkdirAll(jobDataDirPath, DefaultFilePerm); err != nil {
+		return 0, ErrLog(
+			"unable to create directories for lab: "+lab.Name,
+			err,
+			log.Error(),
+		)
 	}
 
-	for _, file := range jobFiles {
-		path := fmt.Sprintf("%s/%s", jobDataDirPath, file.Filename)
-		if err := writeFile(path, file.Content); err != nil {
-			return 0, err
-		}
+	if err = HardLinkFolder(tmpDir, jobDataDirPath); err != nil {
+		return 0, ErrLog("unable to copy files to job dir", err, log.Error())
 	}
+
+	lab.DockerFilePath = filepath.Join(jobDataDirPath, DockerfileName)
+	lab.JobFilesDirPath = filepath.Join(jobDataDirPath, JobDataFolderName)
 
 	lab.ImageTag = fmt.Sprintf("%s:v1", lab.Name)
 	lab.ImageTag = strings.ToLower(strings.Trim(strings.TrimSpace(lab.ImageTag), " "))
 
-	dockerFile.Filename = fmt.Sprintf("%s_%s", lab.Name, dockerFile.Filename)
-	dockerFilePath := fmt.Sprintf("%s/%s", basePath, dockerFile.Filename)
-
-	if err = writeFile(dockerFilePath, dockerFile.Content); err != nil {
-		return 0, err
+	if lab.AutolabCompatible {
+		lab.JobEntryCmd = CreateTangoEntryCommand(
+			WithTimeout(int(lab.JobTimeout.Seconds())),
+		)
+	} else {
+		lab.JobEntryCmd = CreateLeviathanEntryCommand(lab.JobEntryCmd)
 	}
-
-	lab.DockerFilePath = dockerFilePath
-	lab.JobFilesDirPath = jobDataDirPath
 
 	// final save to update paths
 	db, err := service.SaveLabToDB(lab)
@@ -69,36 +71,68 @@ func (service *LabService) CreateLab(lab *models.Lab, dockerFile *v1.FileUpload,
 	return db.ID, nil
 }
 
-func (service *LabService) EditLab(id uint, lab *models.Lab) error {
-	panic("implement me")
+func (service *LabService) EditLab(id uint, lab *models.Lab, jobFiles string) (uint, error) {
+	labData, err := service.GetLabFromDB(id)
+	if err != nil {
+		return 0, err
+	}
+
+	err = service.deleteLabFiles(labData)
+	if err != nil {
+		return 0, err
+	}
+
+	_, err = service.CreateLab(lab, jobFiles)
+	if err != nil {
+		return 0, err
+	}
+
+	return labData.ID, nil
 }
 
 func (service *LabService) DeleteLab(id uint) error {
+	labData, err := service.GetLabFromDB(id)
+	if err != nil {
+		return err
+	}
+
+	err = service.deleteLabFiles(labData)
+	if err != nil {
+		return err
+	}
+
 	if res := service.db.Delete(&models.Lab{}, id); res.Error != nil {
 		return res.Error
+	}
+
+	return nil
+}
+
+func (service *LabService) deleteLabFiles(labData *models.Lab) error {
+	err := os.RemoveAll(filepath.Base(labData.DockerFilePath))
+	if err != nil {
+		return ErrLog(
+			"unable to delete directories for lab: "+labData.Name,
+			err,
+			log.Error(),
+		)
 	}
 	return nil
 }
 
 func (service *LabService) GetLabFromDB(id uint) (*models.Lab, error) {
 	var lab models.Lab
-	if res := service.db.First(&lab).Where("ID = ?", id); res.Error != nil {
+	if res := service.db.Where("ID = ?", id).First(&lab); res.Error != nil {
 		return nil, res.Error
 	}
 	return &lab, nil
 }
 
 func (service *LabService) SaveLabToDB(lab *models.Lab) (*models.Lab, error) {
-	if res := service.db.Save(lab); res.Error != nil {
+	res := service.db.Save(lab)
+	if res.Error != nil {
 		return nil, res.Error
 	}
-	return lab, nil
-}
 
-func writeFile(path string, fileData []byte) error {
-	return os.WriteFile(
-		path,
-		fileData,
-		com.DefaultFilePerm,
-	)
+	return lab, nil
 }

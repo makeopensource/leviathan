@@ -119,15 +119,12 @@ func (c *DkClient) ListContainers(machineId string) ([]*dktypes.ContainerMetaDat
 
 // CreateNewContainer creates a new container from given image
 func (c *DkClient) CreateNewContainer(jobUuid, image, jobFolder, entryCmd string, machineLimits container.Resources) (string, error) {
-	baseCmd := fmt.Sprintf("cd /home/%s", jobFolder)
-	runCommand := fmt.Sprintf("%s && %s", baseCmd, entryCmd)
-
 	config := &container.Config{
 		Image: image,
 		Labels: map[string]string{
 			"con": jobUuid,
 		},
-		Cmd: []string{"sh", "-c", runCommand},
+		Cmd: []string{"sh", "-c", entryCmd},
 	}
 
 	hostConfig := &container.HostConfig{

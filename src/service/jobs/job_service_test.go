@@ -3,9 +3,9 @@ package jobs
 import (
 	"fmt"
 	"github.com/makeopensource/leviathan/common"
-	v1 "github.com/makeopensource/leviathan/generated/types/v1"
 	"github.com/makeopensource/leviathan/models"
 	"github.com/makeopensource/leviathan/service/docker"
+	. "github.com/makeopensource/leviathan/service/file_manager"
 	"github.com/makeopensource/leviathan/service/labs"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -19,13 +19,16 @@ import (
 )
 
 var (
-	dkTestService  *docker.DkService
-	jobTestService *JobService
-	setupOnce      sync.Once
+	dkTestService      *docker.DkService
+	jobTestService     *JobService
+	labTestService     *labs.LabService
+	fileManTestService *FileManagerService
+	setupOnce          sync.Once
+	labCreateOnce      sync.Once
+	createLabId        uint
 )
 
 const (
-	imageName      = "arithmetic-python"
 	dockerFilePath = "../../../example/simple-addition/ex-Dockerfile"
 	makeFilePath   = "../../../example/simple-addition/makefile"
 	graderFilePath = "../../../example/simple-addition/grader.py"
@@ -141,7 +144,7 @@ func TestCancel(t *testing.T) {
 	timeout := testCases["timeout"]
 	timeout.expectedOutput = "Job was cancelled"
 
-	jobId := setupJobProcess(timeout.studentFile, timeLimit)
+	jobId := setupJobProcess(t, timeout.studentFile, timeLimit)
 
 	// cancel the job after 3 seconds
 	time.AfterFunc(3*time.Second, func() {
@@ -158,66 +161,87 @@ func TestCancel(t *testing.T) {
 }
 
 func testJobProcessor(t *testing.T, studentCodePath string, correctOutput string, timeout time.Duration, status models.JobStatus) {
-	jobId := setupJobProcess(studentCodePath, timeout)
+	jobId := setupJobProcess(t, studentCodePath, timeout)
 	testJob(t, jobId, correctOutput, status)
 }
 
-func setupJobProcess(studentCodePath string, timeout time.Duration) string {
-	graderBytes, err := os.ReadFile(graderFilePath)
+func setupJobProcess(t *testing.T, studentCodePath string, timeout time.Duration) string {
+	labId := setupLab(t, &models.Lab{
+		Name:              "test-lab",
+		JobTimeout:        timeout,
+		JobEntryCmd:       "make grade",
+		AutolabCompatible: false,
+	}, dockerFilePath, graderFilePath, makeFilePath)
+	if labId == 0 {
+		t.Fatalf("Failed to create lab")
+	}
+
+	studentBytes, err := os.Open(studentCodePath)
 	if err != nil {
-		log.Fatal().Err(err).Msg("Error reading grader.py")
+		t.Fatal("Error reading student", err)
+	}
+	studentFileInfo := &FileInfo{
+		Reader:   studentBytes,
+		Filename: "student.py",
 	}
 
-	makefileBytes, err := os.ReadFile(makeFilePath)
+	tmpSubmissionFolder, err := fileManTestService.CreateSubmissionFolder(studentFileInfo)
 	if err != nil {
-		log.Fatal().Err(err).Msg("Error reading grader.py")
+		return ""
 	}
 
-	studentBytes, err := os.ReadFile(studentCodePath)
-	if err != nil {
-		log.Fatal().Err(err).Msg("Error reading student")
-	}
-
-	dockerBytes, err := os.ReadFile(dockerFilePath)
-	if err != nil {
-		log.Fatal().Err(err).Msg("Error reading docker file")
-	}
-
-	newLab := models.Lab{
-		JobTimeout:  timeout,
-		JobEntryCmd: "make grade",
-		ImageTag:    imageName,
-	}
-
-	newJob := &models.Job{LabData: &newLab}
-
-	jobId, err := jobTestService.NewJobFromRPC(
+	newJob := &models.Job{LabID: labId}
+	jobId, err := jobTestService.NewJob(
 		newJob,
-		[]*v1.FileUpload{
-			{
-				Filename: filepath.Base(makeFilePath),
-				Content:  makefileBytes,
-			},
-			{
-				Filename: filepath.Base(graderFilePath),
-				Content:  graderBytes,
-			},
-			{
-				Filename: "student.py",
-				Content:  studentBytes,
-			},
-		},
-		&v1.FileUpload{
-			Filename: filepath.Base(dockerFilePath),
-			Content:  dockerBytes,
-		},
+		tmpSubmissionFolder,
 	)
 
 	if err != nil {
-		log.Fatal().Err(err).Msgf("Error creating job")
+		t.Fatal("Error creating job", err)
+		return ""
 	}
 
 	return jobId
+}
+
+func createLab(t *testing.T, labData *models.Lab, dockerfilePath string, files ...string) uint {
+	var labfiles []*FileInfo
+
+	for _, file := range files {
+		filename := filepath.Base(file)
+		fileBytes, err := os.Open(file)
+		if err != nil {
+			t.Fatal("Error reading ", filename, " ", err)
+		}
+
+		labfiles = append(labfiles, &FileInfo{
+			Reader:   fileBytes,
+			Filename: filename,
+		})
+	}
+
+	dockerfile, err := os.Open(dockerfilePath)
+	if err != nil {
+		t.Fatalf("Error reading docker file: %v", err)
+	}
+
+	tmpFolderID, err := fileManTestService.CreateTmpLabFolder(dockerfile, labfiles...)
+	if err != nil {
+		t.Fatalf("Error creating tmp folder: %v", err)
+	}
+
+	labId, err := labTestService.CreateLab(labData, tmpFolderID)
+	if err != nil {
+		t.Fatalf("Error creating lab: %v", err)
+	}
+	return labId
+}
+
+func setupLab(t *testing.T, labData *models.Lab, dockerfilePath string, files ...string) uint {
+	labCreateOnce.Do(func() {
+		createLabId = createLab(t, labData, dockerfilePath, files...)
+	})
+	return createLabId
 }
 
 func testJob(t *testing.T, jobId string, correctOutput string, correctStatus models.JobStatus) {
@@ -227,7 +251,7 @@ func testJob(t *testing.T, jobId string, correctOutput string, correctStatus mod
 		return
 	}
 
-	t.Log("Job ID: ", jobId, " Logs: %s", logs)
+	t.Log("Job ID: ", jobId, " Logs:\n", logs)
 
 	returned := strings.TrimSpace(jobInfo.StatusMessage)
 	expected := strings.TrimSpace(correctOutput)
@@ -244,12 +268,12 @@ func setupTest() {
 
 func initServices() {
 	common.InitConfig()
-
 	db, bc := common.InitDB()
 
 	dkTestService = docker.NewDockerServiceWithClients()
-	lab := labs.NewLabService(db, dkTestService)
-	jobTestService = NewJobService(db, bc, dkTestService, lab)
+	fileManTestService = NewFileManagerService()
+	labTestService = labs.NewLabService(db, dkTestService, fileManTestService)
+	jobTestService = NewJobService(db, bc, dkTestService, labTestService, fileManTestService)
 
 	// no logs on tests
 	log.Logger = log.Logger.Level(zerolog.Disabled)

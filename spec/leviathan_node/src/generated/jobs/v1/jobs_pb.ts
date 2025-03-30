@@ -4,7 +4,6 @@
 
 import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv1";
 import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv1";
-import type { FileUpload, MachineLimits } from "../../types/v1/types_pb";
 import { file_types_v1_types } from "../../types/v1/types_pb";
 import type { Message } from "@bufbuild/protobuf";
 
@@ -12,41 +11,21 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file jobs/v1/jobs.proto.
  */
 export const file_jobs_v1_jobs: GenFile = /*@__PURE__*/
-  fileDesc("ChJqb2JzL3YxL2pvYnMucHJvdG8SB2pvYnMudjEizAEKDU5ld0pvYlJlcXVlc3QSJgoIam9iRmlsZXMYASADKAsyFC50eXBlcy52MS5GaWxlVXBsb2FkEigKCmRvY2tlckZpbGUYAiABKAsyFC50eXBlcy52MS5GaWxlVXBsb2FkEhEKCWltYWdlTmFtZRgDIAEoCRIbChNqb2JUaW1lb3V0SW5TZWNvbmRzGAQgASgEEhAKCGVudHJ5Q21kGAUgASgJEicKBmxpbWl0cxgGIAEoCzIXLnR5cGVzLnYxLk1hY2hpbmVMaW1pdHMiHwoOTmV3Sm9iUmVzcG9uc2USDQoFam9iSWQYASABKAkiIQoQQ2FuY2VsSm9iUmVxdWVzdBINCgVqb2JJZBgBIAEoCSITChFDYW5jZWxKb2JSZXNwb25zZSIeCg1Kb2JMb2dSZXF1ZXN0Eg0KBWpvYklkGAEgASgJIkQKD0pvYkxvZ3NSZXNwb25zZRIjCgdqb2JJbmZvGAEgASgLMhIuam9icy52MS5Kb2JTdGF0dXMSDAoEbG9ncxgCIAEoCSJDCglKb2JTdGF0dXMSDgoGam9iX2lkGAEgASgJEg4KBnN0YXR1cxgCIAEoCRIWCg5zdGF0dXNfbWVzc2FnZRgDIAEoCTKWAgoKSm9iU2VydmljZRI7CgZOZXdKb2ISFi5qb2JzLnYxLk5ld0pvYlJlcXVlc3QaFy5qb2JzLnYxLk5ld0pvYlJlc3BvbnNlIgASPwoJR2V0U3RhdHVzEhYuam9icy52MS5Kb2JMb2dSZXF1ZXN0Ghguam9icy52MS5Kb2JMb2dzUmVzcG9uc2UiABJECgxTdHJlYW1TdGF0dXMSFi5qb2JzLnYxLkpvYkxvZ1JlcXVlc3QaGC5qb2JzLnYxLkpvYkxvZ3NSZXNwb25zZSIAMAESRAoJQ2FuY2VsSm9iEhkuam9icy52MS5DYW5jZWxKb2JSZXF1ZXN0Ghouam9icy52MS5DYW5jZWxKb2JSZXNwb25zZSIAQowBCgtjb20uam9icy52MUIJSm9ic1Byb3RvUAFaNWdpdGh1Yi5jb20vbWFrZW9wZW5zb3VyY2UvbGV2aWF0aGFuL2dlbmVyYXRlZC9qb2JzL3YxogIDSlhYqgIHSm9icy5WMcoCB0pvYnNcVjHiAhNKb2JzXFYxXEdQQk1ldGFkYXRh6gIISm9iczo6VjFiBnByb3RvMw", [file_types_v1_types]);
+  fileDesc("ChJqb2JzL3YxL2pvYnMucHJvdG8SB2pvYnMudjEiPQoNTmV3Sm9iUmVxdWVzdBINCgVsYWJJRBgBIAEoBBIdChV0bXBTdWJtaXNzaW9uRm9sZGVySWQYAiABKAkiHwoOTmV3Sm9iUmVzcG9uc2USDQoFam9iSWQYASABKAkiIQoQQ2FuY2VsSm9iUmVxdWVzdBINCgVqb2JJZBgBIAEoCSITChFDYW5jZWxKb2JSZXNwb25zZSIeCg1Kb2JMb2dSZXF1ZXN0Eg0KBWpvYklkGAEgASgJIkQKD0pvYkxvZ3NSZXNwb25zZRIjCgdqb2JJbmZvGAEgASgLMhIuam9icy52MS5Kb2JTdGF0dXMSDAoEbG9ncxgCIAEoCSJDCglKb2JTdGF0dXMSDgoGam9iX2lkGAEgASgJEg4KBnN0YXR1cxgCIAEoCRIWCg5zdGF0dXNfbWVzc2FnZRgDIAEoCTKWAgoKSm9iU2VydmljZRI7CgZOZXdKb2ISFi5qb2JzLnYxLk5ld0pvYlJlcXVlc3QaFy5qb2JzLnYxLk5ld0pvYlJlc3BvbnNlIgASPwoJR2V0U3RhdHVzEhYuam9icy52MS5Kb2JMb2dSZXF1ZXN0Ghguam9icy52MS5Kb2JMb2dzUmVzcG9uc2UiABJECgxTdHJlYW1TdGF0dXMSFi5qb2JzLnYxLkpvYkxvZ1JlcXVlc3QaGC5qb2JzLnYxLkpvYkxvZ3NSZXNwb25zZSIAMAESRAoJQ2FuY2VsSm9iEhkuam9icy52MS5DYW5jZWxKb2JSZXF1ZXN0Ghouam9icy52MS5DYW5jZWxKb2JSZXNwb25zZSIAQowBCgtjb20uam9icy52MUIJSm9ic1Byb3RvUAFaNWdpdGh1Yi5jb20vbWFrZW9wZW5zb3VyY2UvbGV2aWF0aGFuL2dlbmVyYXRlZC9qb2JzL3YxogIDSlhYqgIHSm9icy5WMcoCB0pvYnNcVjHiAhNKb2JzXFYxXEdQQk1ldGFkYXRh6gIISm9iczo6VjFiBnByb3RvMw", [file_types_v1_types]);
 
 /**
  * @generated from message jobs.v1.NewJobRequest
  */
 export type NewJobRequest = Message<"jobs.v1.NewJobRequest"> & {
   /**
-   * @generated from field: repeated types.v1.FileUpload jobFiles = 1;
+   * @generated from field: uint64 labID = 1;
    */
-  jobFiles: FileUpload[];
+  labID: bigint;
 
   /**
-   * @generated from field: types.v1.FileUpload dockerFile = 2;
+   * @generated from field: string tmpSubmissionFolderId = 2;
    */
-  dockerFile?: FileUpload;
-
-  /**
-   * @generated from field: string imageName = 3;
-   */
-  imageName: string;
-
-  /**
-   * @generated from field: uint64 jobTimeoutInSeconds = 4;
-   */
-  jobTimeoutInSeconds: bigint;
-
-  /**
-   * @generated from field: string entryCmd = 5;
-   */
-  entryCmd: string;
-
-  /**
-   * @generated from field: types.v1.MachineLimits limits = 6;
-   */
-  limits?: MachineLimits;
+  tmpSubmissionFolderId: string;
 };
 
 /**

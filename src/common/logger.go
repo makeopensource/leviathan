@@ -2,6 +2,7 @@ package common
 
 import (
 	"context"
+	"fmt"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"gopkg.in/natefinch/lumberjack.v2"
@@ -45,6 +46,14 @@ func FileConsoleLogger() zerolog.Logger {
 			getConsoleWriter(),
 		),
 	).Level(level)
+}
+
+// ErrLog logs the original error while returning a sanitized user-facing error.
+//
+// This hides implementation details from users while ensuring full error information is available for debugging.
+func ErrLog(message string, err error, eventLevel *zerolog.Event) error {
+	eventLevel.Err(err).Msgf(message)
+	return fmt.Errorf(message)
 }
 
 func ConsoleLogger() zerolog.Logger {

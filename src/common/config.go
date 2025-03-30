@@ -69,8 +69,19 @@ func InitConfig() {
 		"LABS_DIR",
 		fmt.Sprintf("%s/%s", baseDir, "labs"),
 	)
+	tmpUploadFolderPath := setIfEnvPresentOrDefault(
+		tmpUploadFolder,
+		"TMP_UPLOAD_DIR",
+		fmt.Sprintf("%s/%s", baseDir, "tmp_uploads"),
+	)
 
-	err = makeDirectories([]string{submissionFolderPath, outputFolderPath, sshFolderPath, labsFolderPath})
+	err = makeDirectories([]string{
+		submissionFolderPath,
+		outputFolderPath,
+		sshFolderPath,
+		labsFolderPath,
+		tmpUploadFolderPath,
+	})
 	if err != nil {
 		log.Fatal().Err(err).Msg("unable to make required directories")
 	}

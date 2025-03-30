@@ -9,7 +9,7 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
-	"github.com/makeopensource/leviathan/common"
+	. "github.com/makeopensource/leviathan/common"
 	"github.com/makeopensource/leviathan/models"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
@@ -70,7 +70,7 @@ func saveHostKey(machine models.MachineOptions) func(hostname string, remote net
 }
 
 func writeMachineToConfigFile(machine models.MachineOptions) {
-	machineKey := fmt.Sprintf("%s.%s", common.ClientsSSH.ConfigKey, machine.Name())
+	machineKey := fmt.Sprintf("%s.%s", ClientsSSH.ConfigKey, machine.Name())
 	viper.Set(machineKey, machine)
 	err := viper.WriteConfig()
 	if err != nil {
@@ -109,7 +109,7 @@ func GenerateKeyPair() (privateKey []byte, publicKey []byte, err error) {
 //
 // the generated keys can be found in common.SSHConfigFolder
 func initKeyPairFile() {
-	basePath := common.SSHConfigFolder.GetStr()
+	basePath := SSHConfigFolder.GetStr()
 	privateKeyPath := fmt.Sprintf("%s/%s", basePath, "id_rsa")
 	publicKeyPath := fmt.Sprintf("%s/%s", basePath, "id_rsa.pub")
 
@@ -120,7 +120,7 @@ func initKeyPairFile() {
 		Str("private_key_file", privateKeyPath).
 		Str("public_key_file", publicKeyPath)
 
-	if fileExists(privateKeyPath) && fileExists(publicKeyPath) {
+	if FileExists(privateKeyPath) && FileExists(publicKeyPath) {
 		logF.Msg("found existing keys... skipping generation")
 		return
 	}
@@ -140,18 +140,10 @@ func initKeyPairFile() {
 	logF.Msg("Generated new SSH key pair")
 }
 
-func fileExists(filename string) bool {
-	info, err := os.Stat(filename)
-	if os.IsNotExist(err) {
-		return false
-	}
-	return !info.IsDir()
-}
-
 func LoadPrivateKey() ([]byte, error) {
 	return os.ReadFile(fmt.Sprintf(
 		"%s/%s",
-		common.SSHConfigFolder.GetStr(),
+		SSHConfigFolder.GetStr(),
 		"id_rsa",
 	))
 }

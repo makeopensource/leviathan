@@ -7,7 +7,7 @@
 package v1
 
 import (
-	v1 "github.com/makeopensource/leviathan/generated/types/v1"
+	_ "github.com/makeopensource/leviathan/generated/types/v1"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -565,7 +565,6 @@ func (*NewImageResponse) Descriptor() ([]byte, []int) {
 type NewImageRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ImageTag      string                 `protobuf:"bytes,1,opt,name=imageTag,proto3" json:"imageTag,omitempty"`
-	File          *v1.FileUpload         `protobuf:"bytes,2,opt,name=file,proto3" json:"file,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -605,13 +604,6 @@ func (x *NewImageRequest) GetImageTag() string {
 		return x.ImageTag
 	}
 	return ""
-}
-
-func (x *NewImageRequest) GetFile() *v1.FileUpload {
-	if x != nil {
-		return x.File
-	}
-	return nil
 }
 
 type ListImageResponse struct {
@@ -978,10 +970,9 @@ const file_docker_rpc_v1_docker_proto_rawDesc = "" +
 	"\n" +
 	"containers\x18\x01 \x03(\v2\x1e.docker_rpc.v1.DockerContainerR\n" +
 	"containers\"\x12\n" +
-	"\x10NewImageResponse\"W\n" +
+	"\x10NewImageResponse\"-\n" +
 	"\x0fNewImageRequest\x12\x1a\n" +
-	"\bimageTag\x18\x01 \x01(\tR\bimageTag\x12(\n" +
-	"\x04file\x18\x02 \x01(\v2\x14.types.v1.FileUploadR\x04file\"G\n" +
+	"\bimageTag\x18\x01 \x01(\tR\bimageTag\"G\n" +
 	"\x11ListImageResponse\x122\n" +
 	"\x06images\x18\x01 \x03(\v2\x1a.docker_rpc.v1.DockerImageR\x06images\"\x12\n" +
 	"\x10ListImageRequest\"_\n" +
@@ -1048,35 +1039,33 @@ var file_docker_rpc_v1_docker_proto_goTypes = []any{
 	(*ContainerMetaData)(nil),       // 17: docker_rpc.v1.ContainerMetaData
 	(*DockerImage)(nil),             // 18: docker_rpc.v1.DockerImage
 	(*ImageMetaData)(nil),           // 19: docker_rpc.v1.ImageMetaData
-	(*v1.FileUpload)(nil),           // 20: types.v1.FileUpload
 }
 var file_docker_rpc_v1_docker_proto_depIdxs = []int32{
 	16, // 0: docker_rpc.v1.ListContainersResponse.containers:type_name -> docker_rpc.v1.DockerContainer
-	20, // 1: docker_rpc.v1.NewImageRequest.file:type_name -> types.v1.FileUpload
-	18, // 2: docker_rpc.v1.ListImageResponse.images:type_name -> docker_rpc.v1.DockerImage
-	17, // 3: docker_rpc.v1.DockerContainer.metadata:type_name -> docker_rpc.v1.ContainerMetaData
-	19, // 4: docker_rpc.v1.DockerImage.metadata:type_name -> docker_rpc.v1.ImageMetaData
-	6,  // 5: docker_rpc.v1.DockerService.CreateContainer:input_type -> docker_rpc.v1.CreateContainerRequest
-	8,  // 6: docker_rpc.v1.DockerService.DeleteContainer:input_type -> docker_rpc.v1.DeleteContainerRequest
-	10, // 7: docker_rpc.v1.DockerService.ListContainers:input_type -> docker_rpc.v1.ListContainersRequest
-	0,  // 8: docker_rpc.v1.DockerService.StartContainer:input_type -> docker_rpc.v1.StartContainerRequest
-	2,  // 9: docker_rpc.v1.DockerService.StopContainer:input_type -> docker_rpc.v1.StopContainerRequest
-	4,  // 10: docker_rpc.v1.DockerService.GetContainerLogs:input_type -> docker_rpc.v1.GetContainerLogRequest
-	13, // 11: docker_rpc.v1.DockerService.CreateNewImage:input_type -> docker_rpc.v1.NewImageRequest
-	15, // 12: docker_rpc.v1.DockerService.ListImages:input_type -> docker_rpc.v1.ListImageRequest
-	7,  // 13: docker_rpc.v1.DockerService.CreateContainer:output_type -> docker_rpc.v1.CreateContainerResponse
-	9,  // 14: docker_rpc.v1.DockerService.DeleteContainer:output_type -> docker_rpc.v1.DeleteContainerResponse
-	11, // 15: docker_rpc.v1.DockerService.ListContainers:output_type -> docker_rpc.v1.ListContainersResponse
-	1,  // 16: docker_rpc.v1.DockerService.StartContainer:output_type -> docker_rpc.v1.StartContainerResponse
-	3,  // 17: docker_rpc.v1.DockerService.StopContainer:output_type -> docker_rpc.v1.StopContainerResponse
-	5,  // 18: docker_rpc.v1.DockerService.GetContainerLogs:output_type -> docker_rpc.v1.GetContainerLogResponse
-	12, // 19: docker_rpc.v1.DockerService.CreateNewImage:output_type -> docker_rpc.v1.NewImageResponse
-	14, // 20: docker_rpc.v1.DockerService.ListImages:output_type -> docker_rpc.v1.ListImageResponse
-	13, // [13:21] is the sub-list for method output_type
-	5,  // [5:13] is the sub-list for method input_type
-	5,  // [5:5] is the sub-list for extension type_name
-	5,  // [5:5] is the sub-list for extension extendee
-	0,  // [0:5] is the sub-list for field type_name
+	18, // 1: docker_rpc.v1.ListImageResponse.images:type_name -> docker_rpc.v1.DockerImage
+	17, // 2: docker_rpc.v1.DockerContainer.metadata:type_name -> docker_rpc.v1.ContainerMetaData
+	19, // 3: docker_rpc.v1.DockerImage.metadata:type_name -> docker_rpc.v1.ImageMetaData
+	6,  // 4: docker_rpc.v1.DockerService.CreateContainer:input_type -> docker_rpc.v1.CreateContainerRequest
+	8,  // 5: docker_rpc.v1.DockerService.DeleteContainer:input_type -> docker_rpc.v1.DeleteContainerRequest
+	10, // 6: docker_rpc.v1.DockerService.ListContainers:input_type -> docker_rpc.v1.ListContainersRequest
+	0,  // 7: docker_rpc.v1.DockerService.StartContainer:input_type -> docker_rpc.v1.StartContainerRequest
+	2,  // 8: docker_rpc.v1.DockerService.StopContainer:input_type -> docker_rpc.v1.StopContainerRequest
+	4,  // 9: docker_rpc.v1.DockerService.GetContainerLogs:input_type -> docker_rpc.v1.GetContainerLogRequest
+	13, // 10: docker_rpc.v1.DockerService.CreateNewImage:input_type -> docker_rpc.v1.NewImageRequest
+	15, // 11: docker_rpc.v1.DockerService.ListImages:input_type -> docker_rpc.v1.ListImageRequest
+	7,  // 12: docker_rpc.v1.DockerService.CreateContainer:output_type -> docker_rpc.v1.CreateContainerResponse
+	9,  // 13: docker_rpc.v1.DockerService.DeleteContainer:output_type -> docker_rpc.v1.DeleteContainerResponse
+	11, // 14: docker_rpc.v1.DockerService.ListContainers:output_type -> docker_rpc.v1.ListContainersResponse
+	1,  // 15: docker_rpc.v1.DockerService.StartContainer:output_type -> docker_rpc.v1.StartContainerResponse
+	3,  // 16: docker_rpc.v1.DockerService.StopContainer:output_type -> docker_rpc.v1.StopContainerResponse
+	5,  // 17: docker_rpc.v1.DockerService.GetContainerLogs:output_type -> docker_rpc.v1.GetContainerLogResponse
+	12, // 18: docker_rpc.v1.DockerService.CreateNewImage:output_type -> docker_rpc.v1.NewImageResponse
+	14, // 19: docker_rpc.v1.DockerService.ListImages:output_type -> docker_rpc.v1.ListImageResponse
+	12, // [12:20] is the sub-list for method output_type
+	4,  // [4:12] is the sub-list for method input_type
+	4,  // [4:4] is the sub-list for extension type_name
+	4,  // [4:4] is the sub-list for extension extendee
+	0,  // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_docker_rpc_v1_docker_proto_init() }

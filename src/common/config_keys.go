@@ -18,6 +18,7 @@ const (
 	outputDirKey     = "folder.job_output_dir"
 	sshDirKey        = "folder.ssh_config"
 	labDirKey        = "folder.labs"
+	tmpUploadFolder  = "folder.tmp_uploads"
 
 	// docker config
 	enableLocalDockerKey = "clients.enable_local_docker"
@@ -49,6 +50,7 @@ var (
 	SubmissionFolder = Config{submissionDirKey}
 	OutputFolder     = Config{outputDirKey}
 	LabsFolder       = Config{labDirKey}
+	TmpUploadFolder  = Config{tmpUploadFolder}
 
 	// docker config
 	EnableLocalDocker = Config{enableLocalDockerKey}

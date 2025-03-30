@@ -1,8 +1,24 @@
 # Leviathan
 
-Container Orchestrator/Job Runner replacement for Autolab Tango
+A container orchestrator and job runner for executing code in docker containers.
 
-## Testing
+## Overview
+
+Leviathan is the code execution engine for the [DevU project](https://github.com/makeopensource/devU).
+It securely runs submitted code in isolated containers, providing evaluation results and feedback. 
+Designed as a modern replacement for [Autolab Tango](https://github.com/autolab/Tango).
+
+Leviathan maintains full compatibility with existing Autolab/Tango graders. Any graders written for Tango will run on Leviathan without modification.
+
+## Features
+- Secure container-based execution
+- Resource limiting and management
+- gRPC API for type-safe, efficient communication
+
+## Documentation
+See [docs](docs) for configuration options and other details.
+
+## Quick Start
 
 To test out the dev build, ensure docker is installed on your system
 
@@ -20,7 +36,7 @@ You will need to run 2 services
 
 3. Access the frontend at, http://localhost:3000
 
-## Running a job
+### Running a job
 
 You will need to fill out
 
@@ -44,7 +60,7 @@ You will need to fill out
 
 ### Example
 
-You can see the test files [here](./example/simple-addition)
+You can see the test files [here](example/simple-addition)
 
 > [!NOTE]
 >

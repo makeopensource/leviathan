@@ -16,12 +16,8 @@ service JobService {
 }
 
 message NewJobRequest {
-  repeated types.v1.FileUpload jobFiles = 1;
-  types.v1.FileUpload dockerFile = 2;
-  string imageName = 3;
-  uint64 jobTimeoutInSeconds = 4;
-  string entryCmd = 5;
-  types.v1.MachineLimits limits = 6;
+  uint64 labID = 1;
+  string tmpSubmissionFolderId = 2;
 }
 
 message NewJobResponse {

@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "",
   "scripts": {
-    "start": "ts-node index.ts",
+    "start": "tsx --watch index.ts",
     "watch": "npm run build && nodemon index.ts",
     "sta": "ts-node index.ts",
     "build": "parcel build ui/* --dist-dir ui/dist",
@@ -32,6 +32,7 @@
     "nodemon": "^3.1.9",
     "rimraf": "^6.0.1",
     "ts-node": "^10.9.2",
+    "tsx": "^4.19.3",
     "typescript": "^5.7.3"
   }
 }

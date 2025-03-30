@@ -4,9 +4,12 @@ package types.v1;
 
 option go_package = "github.com/makeopensource/leviathan/generated/types/v1";
 
-message FileUpload {
-  string filename = 1;
-  bytes content = 2;
+message LabData {
+  string labname = 1;
+  string entryCmd = 2;
+  uint64 jobTimeoutInSeconds = 3;
+  bool autolabCompatibilityMode = 4;
+  MachineLimits limits = 5;
 }
 
 message MachineLimits {

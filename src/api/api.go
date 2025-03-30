@@ -42,7 +42,7 @@ func setupEndpoints() *http.ServeMux {
 		interceptor = connect.WithInterceptors(&authInterceptor{common.ApiKey.GetStr()})
 	}
 
-	endpoints := []func() (string, http.Handler){
+	v1Endpoints := []func() (string, http.Handler){
 		// jobs endpoints
 		func() (string, http.Handler) {
 			jobSrv := v1.NewJobServer(job)
@@ -57,10 +57,14 @@ func setupEndpoints() *http.ServeMux {
 			labSrv := v1.LabServer{Srv: lab}
 			return labClient.NewLabServiceHandler(labSrv, interceptor)
 		},
+		func() (string, http.Handler) {
+			fileHandler := v1.NewFileManagerHandler("/files.v1")
+			return fileHandler.BasePath + "/", fileHandler
+		},
 	}
 
 	mux := http.NewServeMux()
-	for _, svc := range endpoints {
+	for _, svc := range v1Endpoints {
 		path, handler := svc()
 		mux.Handle(path, handler)
 	}

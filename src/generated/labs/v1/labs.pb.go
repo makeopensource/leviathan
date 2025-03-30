@@ -22,32 +22,28 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type LabRequest struct {
-	state              protoimpl.MessageState `protogen:"open.v1"`
-	LabName            string                 `protobuf:"bytes,1,opt,name=labName,proto3" json:"labName,omitempty"`
-	EntryCommand       string                 `protobuf:"bytes,2,opt,name=entryCommand,proto3" json:"entryCommand,omitempty"`
-	TimeLimitInSeconds uint64                 `protobuf:"varint,4,opt,name=timeLimitInSeconds,proto3" json:"timeLimitInSeconds,omitempty"`
-	MachineLimits      *v1.MachineLimits      `protobuf:"bytes,5,opt,name=machineLimits,proto3" json:"machineLimits,omitempty"`
-	DockerFile         *v1.FileUpload         `protobuf:"bytes,6,opt,name=dockerFile,proto3" json:"dockerFile,omitempty"`
-	JobFiles           []*v1.FileUpload       `protobuf:"bytes,7,rep,name=jobFiles,proto3" json:"jobFiles,omitempty"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
+type NewLabRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	TmpFolderId   string                 `protobuf:"bytes,1,opt,name=tmpFolderId,proto3" json:"tmpFolderId,omitempty"`
+	LabData       *v1.LabData            `protobuf:"bytes,2,opt,name=labData,proto3" json:"labData,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
-func (x *LabRequest) Reset() {
-	*x = LabRequest{}
+func (x *NewLabRequest) Reset() {
+	*x = NewLabRequest{}
 	mi := &file_labs_v1_labs_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *LabRequest) String() string {
+func (x *NewLabRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*LabRequest) ProtoMessage() {}
+func (*NewLabRequest) ProtoMessage() {}
 
-func (x *LabRequest) ProtoReflect() protoreflect.Message {
+func (x *NewLabRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_labs_v1_labs_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -59,49 +55,21 @@ func (x *LabRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use LabRequest.ProtoReflect.Descriptor instead.
-func (*LabRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use NewLabRequest.ProtoReflect.Descriptor instead.
+func (*NewLabRequest) Descriptor() ([]byte, []int) {
 	return file_labs_v1_labs_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *LabRequest) GetLabName() string {
+func (x *NewLabRequest) GetTmpFolderId() string {
 	if x != nil {
-		return x.LabName
+		return x.TmpFolderId
 	}
 	return ""
 }
 
-func (x *LabRequest) GetEntryCommand() string {
+func (x *NewLabRequest) GetLabData() *v1.LabData {
 	if x != nil {
-		return x.EntryCommand
-	}
-	return ""
-}
-
-func (x *LabRequest) GetTimeLimitInSeconds() uint64 {
-	if x != nil {
-		return x.TimeLimitInSeconds
-	}
-	return 0
-}
-
-func (x *LabRequest) GetMachineLimits() *v1.MachineLimits {
-	if x != nil {
-		return x.MachineLimits
-	}
-	return nil
-}
-
-func (x *LabRequest) GetDockerFile() *v1.FileUpload {
-	if x != nil {
-		return x.DockerFile
-	}
-	return nil
-}
-
-func (x *LabRequest) GetJobFiles() []*v1.FileUpload {
-	if x != nil {
-		return x.JobFiles
+		return x.LabData
 	}
 	return nil
 }
@@ -153,7 +121,7 @@ func (x *NewLabResponse) GetLabId() int64 {
 type EditLabRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	LabId         int64                  `protobuf:"varint,1,opt,name=labId,proto3" json:"labId,omitempty"`
-	LabInfo       *LabRequest            `protobuf:"bytes,2,opt,name=labInfo,proto3" json:"labInfo,omitempty"`
+	LabInfo       *v1.LabData            `protobuf:"bytes,2,opt,name=labInfo,proto3" json:"labInfo,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -195,7 +163,7 @@ func (x *EditLabRequest) GetLabId() int64 {
 	return 0
 }
 
-func (x *EditLabRequest) GetLabInfo() *LabRequest {
+func (x *EditLabRequest) GetLabInfo() *v1.LabData {
 	if x != nil {
 		return x.LabInfo
 	}
@@ -322,30 +290,23 @@ var File_labs_v1_labs_proto protoreflect.FileDescriptor
 
 const file_labs_v1_labs_proto_rawDesc = "" +
 	"\n" +
-	"\x12labs/v1/labs.proto\x12\alabs.v1\x1a\x14types/v1/types.proto\"\xa1\x02\n" +
-	"\n" +
-	"LabRequest\x12\x18\n" +
-	"\alabName\x18\x01 \x01(\tR\alabName\x12\"\n" +
-	"\fentryCommand\x18\x02 \x01(\tR\fentryCommand\x12.\n" +
-	"\x12timeLimitInSeconds\x18\x04 \x01(\x04R\x12timeLimitInSeconds\x12=\n" +
-	"\rmachineLimits\x18\x05 \x01(\v2\x17.types.v1.MachineLimitsR\rmachineLimits\x124\n" +
-	"\n" +
-	"dockerFile\x18\x06 \x01(\v2\x14.types.v1.FileUploadR\n" +
-	"dockerFile\x120\n" +
-	"\bjobFiles\x18\a \x03(\v2\x14.types.v1.FileUploadR\bjobFiles\"&\n" +
+	"\x12labs/v1/labs.proto\x12\alabs.v1\x1a\x14types/v1/types.proto\"^\n" +
+	"\rNewLabRequest\x12 \n" +
+	"\vtmpFolderId\x18\x01 \x01(\tR\vtmpFolderId\x12+\n" +
+	"\alabData\x18\x02 \x01(\v2\x11.types.v1.LabDataR\alabData\"&\n" +
 	"\x0eNewLabResponse\x12\x14\n" +
-	"\x05labId\x18\x01 \x01(\x03R\x05labId\"U\n" +
+	"\x05labId\x18\x01 \x01(\x03R\x05labId\"S\n" +
 	"\x0eEditLabRequest\x12\x14\n" +
-	"\x05labId\x18\x01 \x01(\x03R\x05labId\x12-\n" +
-	"\alabInfo\x18\x02 \x01(\v2\x13.labs.v1.LabRequestR\alabInfo\"\x11\n" +
+	"\x05labId\x18\x01 \x01(\x03R\x05labId\x12+\n" +
+	"\alabInfo\x18\x02 \x01(\v2\x11.types.v1.LabDataR\alabInfo\"\x11\n" +
 	"\x0fEditLabResponse\"(\n" +
 	"\x10DeleteLabRequest\x12\x14\n" +
 	"\x05LabID\x18\x01 \x01(\x03R\x05LabID\"\x13\n" +
-	"\x11DeleteLabResponse2\xc8\x01\n" +
+	"\x11DeleteLabResponse2\xc9\x01\n" +
 	"\n" +
-	"LabService\x128\n" +
-	"\x06NewLab\x12\x13.labs.v1.LabRequest\x1a\x17.labs.v1.NewLabResponse\"\x00\x12:\n" +
-	"\aEditLab\x12\x13.labs.v1.LabRequest\x1a\x18.labs.v1.EditLabResponse\"\x00\x12D\n" +
+	"LabService\x12;\n" +
+	"\x06NewLab\x12\x16.labs.v1.NewLabRequest\x1a\x17.labs.v1.NewLabResponse\"\x00\x128\n" +
+	"\aEditLab\x12\x11.types.v1.LabData\x1a\x18.labs.v1.EditLabResponse\"\x00\x12D\n" +
 	"\tDeleteLab\x12\x19.labs.v1.DeleteLabRequest\x1a\x1a.labs.v1.DeleteLabResponse\"\x00B\x8c\x01\n" +
 	"\vcom.labs.v1B\tLabsProtoP\x01Z5github.com/makeopensource/leviathan/generated/labs/v1\xa2\x02\x03LXX\xaa\x02\aLabs.V1\xca\x02\aLabs\\V1\xe2\x02\x13Labs\\V1\\GPBMetadata\xea\x02\bLabs::V1b\x06proto3"
 
@@ -363,31 +324,28 @@ func file_labs_v1_labs_proto_rawDescGZIP() []byte {
 
 var file_labs_v1_labs_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_labs_v1_labs_proto_goTypes = []any{
-	(*LabRequest)(nil),        // 0: labs.v1.LabRequest
+	(*NewLabRequest)(nil),     // 0: labs.v1.NewLabRequest
 	(*NewLabResponse)(nil),    // 1: labs.v1.NewLabResponse
 	(*EditLabRequest)(nil),    // 2: labs.v1.EditLabRequest
 	(*EditLabResponse)(nil),   // 3: labs.v1.EditLabResponse
 	(*DeleteLabRequest)(nil),  // 4: labs.v1.DeleteLabRequest
 	(*DeleteLabResponse)(nil), // 5: labs.v1.DeleteLabResponse
-	(*v1.MachineLimits)(nil),  // 6: types.v1.MachineLimits
-	(*v1.FileUpload)(nil),     // 7: types.v1.FileUpload
+	(*v1.LabData)(nil),        // 6: types.v1.LabData
 }
 var file_labs_v1_labs_proto_depIdxs = []int32{
-	6, // 0: labs.v1.LabRequest.machineLimits:type_name -> types.v1.MachineLimits
-	7, // 1: labs.v1.LabRequest.dockerFile:type_name -> types.v1.FileUpload
-	7, // 2: labs.v1.LabRequest.jobFiles:type_name -> types.v1.FileUpload
-	0, // 3: labs.v1.EditLabRequest.labInfo:type_name -> labs.v1.LabRequest
-	0, // 4: labs.v1.LabService.NewLab:input_type -> labs.v1.LabRequest
-	0, // 5: labs.v1.LabService.EditLab:input_type -> labs.v1.LabRequest
-	4, // 6: labs.v1.LabService.DeleteLab:input_type -> labs.v1.DeleteLabRequest
-	1, // 7: labs.v1.LabService.NewLab:output_type -> labs.v1.NewLabResponse
-	3, // 8: labs.v1.LabService.EditLab:output_type -> labs.v1.EditLabResponse
-	5, // 9: labs.v1.LabService.DeleteLab:output_type -> labs.v1.DeleteLabResponse
-	7, // [7:10] is the sub-list for method output_type
-	4, // [4:7] is the sub-list for method input_type
-	4, // [4:4] is the sub-list for extension type_name
-	4, // [4:4] is the sub-list for extension extendee
-	0, // [0:4] is the sub-list for field type_name
+	6, // 0: labs.v1.NewLabRequest.labData:type_name -> types.v1.LabData
+	6, // 1: labs.v1.EditLabRequest.labInfo:type_name -> types.v1.LabData
+	0, // 2: labs.v1.LabService.NewLab:input_type -> labs.v1.NewLabRequest
+	6, // 3: labs.v1.LabService.EditLab:input_type -> types.v1.LabData
+	4, // 4: labs.v1.LabService.DeleteLab:input_type -> labs.v1.DeleteLabRequest
+	1, // 5: labs.v1.LabService.NewLab:output_type -> labs.v1.NewLabResponse
+	3, // 6: labs.v1.LabService.EditLab:output_type -> labs.v1.EditLabResponse
+	5, // 7: labs.v1.LabService.DeleteLab:output_type -> labs.v1.DeleteLabResponse
+	5, // [5:8] is the sub-list for method output_type
+	2, // [2:5] is the sub-list for method input_type
+	2, // [2:2] is the sub-list for extension type_name
+	2, // [2:2] is the sub-list for extension extendee
+	0, // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_labs_v1_labs_proto_init() }

@@ -61,7 +61,6 @@ message NewImageResponse {}
 
 message NewImageRequest {
   string imageTag = 1;
-  types.v1.FileUpload file = 2;
 }
 
 message ListImageResponse{

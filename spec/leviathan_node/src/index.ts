@@ -34,10 +34,10 @@ async function UploadMultipartForm(url: string, files: Array<FileData>,) {
     const formData = new FormData();
 
     for (const info of files) {
-        const file = new File([info.filedata], info.filename);
         formData.append(
             info.fieldName,
-            file
+            info.filedata,
+            info.filename,
         );
     }
 

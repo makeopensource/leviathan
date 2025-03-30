@@ -7,31 +7,30 @@ export * from "@connectrpc/connect-node"
 export * from "@connectrpc/connect"
 
 type FileData = {
-    fieldName: string,
+    readonly fieldName: string,
     filename: string,
     filedata: Blob
 }
 
 export type SubmissionFile = Omit<FileData, 'fieldName'> & {
-    fieldName: 'submissionFiles'  // Preset field name for submission files
+    fieldName: 'submissionFiles'  // Preset field name
 }
 
 export type DockerFile = Omit<FileData, 'fieldName'> & {
-    fieldName: "dockerfile"  // Preset field name for submission files
+    fieldName: "dockerfile"  // Preset field name
 }
 
 export type LabFile = Omit<FileData, 'fieldName'> & {
     fieldName: 'labFiles'  // Preset field name
 }
 
-
 export async function UploadLabFiles(basePath: String, dockerfile: DockerFile, files: Array<LabFile>) {
-    const url = `${basePath}/v1/files/upload/submission`
+    const url = `${basePath}/files.v1/upload/submission`
     return UploadMultipartForm(url, files)
 }
 
 export async function UploadSubmissionFiles(basePath: String, files: Array<SubmissionFile>) {
-    const url = `${basePath}/v1/files/upload/lab`
+    const url = `${basePath}/files.v1/upload/lab`
     return UploadMultipartForm(url, files)
 }
 

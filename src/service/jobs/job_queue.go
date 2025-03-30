@@ -45,8 +45,7 @@ func (q *JobQueue) AddJob(mes *models.Job) error {
 	jog(mes.JobCtx).Info().Msg("sending job to queue")
 	err := mes.ValidateForQueue()
 	if err != nil {
-		jog(mes.JobCtx).Err(err).Msg("job validation failed")
-		return err
+		return common.ErrLog("job validation failed: "+err.Error(), err, jog(mes.JobCtx).Error())
 	}
 
 	// run in go routine in case queue is full and gets blocked

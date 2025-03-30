@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 	"github.com/google/uuid"
-	com "github.com/makeopensource/leviathan/common"
-	v1 "github.com/makeopensource/leviathan/generated/types/v1"
+	. "github.com/makeopensource/leviathan/common"
 	"github.com/makeopensource/leviathan/models"
 	"github.com/makeopensource/leviathan/service/docker"
+	"github.com/makeopensource/leviathan/service/file_manager"
 	"github.com/makeopensource/leviathan/service/labs"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -23,31 +23,40 @@ type JobService struct {
 	queue       *JobQueue
 	broadcastCh *models.BroadcastChannel
 	labSrv      *labs.LabService
+	fileManSrv  *file_manager.FileManagerService
 }
 
-func NewJobService(db *gorm.DB, bc *models.BroadcastChannel, dockerService *docker.DkService, labService *labs.LabService) *JobService {
+func NewJobService(
+	db *gorm.DB,
+	bc *models.BroadcastChannel,
+	dockerService *docker.DkService,
+	labService *labs.LabService,
+	tmpFileService *file_manager.FileManagerService,
+) *JobService {
 	srv := &JobService{
 		db:          db,
 		broadcastCh: bc,
 		dockerSrv:   dockerService,
-		queue:       NewJobQueue(uint(com.ConcurrentJobs.GetUint64()), db, dockerService),
+		queue:       NewJobQueue(uint(ConcurrentJobs.GetUint64()), db, dockerService),
 		labSrv:      labService,
+		fileManSrv:  tmpFileService,
 	}
 	srv.cleanupOrphanJobs()
 	return srv
 }
 
-func NewJobServiceWithDeps(dockerService *docker.DkService, labService *labs.LabService) *JobService {
-	db, bc := com.InitDB()
-	srv := NewJobService(db, bc, dockerService, labService)
-	return srv
-}
+func (job *JobService) NewJob(newJob *models.Job, submissionFolderId string) (string, error) {
+	if newJob.LabData == nil {
+		labData, err := job.getLab(newJob.LabID)
+		if err != nil {
+			return "", err
+		}
+		newJob.LabData = labData
+	}
 
-func (job *JobService) NewJobFromRPC(newJob *models.Job, jobFiles []*v1.FileUpload, dockerfile *v1.FileUpload, isTangoCompatible ...bool) (string, error) {
 	jobId, err := uuid.NewUUID()
 	if err != nil {
-		log.Error().Err(err).Msg("failed to generate job ID")
-		return "", fmt.Errorf("failed to generate job ID")
+		return "", ErrLog("failed to generate job ID", err, log.Error())
 	}
 	newJob.JobId = jobId.String()
 
@@ -56,92 +65,27 @@ func (job *JobService) NewJobFromRPC(newJob *models.Job, jobFiles []*v1.FileUplo
 	// job context, so that it can be cancelled, and store sub logger
 	ctx := job.queue.NewJobContext(newJob.JobId)
 
-	// "" implies randomly named tmp folder
-	dockerFileDir, err := CreateTmpJobDir(newJob.JobId, "", dockerfile)
+	jobDir, err := CreateTmpJobDir(newJob.JobId, SubmissionFolder.GetStr())
 	if err != nil {
-		jog(ctx).Error().Err(err).Msg("failed to create dockerfile dir")
-		return "", fmt.Errorf("failed to create dockerfile dir")
+		return "", ErrLog("failed to create job dir", err, jog(ctx).Error())
 	}
 
-	jobDir, err := CreateTmpJobDir(newJob.JobId, com.SubmissionFolder.GetStr(), jobFiles...)
-	if err != nil {
-		jog(ctx).Error().Err(err).Msg("failed to create job dir")
-		return "", fmt.Errorf("failed to create job dir")
-	}
-
-	logPath, err, reason := setupLogFile(newJob.JobId)
-	if err != nil {
-		jog(ctx).Error().Err(err).Str("reason", reason).Msg("failed to setup log file")
-		return "", fmt.Errorf("failed to setup log file")
-	}
-
-	// setup job metadata
-	newJob.MachineId = mId
-	newJob.Status = models.Queued
-	newJob.OutputLogFilePath = logPath
-	newJob.TmpJobFolderPath = jobDir
-	newJob.LabData.DockerFilePath = fmt.Sprintf("%s/%s", dockerFileDir, dockerfile.Filename)
-	newJob.JobCtx = ctx
-	newJob.LabData.VerifyJobLimits()
-	jog(newJob.JobCtx).Debug().Any("limits", newJob.LabData.JobLimits).Msg("job limits")
-
-	if len(isTangoCompatible) > 0 && isTangoCompatible[0] {
-		// todo maybe let entry command be compatible
-		newJob.LabData.JobEntryCmd = createTangoEntryCommand(nil)
-	}
-
-	res := job.db.Create(newJob)
-	if res.Error != nil {
-		jog(ctx).Error().Err(res.Error).Msg("Failed to save job to db")
-		return "", fmt.Errorf("failed to save job to db")
-	}
-
-	err = job.queue.AddJob(newJob)
+	submissionFolder, err := job.fileManSrv.GetSubmissionPath(submissionFolderId)
 	if err != nil {
 		return "", err
 	}
+	defer job.fileManSrv.DeleteFolder(submissionFolderId)
 
-	return jobId.String(), nil
-}
-
-func (job *JobService) NewJobFromLab(newJob *models.Job, studentFiles []*v1.FileUpload) (string, error) {
-	if newJob.LabID == 0 {
-		return "", fmt.Errorf("invalid lab ID %d", newJob.LabID)
+	if err = HardLinkFolder(submissionFolder, jobDir); err != nil {
+		return "", ErrLog("unable to copy files to job dir", err, log.Error())
 	}
-
-	labData, err := job.labSrv.GetLabFromDB(newJob.LabID)
-	if err != nil {
-		return "", err
-	}
-	newJob.LabData = labData
-
-	jobId, err := uuid.NewUUID()
-	if err != nil {
-		log.Error().Err(err).Msg("failed to generate job ID")
-		return "", fmt.Errorf("failed to generate job ID")
-	}
-	newJob.JobId = jobId.String()
-
-	mId := job.dockerSrv.ClientManager.GetLeastJobCountMachineId()
-
-	// job context, so that it can be cancelled, and store sub logger
-	ctx := job.queue.NewJobContext(newJob.JobId)
-
-	jobDir, err := CreateTmpJobDir(newJob.JobId, com.SubmissionFolder.GetStr(), studentFiles...)
-	if err != nil {
-		jog(ctx).Error().Err(err).Msg("failed to create job dir")
-		return "", fmt.Errorf("failed to create job dir")
-	}
-
 	if err = HardLinkFolder(newJob.LabData.JobFilesDirPath, jobDir); err != nil {
-		jog(ctx).Error().Err(err).Msg("unable to copy files to job dir")
-		return "", fmt.Errorf("unable to copy files to job dir")
+		return "", ErrLog("unable to copy files to job dir", err, log.Error())
 	}
 
 	logPath, err, reason := setupLogFile(newJob.JobId)
 	if err != nil {
-		jog(ctx).Error().Err(err).Str("reason", reason).Msg("failed to setup log file")
-		return "", fmt.Errorf("failed to setup log file")
+		return "", ErrLog("failed to setup log file: "+reason, err, jog(ctx).Error().Str("reason", reason))
 	}
 
 	// setup job metadata
@@ -155,8 +99,7 @@ func (job *JobService) NewJobFromLab(newJob *models.Job, studentFiles []*v1.File
 
 	res := job.db.Create(newJob)
 	if res.Error != nil {
-		jog(ctx).Error().Err(res.Error).Msg("Failed to save job to db")
-		return "", fmt.Errorf("failed to save job to db")
+		return "", ErrLog("failed to save job to db", res.Error, jog(ctx).Error())
 	}
 
 	err = job.queue.AddJob(newJob)
@@ -277,13 +220,13 @@ func (job *JobService) ListenToJobLogs(ctx context.Context, jobInfo *models.Job)
 				content := ReadLogFile(jobInfo.OutputLogFilePath)
 				contLen := len(content)
 				if contLen > prevLength { // send if content changed
-					log.Debug().Str(com.JobLogKey, jobInfo.JobId).Msgf("sending log, length changed from %d to %d", prevLength, contLen)
+					log.Debug().Str(JobLogKey, jobInfo.JobId).Msgf("sending log, length changed from %d to %d", prevLength, contLen)
 					prevLength = contLen
 					logChannel <- content
 				}
 			case <-ctx.Done():
 				close(logChannel)
-				log.Debug().Str(com.JobLogKey, jobInfo.JobId).Msg("stopping listening for logs")
+				log.Debug().Str(JobLogKey, jobInfo.JobId).Msg("stopping listening for logs")
 				return
 			}
 		}
@@ -307,7 +250,7 @@ func (job *JobService) checkJob(jobUuid string) (*models.Job, bool, string, erro
 	}
 
 	if jobInf.Status.Done() {
-		log.Debug().Str(com.JobLogKey, jobUuid).Msg("job is already done")
+		log.Debug().Str(JobLogKey, jobUuid).Msg("job is already done")
 
 		content := ReadLogFile(jobInf.OutputLogFilePath)
 		return jobInf, true, content, nil
@@ -386,7 +329,7 @@ func (job *JobService) cleanupOrphanJobs() {
 
 // setupLogFile store grader output
 func setupLogFile(jobId string) (string, error, string) {
-	outputFile := fmt.Sprintf("%s/%s.txt", com.OutputFolder.GetStr(), jobId)
+	outputFile := fmt.Sprintf("%s/%s.txt", OutputFolder.GetStr(), jobId)
 	outFile, err := os.Create(outputFile)
 	if err != nil {
 		return "", err, fmt.Sprintf("error while creating log file at %s", outputFile)
@@ -404,6 +347,17 @@ func setupLogFile(jobId string) (string, error, string) {
 	}
 
 	return full, nil, ""
+}
+
+func (job *JobService) getLab(labId uint) (*models.Lab, error) {
+	if labId == 0 {
+		return nil, fmt.Errorf("invalid lab ID %d", labId)
+	}
+	labData, err := job.labSrv.GetLabFromDB(labId)
+	if err != nil {
+		return nil, err
+	}
+	return labData, nil
 }
 
 // zerolog log with context, intended for job logs

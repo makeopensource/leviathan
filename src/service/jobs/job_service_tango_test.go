@@ -1,8 +1,8 @@
 package jobs
 
 import (
-	v1 "github.com/makeopensource/leviathan/generated/types/v1"
 	"github.com/makeopensource/leviathan/models"
+	. "github.com/makeopensource/leviathan/service/file_manager"
 	"os"
 	"path/filepath"
 	"testing"
@@ -17,6 +17,7 @@ var (
 	autolab2        = basePath + "/tango2"
 	autolab3        = basePath + "/tango3"
 	autolab4        = basePath + "/tango4"
+	tangoTimeout    = 10 * time.Second
 )
 
 type testMap = map[string]testCase
@@ -99,8 +100,20 @@ var (
 	}
 	tangoTestFuncs = map[string]func(*testing.T){
 		"autolab0": TestTango0,
+		"autolab1": TestTango1,
+		"autolab3": TestTango3,
+		"autolab4": TestTango4,
 	}
 )
+
+func TestAllTango(t *testing.T) {
+	for tCase, test := range tangoTestFuncs {
+		t.Run(tCase, func(t *testing.T) {
+			t.Parallel()
+			test(t)
+		})
+	}
+}
 
 func TestTango0(t *testing.T) {
 	setupTest()
@@ -108,10 +121,12 @@ func TestTango0(t *testing.T) {
 	folderName := "tango0"
 	cases := tangoTestCases[folderName]
 
+	labId := newLab(t, autolab0)
+
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
-			jobid := setupJobProcessTango(t, basePath+"/"+folderName, test.studentFile, 10*time.Second)
+			jobid := setupJobProcessTango(t, labId, test.studentFile)
 			testJob(t, jobid, test.expectedOutput, test.correctStatus)
 		})
 	}
@@ -122,11 +137,12 @@ func TestTango1(t *testing.T) {
 
 	folderName := "tango1"
 	cases := tangoTestCases[folderName]
+	labId := newLab(t, autolab1)
 
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
-			jobid := setupJobProcessTango(t, basePath+"/"+folderName, test.studentFile, 10*time.Second)
+			jobid := setupJobProcessTango(t, labId, test.studentFile)
 			testJob(t, jobid, test.expectedOutput, test.correctStatus)
 		})
 	}
@@ -137,11 +153,12 @@ func TestTango3(t *testing.T) {
 
 	folderName := "tango3"
 	cases := tangoTestCases[folderName]
+	labId := newLab(t, autolab3)
 
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
-			jobid := setupJobProcessTango(t, basePath+"/"+folderName, test.studentFile, 10*time.Second)
+			jobid := setupJobProcessTango(t, labId, test.studentFile)
 			testJob(t, jobid, test.expectedOutput, test.correctStatus)
 		})
 	}
@@ -152,28 +169,33 @@ func TestTango4(t *testing.T) {
 
 	folderName := "tango4"
 	cases := tangoTestCases[folderName]
+	labId := newLab(t, autolab4)
 
 	for name, test := range cases {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
-			jobid := setupJobProcessTango(t, basePath+"/"+folderName, test.studentFile, 10*time.Second)
+			jobid := setupJobProcessTango(t, labId, test.studentFile)
 			testJob(t, jobid, test.expectedOutput, test.correctStatus)
 		})
 	}
 }
 
-func setupJobProcessTango(t *testing.T, testFolder, studentCodePath string, timeout time.Duration) string {
+func newLab(t *testing.T, folderName string) uint {
+	tarPath := folderName + "/autograde.tar"
+	tangoMakeFilePath := folderName + "/Makefile"
+	labId := createLab(t, &models.Lab{
+		Name:              "tango-test-lab",
+		JobTimeout:        tangoTimeout,
+		AutolabCompatible: true,
+	}, tangoDockerFile, tarPath, tangoMakeFilePath)
+	if labId == 0 {
+		t.Fatalf("Failed to create lab")
+	}
+	return labId
+}
 
-	tarPath := testFolder + "/autograde.tar"
-	graderTar, err := os.ReadFile(tarPath)
-	if err != nil {
-		t.Fatal(err)
-	}
-	tangoMakeFilePath := testFolder + "/Makefile"
-	tangoMakeFilePathBytes, err := os.ReadFile(tangoMakeFilePath)
-	if err != nil {
-		t.Fatal(err)
-	}
+func setupJobProcessTango(t *testing.T, labId uint, studentCodePath string) string {
+	newJob := &models.Job{LabID: labId}
 
 	studentFileName := filepath.Base(studentCodePath)
 	if filepath.Ext(studentFileName) == ".json" {
@@ -182,45 +204,23 @@ func setupJobProcessTango(t *testing.T, testFolder, studentCodePath string, time
 		studentFileName = "handin.py"
 	}
 
-	studentBytes, err := os.ReadFile(studentCodePath)
+	studentCode, err := os.Open(studentCodePath)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	dockerBytes, err := os.ReadFile(tangoDockerFile)
+	folderId, err := fileManTestService.CreateSubmissionFolder(&FileInfo{
+		Reader:   studentCode,
+		Filename: studentFileName,
+	})
 	if err != nil {
 		t.Fatal(err)
+		return ""
 	}
 
-	newLab := models.Lab{
-		JobTimeout: timeout,
-		//JobEntryCmd: "ls -la ;while true; do sleep 1; done",
-		ImageTag: "tango-test",
-	}
-
-	newJob := &models.Job{LabData: &newLab}
-
-	jobId, err := jobTestService.NewJobFromRPC(
+	jobId, err := jobTestService.NewJob(
 		newJob,
-		[]*v1.FileUpload{
-			{
-				Filename: filepath.Base(tarPath),
-				Content:  graderTar,
-			},
-			{
-				Filename: filepath.Base(tangoMakeFilePath),
-				Content:  tangoMakeFilePathBytes,
-			},
-			{
-				Filename: studentFileName,
-				Content:  studentBytes,
-			},
-		},
-		&v1.FileUpload{
-			Filename: filepath.Base(tangoDockerFile),
-			Content:  dockerBytes,
-		},
-		true,
+		folderId,
 	)
 
 	if err != nil {

@@ -6,42 +6,38 @@ export * from "./generated/types/v1/types_pb"
 export * from "@connectrpc/connect-node"
 export * from "@connectrpc/connect"
 
-type FileData = {
-    readonly fieldName: string,
+// Base type with common properties
+type BaseFileData = {
     filename: string,
     filedata: Blob
 }
 
-export type SubmissionFile = Omit<FileData, 'fieldName'> & {
-    fieldName: 'submissionFiles'  // Preset field name
-}
+// Create specific types with preset field names
+export type SubmissionFile = BaseFileData & { fieldName: 'submissionFiles' }
+export type DockerFile = BaseFileData & { fieldName: 'dockerfile' }
+export type LabFile = BaseFileData & { fieldName: 'labFiles' }
 
-export type DockerFile = Omit<FileData, 'fieldName'> & {
-    fieldName: "dockerfile"  // Preset field name
-}
-
-export type LabFile = Omit<FileData, 'fieldName'> & {
-    fieldName: 'labFiles'  // Preset field name
-}
+// Union type of all possible file data types
+type FileData = SubmissionFile | DockerFile | LabFile
 
 export async function UploadLabFiles(basePath: String, dockerfile: DockerFile, files: Array<LabFile>) {
-    const url = `${basePath}/files.v1/upload/submission`
-    return UploadMultipartForm(url, files)
+    const url = `${basePath}/files.v1/upload/lab`
+    return UploadMultipartForm(url, [...files, dockerfile])
 }
 
 export async function UploadSubmissionFiles(basePath: String, files: Array<SubmissionFile>) {
-    const url = `${basePath}/files.v1/upload/lab`
+    const url = `${basePath}/files.v1/upload/submission`
     return UploadMultipartForm(url, files)
 }
 
 async function UploadMultipartForm(url: string, files: Array<FileData>,) {
     const formData = new FormData();
 
-    for (const file of files) {
+    for (const info of files) {
+        const file = new File([info.filedata], info.filename);
         formData.append(
-            file.fieldName,
-            file.filedata,
-            file.filename,
+            info.fieldName,
+            file
         );
     }
 

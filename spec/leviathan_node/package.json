@@ -8,6 +8,7 @@
   "license": "ISC",
   "description": "node gRPC stubs for the leviathan service",
   "scripts": {
+    "test": "npx ts-node src/index_test.ts",
     "build": "tsc",
     "postinstall": "npm run build",
     "clean": "npx rimraf node_modules dist"
@@ -19,6 +20,7 @@
     "leviathan-node-sdk": "https://gitpkg.vercel.app/makeopensource/leviathan/spec/leviathan_node?master"
   },
   "devDependencies": {
+    "ts-node": "^10.9.2",
     "@types/node": "^20.0.0",
     "rimraf": "^6.0.1",
     "typescript": "^5.0.0"

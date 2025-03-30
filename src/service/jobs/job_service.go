@@ -274,7 +274,7 @@ func (job *JobService) getJobFromDB(jobUuid string) (*models.Job, error) {
 // for example machine running leviathan shutdown unexpectedly or leviathan had an unrecoverable error
 func (job *JobService) cleanupOrphanJobs() {
 	var orphanJobs []*models.Job
-	res := job.db.Preload("labs").
+	res := job.db.Preload("LabData").
 		Where("status = ?", string(models.Queued)).
 		Or("status = ?", string(models.Running)).
 		Or("status = ?", string(models.Preparing)).

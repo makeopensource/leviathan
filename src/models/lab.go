@@ -7,13 +7,14 @@ import (
 
 type Lab struct {
 	gorm.Model
-	Name            string `gorm:"unique"`
-	JobTimeout      time.Duration
-	ImageTag        string
-	DockerFilePath  string
-	JobLimits       MachineLimits `gorm:"embedded;embeddedPrefix:machine_limit_"`
-	JobEntryCmd     string
-	JobFilesDirPath string
+	Name              string
+	JobTimeout        time.Duration
+	ImageTag          string
+	DockerFilePath    string
+	JobLimits         MachineLimits `gorm:"embedded;embeddedPrefix:machine_limit_"`
+	JobEntryCmd       string
+	JobFilesDirPath   string
+	AutolabCompatible bool
 }
 
 // VerifyJobLimits checks if job limits are provided,

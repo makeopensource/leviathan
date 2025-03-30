@@ -2,12 +2,11 @@ package jobs
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	dk "github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/makeopensource/leviathan/common"
-	"github.com/makeopensource/leviathan/models"
+	. "github.com/makeopensource/leviathan/models"
 	"github.com/makeopensource/leviathan/service/docker"
 	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
@@ -17,41 +16,31 @@ import (
 )
 
 type JobQueue struct {
-	jobChannel chan *models.Job
-	db         *gorm.DB
-	dkSrv      *docker.DkService
-	contextMap *models.Map[string, func()]
+	jobSemaphore *WorkerSemaphore
+	db           *gorm.DB
+	dkSrv        *docker.DkService
+	contextMap   *Map[string, func()]
 }
 
 func NewJobQueue(totalJobs uint, db *gorm.DB, dk *docker.DkService) *JobQueue {
 	queue := &JobQueue{
-		jobChannel: make(chan *models.Job, totalJobs),
-		contextMap: &models.Map[string, func()]{},
-		db:         db,
-		dkSrv:      dk,
+		contextMap:   &Map[string, func()]{},
+		db:           db,
+		dkSrv:        dk,
+		jobSemaphore: NewWorkerSemaphore(int(totalJobs)),
 	}
 
-	queue.spawnWorkers(int(totalJobs))
 	return queue
 }
 
-func (q *JobQueue) spawnWorkers(workerCount int) {
-	for i := 0; i < workerCount; i++ {
-		go q.worker()
-	}
-}
-
-func (q *JobQueue) AddJob(mes *models.Job) error {
+func (q *JobQueue) AddJob(mes *Job) error {
 	jog(mes.JobCtx).Info().Msg("sending job to queue")
 	err := mes.ValidateForQueue()
 	if err != nil {
 		return common.ErrLog("job validation failed: "+err.Error(), err, jog(mes.JobCtx).Error())
 	}
 
-	// run in go routine in case queue is full and gets blocked
-	go func() {
-		q.jobChannel <- mes
-	}()
+	go q.worker(mes)
 	return nil
 }
 
@@ -75,27 +64,28 @@ func (q *JobQueue) CancelJob(messageId string) {
 	cancel()
 }
 
-func (q *JobQueue) worker() {
-	for msg := range q.jobChannel {
-		if msg == nil {
-			log.Error().Msg("job received was nil, THIS SHOULD NEVER HAPPEN")
-			continue
-		}
+func (q *JobQueue) worker(msg *Job) {
+	if msg == nil {
+		log.Error().Msg("job received was nil, THIS SHOULD NEVER HAPPEN")
+		return
+	}
 
-		if errors.Is(msg.JobCtx.Err(), context.Canceled) {
-			q.setJobAsCancelled(msg)
-			q.cleanupJob(msg, nil)
-			jog(msg.JobCtx).Warn().Msgf("job context was canceled before queue could process")
-			continue
-		}
-
+	select {
+	case <-q.jobSemaphore.Acquire():
+		defer q.jobSemaphore.Release()
 		jog(msg.JobCtx).Info().Msgf("worker is now processing job")
 		q.runJob(msg)
+		return
+	case <-msg.JobCtx.Done():
+		q.setJobAsCancelled(msg)
+		q.cleanupJob(msg, nil)
+		jog(msg.JobCtx).Warn().Msgf("job context was canceled before queue could process")
+		return
 	}
 }
 
 // runJob should ALWAYS BE BLOCKING, as it prevents the worker from moving on to a new job
-func (q *JobQueue) runJob(job *models.Job) {
+func (q *JobQueue) runJob(job *Job) {
 	client, contId, err, reason := q.setupJob(job)
 	defer q.cleanupJob(job, client)
 	if err != nil {
@@ -155,7 +145,7 @@ func (q *JobQueue) runJob(job *models.Job) {
 // setupJob Set up job like king, yes!
 // returns nil client if an error occurred while setup,
 // make sure to handle null ptr dereference
-func (q *JobQueue) setupJob(msg *models.Job) (*docker.DkClient, string, error, string) {
+func (q *JobQueue) setupJob(msg *Job) (*docker.DkClient, string, error, string) {
 	q.setJobInSetup(msg)
 
 	machine, err := q.dkSrv.ClientManager.GetClientById(msg.MachineId)
@@ -180,8 +170,8 @@ func (q *JobQueue) setupJob(msg *models.Job) (*docker.DkClient, string, error, s
 	}
 
 	resources := dk.Resources{
-		NanoCPUs:  msg.LabData.JobLimits.NanoCPU * models.CPUQuota,
-		Memory:    msg.LabData.JobLimits.Memory * models.MB,
+		NanoCPUs:  msg.LabData.JobLimits.NanoCPU * CPUQuota,
+		Memory:    msg.LabData.JobLimits.Memory * MB,
 		PidsLimit: &msg.LabData.JobLimits.PidsLimit,
 	}
 
@@ -206,7 +196,7 @@ func (q *JobQueue) setupJob(msg *models.Job) (*docker.DkClient, string, error, s
 
 // cleanupJob clean up job,
 // updates job in DB, removes the container and associated tmp job data
-func (q *JobQueue) cleanupJob(msg *models.Job, client *docker.DkClient) {
+func (q *JobQueue) cleanupJob(msg *Job, client *docker.DkClient) {
 	jog(msg.JobCtx).Info().Msg("cleaning up job")
 	q.updateJobVeryNice(msg)
 
@@ -231,9 +221,9 @@ func (q *JobQueue) cleanupJob(msg *models.Job, client *docker.DkClient) {
 // Very nice!
 //
 // jobResult is the last line expected to be valid json string, returned to the job caller
-func (q *JobQueue) greatSuccess(job *models.Job, jobResult string) {
+func (q *JobQueue) greatSuccess(job *Job, jobResult string) {
 	jog(job.JobCtx).Info().Msg("job completed successfully")
-	job.Status = models.Complete
+	job.Status = Complete
 	job.StatusMessage = jobResult
 }
 
@@ -244,46 +234,46 @@ func (q *JobQueue) greatSuccess(job *models.Job, jobResult string) {
 // The publicReason will be displayed to the end user, providing a user-friendly message.
 //
 // The err parameter holds the underlying error, used for debugging purposes.
-func (q *JobQueue) bigProblem(job *models.Job, publicReason string, err error) {
+func (q *JobQueue) bigProblem(job *Job, publicReason string, err error) {
 	jog(job.JobCtx).Error().Err(err).Str("reason", publicReason).Msg("job failed")
-	job.Status = models.Failed
+	job.Status = Failed
 	job.StatusMessage = publicReason
 	if err != nil {
 		job.Error = err.Error()
 	}
 }
 
-func (q *JobQueue) setJobAsCancelled(job *models.Job) {
+func (q *JobQueue) setJobAsCancelled(job *Job) {
 	jog(job.JobCtx).Info().Msg("job was cancelled")
-	job.Status = models.Canceled
+	job.Status = Canceled
 	job.StatusMessage = "Job was cancelled"
 }
 
 // setJobInProgress set job status as models.Running
 //
 // Job is in progress, success soon!
-func (q *JobQueue) setJobInProgress(msg *models.Job) {
-	msg.Status = models.Running
+func (q *JobQueue) setJobInProgress(msg *Job) {
+	msg.Status = Running
 	q.updateJobVeryNice(msg)
 }
 
 // setJobInSetup set job status as models.Preparing
 //
 // job is being setup standby
-func (q *JobQueue) setJobInSetup(msg *models.Job) {
-	msg.Status = models.Preparing
+func (q *JobQueue) setJobInSetup(msg *Job) {
+	msg.Status = Preparing
 	q.updateJobVeryNice(msg)
 }
 
 // updateJobVeryNice Database updated, fresh like new wife!
-func (q *JobQueue) updateJobVeryNice(msg *models.Job) {
+func (q *JobQueue) updateJobVeryNice(msg *Job) {
 	res := q.db.Save(msg)
 	if res.Error != nil {
 		jog(msg.JobCtx).Error().Err(res.Error).Msg("error occurred while saving job to db")
 	}
 }
 
-func writeLogs(client *docker.DkClient, msg *models.Job) (string, error) {
+func writeLogs(client *docker.DkClient, msg *Job) (string, error) {
 	outputFile, err := os.OpenFile(msg.OutputLogFilePath, os.O_RDWR|os.O_CREATE, 0660)
 	if err != nil {
 		return "unable to open log file", err
@@ -308,8 +298,8 @@ func writeLogs(client *docker.DkClient, msg *models.Job) (string, error) {
 	return "", nil
 }
 
-func verifyLogs(msg *models.Job) (string, string, error) {
-	if msg.Status == models.Failed {
+func verifyLogs(msg *Job) (string, string, error) {
+	if msg.Status == Failed {
 		return "", "Job failed, skipping parsing log file", nil
 	}
 

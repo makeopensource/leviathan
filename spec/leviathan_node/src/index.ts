@@ -6,18 +6,31 @@ export * from "./generated/types/v1/types_pb"
 export * from "@connectrpc/connect-node"
 export * from "@connectrpc/connect"
 
-export type FileData = {
+type FileData = {
     fieldName: string,
     filename: string,
     filedata: Blob
 }
 
-export async function UploadLabFiles(basePath: String, files: Array<FileData>) {
+export type SubmissionFile = Omit<FileData, 'fieldName'> & {
+    fieldName: 'submissionFiles'  // Preset field name for submission files
+}
+
+export type DockerFile = Omit<FileData, 'fieldName'> & {
+    fieldName: "dockerfile"  // Preset field name for submission files
+}
+
+export type LabFile = Omit<FileData, 'fieldName'> & {
+    fieldName: 'labFiles'  // Preset field name
+}
+
+
+export async function UploadLabFiles(basePath: String, dockerfile: DockerFile, files: Array<LabFile>) {
     const url = `${basePath}/v1/files/upload/submission`
     return UploadMultipartForm(url, files)
 }
 
-export async function UploadSubmissionFiles(basePath: String, files: Array<FileData>) {
+export async function UploadSubmissionFiles(basePath: String, files: Array<SubmissionFile>) {
     const url = `${basePath}/v1/files/upload/lab`
     return UploadMultipartForm(url, files)
 }
@@ -44,7 +57,7 @@ async function UploadMultipartForm(url: string, files: Array<FileData>,) {
 
     const data = await response.json();
     if (data && data.folderId) {
-        return data.folderId;
+        return data.folderId as string;
     } else {
         throw new Error('Response did not contain an folderID');
     }

@@ -6,7 +6,20 @@ title: About
 
 # Leviathan
 
-Leviathan is a container orchestrator and job runner intended to be code runner component of the [DevU](https://github.com/makeopensource/devU).
+A container orchestrator and job runner for executing code in docker containers.
+
+## Overview
+
+Leviathan is the code execution engine for the [DevU project](https://github.com/makeopensource/devU).
+It securely runs submitted code in isolated containers, providing evaluation results and feedback.
+Designed as a modern replacement for [Autolab Tango](https://github.com/autolab/Tango).
+
+Leviathan maintains full compatibility with existing Autolab/Tango graders. Any graders written for Tango will run on Leviathan without modification.
+
+## Features
+- Secure container-based execution
+- Resource limiting and management
+- gRPC API for type-safe, efficient communication
 
 ## How it Works
 

@@ -2,10 +2,10 @@ package labs
 
 import (
 	"fmt"
-	. "github.com/makeopensource/leviathan/common"
+	com "github.com/makeopensource/leviathan/common"
 	"github.com/makeopensource/leviathan/models"
 	"github.com/makeopensource/leviathan/service/docker"
-	. "github.com/makeopensource/leviathan/service/file_manager"
+	fm "github.com/makeopensource/leviathan/service/file_manager"
 	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
 	"os"
@@ -16,10 +16,10 @@ import (
 type LabService struct {
 	db      *gorm.DB
 	dk      *docker.DkService
-	fileMan *FileManagerService
+	fileMan *fm.FileManagerService
 }
 
-func NewLabService(db *gorm.DB, dk *docker.DkService, service *FileManagerService) *LabService {
+func NewLabService(db *gorm.DB, dk *docker.DkService, service *fm.FileManagerService) *LabService {
 	return &LabService{
 		db:      db,
 		dk:      dk,
@@ -35,21 +35,21 @@ func (service *LabService) CreateLab(lab *models.Lab, jobDirId string) (uint, er
 	defer service.fileMan.DeleteFolder(jobDirId)
 
 	jobFolderName := fmt.Sprintf("%s_%s", lab.Name, jobDirId)
-	jobDataDirPath := fmt.Sprintf("%s/%s", LabsFolder.GetStr(), jobFolderName)
-	if err = os.MkdirAll(jobDataDirPath, DefaultFilePerm); err != nil {
-		return 0, ErrLog(
+	jobDataDirPath := fmt.Sprintf("%s/%s", com.LabsFolder.GetStr(), jobFolderName)
+	if err = os.MkdirAll(jobDataDirPath, com.DefaultFilePerm); err != nil {
+		return 0, com.ErrLog(
 			"unable to create directories for lab: "+lab.Name,
 			err,
 			log.Error(),
 		)
 	}
 
-	if err = HardLinkFolder(tmpDir, jobDataDirPath); err != nil {
-		return 0, ErrLog("unable to copy files to job dir", err, log.Error())
+	if err = com.HardLinkFolder(tmpDir, jobDataDirPath); err != nil {
+		return 0, com.ErrLog("unable to copy files to job dir", err, log.Error())
 	}
 
-	lab.DockerFilePath = filepath.Join(jobDataDirPath, DockerfileName)
-	lab.JobFilesDirPath = filepath.Join(jobDataDirPath, JobDataFolderName)
+	lab.DockerFilePath = filepath.Join(jobDataDirPath, fm.DockerfileName)
+	lab.JobFilesDirPath = filepath.Join(jobDataDirPath, fm.JobDataFolderName)
 
 	lab.ImageTag = fmt.Sprintf("%s:v1", lab.Name)
 	lab.ImageTag = strings.ToLower(strings.Trim(strings.TrimSpace(lab.ImageTag), " "))
@@ -111,7 +111,7 @@ func (service *LabService) DeleteLab(id uint) error {
 func (service *LabService) deleteLabFiles(labData *models.Lab) error {
 	err := os.RemoveAll(filepath.Base(labData.DockerFilePath))
 	if err != nil {
-		return ErrLog(
+		return com.ErrLog(
 			"unable to delete directories for lab: "+labData.Name,
 			err,
 			log.Error(),

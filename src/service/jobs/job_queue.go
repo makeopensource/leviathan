@@ -6,7 +6,7 @@ import (
 	dk "github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/makeopensource/leviathan/common"
-	. "github.com/makeopensource/leviathan/models"
+	md "github.com/makeopensource/leviathan/models"
 	"github.com/makeopensource/leviathan/service/docker"
 	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
@@ -16,24 +16,24 @@ import (
 )
 
 type JobQueue struct {
-	jobSemaphore *WorkerSemaphore
+	jobSemaphore *md.WorkerSemaphore
 	db           *gorm.DB
 	dkSrv        *docker.DkService
-	contextMap   *Map[string, func()]
+	contextMap   *md.Map[string, func()]
 }
 
 func NewJobQueue(totalJobs uint, db *gorm.DB, dk *docker.DkService) *JobQueue {
 	queue := &JobQueue{
-		contextMap:   &Map[string, func()]{},
+		contextMap:   &md.Map[string, func()]{},
 		db:           db,
 		dkSrv:        dk,
-		jobSemaphore: NewWorkerSemaphore(int(totalJobs)),
+		jobSemaphore: md.NewWorkerSemaphore(int(totalJobs)),
 	}
 
 	return queue
 }
 
-func (q *JobQueue) AddJob(mes *Job) error {
+func (q *JobQueue) AddJob(mes *md.Job) error {
 	jog(mes.JobCtx).Info().Msg("sending job to queue")
 	err := mes.ValidateForQueue()
 	if err != nil {
@@ -64,7 +64,7 @@ func (q *JobQueue) CancelJob(messageId string) {
 	cancel()
 }
 
-func (q *JobQueue) worker(msg *Job) {
+func (q *JobQueue) worker(msg *md.Job) {
 	if msg == nil {
 		log.Error().Msg("job received was nil, THIS SHOULD NEVER HAPPEN")
 		return
@@ -85,56 +85,48 @@ func (q *JobQueue) worker(msg *Job) {
 }
 
 // runJob should ALWAYS BE BLOCKING, as it prevents the worker from moving on to a new job
-func (q *JobQueue) runJob(job *Job) {
-	client, contId, err, reason := q.setupJob(job)
+func (q *JobQueue) runJob(job *md.Job) {
+	client, contId, err := q.setupJob(job)
 	defer q.cleanupJob(job, client)
 	if err != nil {
-		q.bigProblem(job, reason, err)
+		q.bigProblem(job, err)
 		return
 	}
 
-	logStatusCh := make(chan struct {
-		message string
-		err     error
-	})
+	logStatusCh := make(chan md.JobError, 1)
 
 	q.setJobInProgress(job)
-	err = client.StartContainer(contId)
-	if err != nil {
-		q.bigProblem(job, "unable to start job container", err)
+	err2 := client.StartContainer(contId)
+	if err2 != nil {
+		q.bigProblem(job, md.JError("unable to start job container", err2))
 		return
 	}
 
 	// start writing to log file so that
 	// we can stream changes to the log file to the user
 	go func() {
-		statusMessage, err2 := writeLogs(client, job)
-		logStatusCh <- struct {
-			message string
-			err     error
-		}{message: statusMessage, err: err2}
+		logStatusCh <- writeLogs(client, job)
 	}()
 
 	statusCh, errCh := client.Client.ContainerWait(context.Background(), contId, dk.WaitConditionNotRunning)
 	select {
 	case <-statusCh:
-		mes := <-logStatusCh
-		if mes.err != nil {
-			q.bigProblem(job, mes.message, mes.err)
+		if mes := <-logStatusCh; mes != nil {
+			q.bigProblem(job, mes)
 			return
 		}
-		logLine, errMessage, err := verifyLogs(job)
-		if err != nil || errMessage != "" {
-			q.bigProblem(job, errMessage, err)
+		logLine, err := verifyLogs(job)
+		if err != nil {
+			q.bigProblem(job, err)
 			return
 		}
 		q.greatSuccess(job, logLine)
 		return
 	case err := <-errCh:
-		q.bigProblem(job, "error occurred while waiting for job process", err)
+		q.bigProblem(job, md.JError("error occurred while waiting for job process", err))
 		return
 	case <-time.After(job.LabData.JobTimeout):
-		q.bigProblem(job, fmt.Sprintf("Maximum timeout reached for job, job ran for %s", job.LabData.JobTimeout), nil)
+		q.bigProblem(job, md.JError(timeoutErrLog(job.LabData.JobTimeout), nil))
 		return
 	case <-job.JobCtx.Done():
 		q.setJobAsCancelled(job)
@@ -142,61 +134,65 @@ func (q *JobQueue) runJob(job *Job) {
 	}
 }
 
+func timeoutErrLog(timeout time.Duration) string {
+	return fmt.Sprintf("Maximum timeout reached for job, job ran for %s", timeout)
+}
+
 // setupJob Set up job like king, yes!
 // returns nil client if an error occurred while setup,
 // make sure to handle null ptr dereference
-func (q *JobQueue) setupJob(msg *Job) (*docker.DkClient, string, error, string) {
+func (q *JobQueue) setupJob(msg *md.Job) (*docker.DkClient, string, md.JobError) {
 	q.setJobInSetup(msg)
 
 	machine, err := q.dkSrv.ClientManager.GetClientById(msg.MachineId)
 	if err != nil {
-		return nil, "", err, "Failed to get machine info"
+		return nil, "", md.JError("Failed to get machine info", err)
 	}
 
 	// incase dockerfile is not passed and referenced via tag name
 	if msg.LabData.DockerFilePath != "" {
 		err = machine.BuildImageFromDockerfile(msg.LabData.DockerFilePath, msg.LabData.ImageTag)
 		if err != nil {
-			return nil, "", err, "Failed to create image"
+			return nil, "", md.JError("Failed to create image", err)
 		}
 		// folder structure is '/<id>/autolab/Dockerfile, get the <random id> folder path
 		parent := filepath.Base(filepath.Dir(filepath.Dir(msg.LabData.DockerFilePath)))
 
 		if parent != "labs" { // do not delete if job is from a saved lab
 			if err = os.RemoveAll(parent); err != nil {
-				return nil, "", err, "failed to delete dockerfile"
+				return nil, "", md.JError("failed to delete dockerfile", err)
 			}
 		}
 	}
 
 	resources := dk.Resources{
-		NanoCPUs:  msg.LabData.JobLimits.NanoCPU * CPUQuota,
-		Memory:    msg.LabData.JobLimits.Memory * MB,
+		NanoCPUs:  msg.LabData.JobLimits.NanoCPU * md.CPUQuota,
+		Memory:    msg.LabData.JobLimits.Memory * md.MB,
 		PidsLimit: &msg.LabData.JobLimits.PidsLimit,
 	}
 
 	contId, err := machine.CreateNewContainer(msg.JobId, msg.LabData.ImageTag, filepath.Base(msg.TmpJobFolderPath), msg.LabData.JobEntryCmd, resources)
 	if err != nil {
-		return nil, "", err, "unable to create job container"
+		return nil, "", md.JError("unable to create job container", err)
 	}
 
 	err = machine.CopyToContainer(contId, msg.TmpJobFolderPath)
 	if err != nil {
-		return nil, "", err, "unable to copy files to job container"
+		return nil, "", md.JError("unable to copy files to job container", err)
 	}
 
 	msg.ContainerId = contId
 	res := q.db.Save(msg)
 	if res.Error != nil {
-		return nil, "", err, "unable to update job in db"
+		return nil, "", md.JError("unable to update job in db", err)
 	}
 
-	return machine, contId, nil, ""
+	return machine, contId, nil
 }
 
 // cleanupJob clean up job,
 // updates job in DB, removes the container and associated tmp job data
-func (q *JobQueue) cleanupJob(msg *Job, client *docker.DkClient) {
+func (q *JobQueue) cleanupJob(msg *md.Job, client *docker.DkClient) {
 	jog(msg.JobCtx).Info().Msg("cleaning up job")
 	q.updateJobVeryNice(msg)
 
@@ -221,62 +217,56 @@ func (q *JobQueue) cleanupJob(msg *Job, client *docker.DkClient) {
 // Very nice!
 //
 // jobResult is the last line expected to be valid json string, returned to the job caller
-func (q *JobQueue) greatSuccess(job *Job, jobResult string) {
+func (q *JobQueue) greatSuccess(job *md.Job, jobResult string) {
 	jog(job.JobCtx).Info().Msg("job completed successfully")
-	job.Status = Complete
+	job.Status = md.Complete
 	job.StatusMessage = jobResult
 }
 
 // bigProblem set job status to models.Failed
 //
 // job failed, Not good!
-//
-// The publicReason will be displayed to the end user, providing a user-friendly message.
-//
-// The err parameter holds the underlying error, used for debugging purposes.
-func (q *JobQueue) bigProblem(job *Job, publicReason string, err error) {
-	jog(job.JobCtx).Error().Err(err).Str("reason", publicReason).Msg("job failed")
-	job.Status = Failed
-	job.StatusMessage = publicReason
-	if err != nil {
-		job.Error = err.Error()
-	}
+func (q *JobQueue) bigProblem(job *md.Job, jErr md.JobError) {
+	jog(job.JobCtx).Error().Err(jErr.Err()).Str("reason", jErr.Reason()).Msg("job failed")
+	job.Status = md.Failed
+	job.StatusMessage = jErr.Reason()
+	job.Error = jErr.ErrStr()
 }
 
-func (q *JobQueue) setJobAsCancelled(job *Job) {
+func (q *JobQueue) setJobAsCancelled(job *md.Job) {
 	jog(job.JobCtx).Info().Msg("job was cancelled")
-	job.Status = Canceled
+	job.Status = md.Canceled
 	job.StatusMessage = "Job was cancelled"
 }
 
 // setJobInProgress set job status as models.Running
 //
 // Job is in progress, success soon!
-func (q *JobQueue) setJobInProgress(msg *Job) {
-	msg.Status = Running
+func (q *JobQueue) setJobInProgress(msg *md.Job) {
+	msg.Status = md.Running
 	q.updateJobVeryNice(msg)
 }
 
 // setJobInSetup set job status as models.Preparing
 //
 // job is being setup standby
-func (q *JobQueue) setJobInSetup(msg *Job) {
-	msg.Status = Preparing
+func (q *JobQueue) setJobInSetup(msg *md.Job) {
+	msg.Status = md.Preparing
 	q.updateJobVeryNice(msg)
 }
 
 // updateJobVeryNice Database updated, fresh like new wife!
-func (q *JobQueue) updateJobVeryNice(msg *Job) {
+func (q *JobQueue) updateJobVeryNice(msg *md.Job) {
 	res := q.db.Save(msg)
 	if res.Error != nil {
 		jog(msg.JobCtx).Error().Err(res.Error).Msg("error occurred while saving job to db")
 	}
 }
 
-func writeLogs(client *docker.DkClient, msg *Job) (string, error) {
+func writeLogs(client *docker.DkClient, msg *md.Job) md.JobError {
 	outputFile, err := os.OpenFile(msg.OutputLogFilePath, os.O_RDWR|os.O_CREATE, 0660)
 	if err != nil {
-		return "unable to open log file", err
+		return md.JError("unable to open log file", err)
 	}
 
 	defer func() {
@@ -288,24 +278,24 @@ func writeLogs(client *docker.DkClient, msg *Job) (string, error) {
 
 	logs, err := client.TailContainerLogs(context.Background(), msg.ContainerId)
 	if err != nil {
-		return "unable to tail job container", err
+		return md.JError("unable to tail job container", err)
 	}
 
 	_, err = stdcopy.StdCopy(outputFile, outputFile, logs)
 	if err != nil {
-		return "unable to write to log file", err
+		return md.JError("unable to write to log file", err)
 	}
-	return "", nil
+	return nil
 }
 
-func verifyLogs(msg *Job) (string, string, error) {
-	if msg.Status == Failed {
-		return "", "Job failed, skipping parsing log file", nil
+func verifyLogs(msg *md.Job) (string, md.JobError) {
+	if msg.Status == md.Failed {
+		return "", md.JError("Job failed, skipping parsing log file", nil)
 	}
 
 	outputFile, err := os.Open(msg.OutputLogFilePath)
 	if err != nil {
-		return "", "unable to open log file", err
+		return "", md.JError("unable to open log file", err)
 	}
 	defer func(open *os.File) {
 		err := open.Close()
@@ -316,11 +306,11 @@ func verifyLogs(msg *Job) (string, string, error) {
 
 	line, err := GetLastLine(outputFile)
 	if err != nil {
-		return "", "unable to get logs", err
+		return "", md.JError("unable to get logs", err)
 	}
 	if !IsValidJSON(line) {
-		return "", "unable to parse log output", nil
+		return "", md.JError("unable to parse log output", err)
 	}
 
-	return line, "", nil
+	return line, nil
 }

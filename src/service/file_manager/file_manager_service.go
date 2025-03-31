@@ -3,7 +3,7 @@ package file_manager
 import (
 	"fmt"
 	"github.com/google/uuid"
-	. "github.com/makeopensource/leviathan/common"
+	com "github.com/makeopensource/leviathan/common"
 	"github.com/rs/zerolog/log"
 	"io"
 	"os"
@@ -36,7 +36,7 @@ func (f *FileManagerService) CreateTmpLabFolder(dockerfile io.Reader, jobFiles .
 	jobDataDir := filepath.Join(basePath, JobDataFolderName)
 	err = os.MkdirAll(jobDataDir, os.ModePerm)
 	if err != nil {
-		return "", ErrLog("unable to create job data folder", err, log.Error())
+		return "", com.ErrLog("unable to create job data folder", err, log.Error())
 	}
 
 	if err = f.SaveFile(basePath, DockerfileName, dockerfile); err != nil {
@@ -71,14 +71,14 @@ func (f *FileManagerService) CreateSubmissionFolder(jobFiles ...*FileInfo) (stri
 func (f *FileManagerService) createBaseFolder() (string, string, error) {
 	folderUUID, err := uuid.NewUUID()
 	if err != nil {
-		return "", "", ErrLog("Unable to generate uuid", err, log.Error())
+		return "", "", com.ErrLog("Unable to generate uuid", err, log.Error())
 	}
 	stringUuid := folderUUID.String()
-	basePath := filepath.Join(TmpUploadFolder.GetStr(), stringUuid)
+	basePath := filepath.Join(com.TmpUploadFolder.GetStr(), stringUuid)
 
-	err = os.Mkdir(basePath, DefaultFilePerm)
+	err = os.Mkdir(basePath, com.DefaultFilePerm)
 	if err != nil {
-		return "", "", ErrLog("Unable to create tmp folder", err, log.Error())
+		return "", "", com.ErrLog("Unable to create tmp folder", err, log.Error())
 	}
 
 	return folderUUID.String(), basePath, nil
@@ -90,7 +90,7 @@ func (f *FileManagerService) SaveFile(basePath string, filename string, file io.
 	dst, err := os.Create(fPath)
 
 	if err != nil {
-		return ErrLog(
+		return com.ErrLog(
 			"Failed to create destination file",
 			err,
 			log.Error(),
@@ -106,7 +106,7 @@ func (f *FileManagerService) SaveFile(basePath string, filename string, file io.
 	// Copy the file contents
 	written, err := io.Copy(dst, file)
 	if err != nil {
-		return ErrLog(
+		return com.ErrLog(
 			"Failed to write file",
 			err,
 			log.Error(),
@@ -122,14 +122,14 @@ func (f *FileManagerService) SaveFile(basePath string, filename string, file io.
 }
 
 func (f *FileManagerService) DeleteFolder(folderUuid string) {
-	basePath := filepath.Join(TmpUploadFolder.GetStr(), folderUuid)
+	basePath := filepath.Join(com.TmpUploadFolder.GetStr(), folderUuid)
 	if err := os.RemoveAll(basePath); err != nil {
 		log.Warn().Err(err).Msgf("failed to delete tmp folder %s", folderUuid)
 	}
 }
 
 func (f *FileManagerService) GetLabFilePaths(folderUuid string) (basePath string, err error) {
-	basePath = filepath.Join(TmpUploadFolder.GetStr(), folderUuid)
+	basePath = filepath.Join(com.TmpUploadFolder.GetStr(), folderUuid)
 	jobData := filepath.Join(basePath, JobDataFolderName)
 	dockerFile := filepath.Join(basePath, DockerfileName)
 
@@ -144,12 +144,12 @@ func (f *FileManagerService) GetLabFilePaths(folderUuid string) (basePath string
 }
 
 func (f *FileManagerService) GetSubmissionPath(uuid string) (string, error) {
-	path := filepath.Join(TmpUploadFolder.GetStr(), uuid)
+	path := filepath.Join(com.TmpUploadFolder.GetStr(), uuid)
 	return f.checkFolder(path)
 }
 
 func (f *FileManagerService) checkFolder(path string) (jobData string, err error) {
-	if !FileExists(path) {
+	if !com.FileExists(path) {
 		return "", fmt.Errorf("could not find path")
 	}
 	return path, err

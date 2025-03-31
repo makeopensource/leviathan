@@ -14,10 +14,10 @@ var (
 	tangoDockerFile = basePath + "/tango-Dockerfile"
 	autolab0        = basePath + "/tango0"
 	autolab1        = basePath + "/tango1"
-	autolab2        = basePath + "/tango2"
-	autolab3        = basePath + "/tango3"
-	autolab4        = basePath + "/tango4"
-	tangoTimeout    = 10 * time.Second
+	//autolab2        = basePath + "/tango2"
+	autolab3     = basePath + "/tango3"
+	autolab4     = basePath + "/tango4"
+	tangoTimeout = 10 * time.Second
 )
 
 type testMap = map[string]testCase

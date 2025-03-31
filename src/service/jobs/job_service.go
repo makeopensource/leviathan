@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/google/uuid"
-	. "github.com/makeopensource/leviathan/common"
+	com "github.com/makeopensource/leviathan/common"
 	"github.com/makeopensource/leviathan/models"
 	"github.com/makeopensource/leviathan/service/docker"
 	"github.com/makeopensource/leviathan/service/file_manager"
@@ -37,7 +37,7 @@ func NewJobService(
 		db:          db,
 		broadcastCh: bc,
 		dockerSrv:   dockerService,
-		queue:       NewJobQueue(uint(ConcurrentJobs.GetUint64()), db, dockerService),
+		queue:       NewJobQueue(uint(com.ConcurrentJobs.GetUint64()), db, dockerService),
 		labSrv:      labService,
 		fileManSrv:  tmpFileService,
 	}
@@ -56,7 +56,7 @@ func (job *JobService) NewJob(newJob *models.Job, submissionFolderId string) (st
 
 	jobId, err := uuid.NewUUID()
 	if err != nil {
-		return "", ErrLog("failed to generate job ID", err, log.Error())
+		return "", com.ErrLog("failed to generate job ID", err, log.Error())
 	}
 	newJob.JobId = jobId.String()
 
@@ -65,9 +65,9 @@ func (job *JobService) NewJob(newJob *models.Job, submissionFolderId string) (st
 	// job context, so that it can be cancelled, and store sub logger
 	ctx := job.queue.NewJobContext(newJob.JobId)
 
-	jobDir, err := CreateTmpJobDir(newJob.JobId, SubmissionFolder.GetStr())
+	jobDir, err := CreateTmpJobDir(newJob.JobId, com.SubmissionFolder.GetStr())
 	if err != nil {
-		return "", ErrLog("failed to create job dir", err, jog(ctx).Error())
+		return "", com.ErrLog("failed to create job dir", err, jog(ctx).Error())
 	}
 
 	submissionFolder, err := job.fileManSrv.GetSubmissionPath(submissionFolderId)
@@ -76,16 +76,20 @@ func (job *JobService) NewJob(newJob *models.Job, submissionFolderId string) (st
 	}
 	defer job.fileManSrv.DeleteFolder(submissionFolderId)
 
-	if err = HardLinkFolder(submissionFolder, jobDir); err != nil {
-		return "", ErrLog("unable to copy files to job dir", err, log.Error())
+	if err = com.HardLinkFolder(submissionFolder, jobDir); err != nil {
+		return "", com.ErrLog("unable to copy files to job dir", err, log.Error())
 	}
-	if err = HardLinkFolder(newJob.LabData.JobFilesDirPath, jobDir); err != nil {
-		return "", ErrLog("unable to copy files to job dir", err, log.Error())
+	if err = com.HardLinkFolder(newJob.LabData.JobFilesDirPath, jobDir); err != nil {
+		return "", com.ErrLog("unable to copy files to job dir", err, log.Error())
 	}
 
-	logPath, err, reason := setupLogFile(newJob.JobId)
-	if err != nil {
-		return "", ErrLog("failed to setup log file: "+reason, err, jog(ctx).Error().Str("reason", reason))
+	logPath, err2 := setupLogFile(newJob.JobId)
+	if err2 != nil {
+		return "", com.ErrLog(
+			"failed to setup log file: "+err2.Reason(),
+			err,
+			jog(ctx).Error().Str("reason", err2.Reason()),
+		)
 	}
 
 	// setup job metadata
@@ -99,7 +103,7 @@ func (job *JobService) NewJob(newJob *models.Job, submissionFolderId string) (st
 
 	res := job.db.Create(newJob)
 	if res.Error != nil {
-		return "", ErrLog("failed to save job to db", res.Error, jog(ctx).Error())
+		return "", com.ErrLog("failed to save job to db", res.Error, jog(ctx).Error())
 	}
 
 	err = job.queue.AddJob(newJob)
@@ -220,13 +224,13 @@ func (job *JobService) ListenToJobLogs(ctx context.Context, jobInfo *models.Job)
 				content := ReadLogFile(jobInfo.OutputLogFilePath)
 				contLen := len(content)
 				if contLen > prevLength { // send if content changed
-					log.Debug().Str(JobLogKey, jobInfo.JobId).Msgf("sending log, length changed from %d to %d", prevLength, contLen)
+					log.Debug().Str(com.JobLogKey, jobInfo.JobId).Msgf("sending log, length changed from %d to %d", prevLength, contLen)
 					prevLength = contLen
 					logChannel <- content
 				}
 			case <-ctx.Done():
 				close(logChannel)
-				log.Debug().Str(JobLogKey, jobInfo.JobId).Msg("stopping listening for logs")
+				log.Debug().Str(com.JobLogKey, jobInfo.JobId).Msg("stopping listening for logs")
 				return
 			}
 		}
@@ -250,7 +254,7 @@ func (job *JobService) checkJob(jobUuid string) (*models.Job, bool, string, erro
 	}
 
 	if jobInf.Status.Done() {
-		log.Debug().Str(JobLogKey, jobUuid).Msg("job is already done")
+		log.Debug().Str(com.JobLogKey, jobUuid).Msg("job is already done")
 
 		content := ReadLogFile(jobInf.OutputLogFilePath)
 		return jobInf, true, content, nil
@@ -328,11 +332,11 @@ func (job *JobService) cleanupOrphanJobs() {
 }
 
 // setupLogFile store grader output
-func setupLogFile(jobId string) (string, error, string) {
-	outputFile := fmt.Sprintf("%s/%s.txt", OutputFolder.GetStr(), jobId)
+func setupLogFile(jobId string) (string, models.JobError) {
+	outputFile := fmt.Sprintf("%s/%s.txt", com.OutputFolder.GetStr(), jobId)
 	outFile, err := os.Create(outputFile)
 	if err != nil {
-		return "", err, fmt.Sprintf("error while creating log file at %s", outputFile)
+		return "", models.JError(fmt.Sprintf("error while creating log file at %s", outputFile), err)
 	}
 	defer func() {
 		err := outFile.Close()
@@ -343,10 +347,10 @@ func setupLogFile(jobId string) (string, error, string) {
 
 	full, err := filepath.Abs(outputFile)
 	if err != nil {
-		return "", err, "error while getting absolute path"
+		return "", models.JError("error while getting absolute path", err)
 	}
 
-	return full, nil, ""
+	return full, nil
 }
 
 func (job *JobService) getLab(labId uint) (*models.Lab, error) {

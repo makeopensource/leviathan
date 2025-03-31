@@ -2,8 +2,8 @@ package v1
 
 import (
 	"encoding/json"
-	. "github.com/makeopensource/leviathan/common"
-	. "github.com/makeopensource/leviathan/service/file_manager"
+	com "github.com/makeopensource/leviathan/common"
+	fm "github.com/makeopensource/leviathan/service/file_manager"
 	"github.com/rs/zerolog/log"
 	"mime/multipart"
 	"net/http"
@@ -20,7 +20,7 @@ type FileManagerHandler struct {
 	BasePath             string
 	UploadLabPath        string
 	UploadSubmissionPath string
-	service              FileManagerService
+	service              fm.FileManagerService
 }
 
 func NewFileManagerHandler(basePath string) *FileManagerHandler {
@@ -28,7 +28,7 @@ func NewFileManagerHandler(basePath string) *FileManagerHandler {
 		BasePath:             basePath,
 		UploadLabPath:        basePath + "/upload/lab",
 		UploadSubmissionPath: basePath + "/upload/submission",
-		service:              FileManagerService{},
+		service:              fm.FileManagerService{},
 	}
 }
 
@@ -44,7 +44,6 @@ func (f *FileManagerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusMethodNotAllowed)
-	return
 }
 
 func (f *FileManagerHandler) UploadLabData(w http.ResponseWriter, r *http.Request) {
@@ -58,12 +57,12 @@ func (f *FileManagerHandler) UploadLabData(w http.ResponseWriter, r *http.Reques
 	if err != nil {
 		http.Error(
 			w,
-			ErrLog("Failed to get dockerfile in form", err, log.Error()).Error(),
+			com.ErrLog("Failed to get dockerfile in form", err, log.Error()).Error(),
 			http.StatusBadRequest,
 		)
 		return
 	}
-	defer CloseFile(dockerFile)
+	defer com.CloseFile(dockerFile)
 
 	jobFiles, ok := r.MultipartForm.File[LabFilesKey]
 	if !ok || len(jobFiles) == 0 {
@@ -76,9 +75,9 @@ func (f *FileManagerHandler) UploadLabData(w http.ResponseWriter, r *http.Reques
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	defer func(files []*FileInfo) {
+	defer func(files []*fm.FileInfo) {
 		for _, file := range files {
-			CloseFile(file.Reader)
+			com.CloseFile(file.Reader)
 		}
 	}(fileInfos)
 
@@ -88,7 +87,7 @@ func (f *FileManagerHandler) UploadLabData(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	sendResponse(w, err, folderID)
+	sendResponse(w, folderID)
 }
 
 func (f *FileManagerHandler) UploadSubmissionData(w http.ResponseWriter, r *http.Request) {
@@ -109,9 +108,9 @@ func (f *FileManagerHandler) UploadSubmissionData(w http.ResponseWriter, r *http
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	defer func(files []*FileInfo) {
+	defer func(files []*fm.FileInfo) {
 		for _, file := range files {
-			CloseFile(file.Reader)
+			com.CloseFile(file.Reader)
 		}
 	}(fileInfos)
 
@@ -121,11 +120,11 @@ func (f *FileManagerHandler) UploadSubmissionData(w http.ResponseWriter, r *http
 		return
 	}
 
-	sendResponse(w, err, folderID)
+	sendResponse(w, folderID)
 }
 
-func sendResponse(w http.ResponseWriter, err error, folderID string) {
-	jsonData, err := toJson(folderID, err)
+func sendResponse(w http.ResponseWriter, folderID string) {
+	jsonData, err := toJson(folderID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -135,32 +134,32 @@ func sendResponse(w http.ResponseWriter, err error, folderID string) {
 	if err != nil {
 		http.Error(
 			w,
-			ErrLog("Failed to write response", err, log.Error()).Error(),
+			com.ErrLog("Failed to write response", err, log.Error()).Error(),
 			http.StatusInternalServerError,
 		)
 		return
 	}
 }
 
-func toJson(folderID string, err error) ([]byte, error) {
+func toJson(folderID string) ([]byte, error) {
 	resultMap := map[string]string{
 		"folderId": folderID,
 	}
 	jsonData, err := json.Marshal(resultMap)
 	if err != nil {
-		return nil, ErrLog("Failed to marshal json", err, log.Error())
+		return nil, com.ErrLog("Failed to marshal json", err, log.Error())
 	}
 	return jsonData, nil
 }
 
-func mapToFileInfo(jobFiles []*multipart.FileHeader) ([]*FileInfo, error) {
-	var fileInfos []*FileInfo
+func mapToFileInfo(jobFiles []*multipart.FileHeader) ([]*fm.FileInfo, error) {
+	var fileInfos []*fm.FileInfo
 	for _, jobFile := range jobFiles {
 		file, err := jobFile.Open()
 		if err != nil {
-			return fileInfos, ErrLog("unable to open file: "+err.Error(), err, log.Error())
+			return fileInfos, com.ErrLog("unable to open file: "+err.Error(), err, log.Error())
 		}
-		fileInfos = append(fileInfos, &FileInfo{
+		fileInfos = append(fileInfos, &fm.FileInfo{
 			Reader:   file,
 			Filename: jobFile.Filename,
 		})

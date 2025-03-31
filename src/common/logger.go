@@ -52,8 +52,8 @@ func FileConsoleLogger() zerolog.Logger {
 //
 // This hides implementation details from users while ensuring full error information is available for debugging.
 func ErrLog(message string, err error, eventLevel *zerolog.Event) error {
-	eventLevel.Err(err).Msgf(message)
-	return fmt.Errorf(message)
+	eventLevel.Err(err).Msg(message)
+	return fmt.Errorf("%s", message)
 }
 
 func ConsoleLogger() zerolog.Logger {

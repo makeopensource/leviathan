@@ -1,9 +1,8 @@
 package docker
 
 import (
-	"context"
-	"fmt"
 	"github.com/rs/zerolog/log"
+	"sync"
 )
 
 type DkService struct {
@@ -18,19 +17,21 @@ func NewDockerServiceWithClients() *DkService {
 	return &DkService{ClientManager: NewRemoteClientManager()}
 }
 
-func (service *DkService) BuildNewImageOnAllClients(dockerfilePath string, imageTag string) error {
-	for _, item := range service.ClientManager.Clients {
-		err := item.Client.BuildImageFromDockerfile(dockerfilePath, imageTag)
-		if err != nil {
-			info, err := item.Client.Client.Info(context.Background())
+func (dk *DkService) BuildNewImageOnAllClients(dockerfilePath string, imageTag string) {
+	var wg sync.WaitGroup
+
+	for name, item := range dk.ClientManager.Clients {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			err := item.Client.BuildImageFromDockerfile(dockerfilePath, imageTag)
 			if err != nil {
-				log.Error().Err(err).Msg("failed to get server info")
-				return fmt.Errorf("failed to get server info")
+				log.Error().Err(err).Msgf("unable to build image: %s for %s", imageTag, name)
+				return
 			}
-			log.Error().Err(err).Msgf("Error building image for %s", info.Name)
-			return fmt.Errorf("failed to create image for client")
-		}
+			log.Debug().Msgf("image: %s built successfully for machine: %s", imageTag, name)
+		}()
 	}
 
-	return nil
+	wg.Wait()
 }

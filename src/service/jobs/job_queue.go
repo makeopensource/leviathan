@@ -8,6 +8,7 @@ import (
 	"github.com/makeopensource/leviathan/common"
 	md "github.com/makeopensource/leviathan/models"
 	"github.com/makeopensource/leviathan/service/docker"
+	"github.com/makeopensource/leviathan/service/labs"
 	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
 	"os"
@@ -20,14 +21,16 @@ type JobQueue struct {
 	db           *gorm.DB
 	dkSrv        *docker.DkService
 	contextMap   *md.Map[string, func()]
+	labSrv       *labs.LabService
 }
 
-func NewJobQueue(totalJobs uint, db *gorm.DB, dk *docker.DkService) *JobQueue {
+func NewJobQueue(totalJobs uint, db *gorm.DB, dk *docker.DkService, lab *labs.LabService) *JobQueue {
 	queue := &JobQueue{
 		contextMap:   &md.Map[string, func()]{},
 		db:           db,
 		dkSrv:        dk,
 		jobSemaphore: md.NewWorkerSemaphore(int(totalJobs)),
+		labSrv:       lab,
 	}
 
 	return queue
@@ -93,7 +96,7 @@ func (q *JobQueue) runJob(job *md.Job) {
 		return
 	}
 
-	logStatusCh := make(chan md.JobError, 1)
+	logStatusCh := make(chan md.JobError)
 
 	q.setJobInProgress(job)
 	err2 := client.StartContainer(contId)
@@ -102,13 +105,13 @@ func (q *JobQueue) runJob(job *md.Job) {
 		return
 	}
 
-	// start writing to log file so that
+	// start writing to log file so that,
 	// we can stream changes to the log file to the user
 	go func() {
 		logStatusCh <- writeLogs(client, job)
 	}()
 
-	statusCh, errCh := client.Client.ContainerWait(context.Background(), contId, dk.WaitConditionNotRunning)
+	statusCh, errCh := client.WaitForContainerStatusChange(contId)
 	select {
 	case <-statusCh:
 		if mes := <-logStatusCh; mes != nil {
@@ -155,14 +158,6 @@ func (q *JobQueue) setupJob(msg *md.Job) (*docker.DkClient, string, md.JobError)
 		if err != nil {
 			return nil, "", md.JError("Failed to create image", err)
 		}
-		// folder structure is '/<id>/autolab/Dockerfile, get the <random id> folder path
-		parent := filepath.Base(filepath.Dir(filepath.Dir(msg.LabData.DockerFilePath)))
-
-		if parent != "labs" { // do not delete if job is from a saved lab
-			if err = os.RemoveAll(parent); err != nil {
-				return nil, "", md.JError("failed to delete dockerfile", err)
-			}
-		}
 	}
 
 	resources := dk.Resources{
@@ -171,7 +166,12 @@ func (q *JobQueue) setupJob(msg *md.Job) (*docker.DkClient, string, md.JobError)
 		PidsLimit: &msg.LabData.JobLimits.PidsLimit,
 	}
 
-	contId, err := machine.CreateNewContainer(msg.JobId, msg.LabData.ImageTag, filepath.Base(msg.TmpJobFolderPath), msg.LabData.JobEntryCmd, resources)
+	contId, err := machine.CreateNewContainer(
+		msg.JobId,
+		msg.LabData.ImageTag,
+		msg.LabData.JobEntryCmd,
+		resources,
+	)
 	if err != nil {
 		return nil, "", md.JError("unable to create job container", err)
 	}

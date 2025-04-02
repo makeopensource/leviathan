@@ -37,7 +37,7 @@ func NewJobService(
 		db:          db,
 		broadcastCh: bc,
 		dockerSrv:   dockerService,
-		queue:       NewJobQueue(uint(com.ConcurrentJobs.GetUint64()), db, dockerService),
+		queue:       NewJobQueue(uint(com.ConcurrentJobs.GetUint64()), db, dockerService, labService),
 		labSrv:      labService,
 		fileManSrv:  tmpFileService,
 	}

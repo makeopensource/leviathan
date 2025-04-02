@@ -50,7 +50,7 @@ func NewRemoteClientManager() *RemoteClientManager {
 			continue
 		}
 
-		info, err := testClientConn(remoteClient.Client)
+		info, err := testClientConn(remoteClient.client)
 		if err != nil {
 			log.Warn().Err(err).Msgf("Remote docker client failed to connect: %s", machine.Name())
 			continue
@@ -68,7 +68,7 @@ func NewRemoteClientManager() *RemoteClientManager {
 			log.Error().Err(err).Msg("Failed to setup local docker client")
 		}
 
-		info, err := testClientConn(localClient.Client)
+		info, err := testClientConn(localClient.client)
 		if err != nil {
 			log.Warn().Err(err).Msgf("Client failed to connect: localdocker")
 		} else {
@@ -250,7 +250,6 @@ func (man *RemoteClientManager) GetClientById(id string) (*DkClient, error) {
 	if !exists {
 		return nil, fmt.Errorf("invalid machine id: %s", id)
 	}
-
 	return status.Client, nil
 }
 

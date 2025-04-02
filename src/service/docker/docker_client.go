@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
+	dk "github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/api/types/network"
@@ -20,15 +21,17 @@ import (
 
 type ImageMap = models.Map[string, *models.CountingMutex]
 
+const JobIdLabel = "jobIdLabel"
+
 // DkClient a wrapper for the docker client struct, that exposes the commands leviathan needs
 type DkClient struct {
-	Client *client.Client
+	client *client.Client
 	imgMap *ImageMap
 }
 
 func NewDkClient(client *client.Client) *DkClient {
 	cli := &DkClient{
-		Client: client,
+		client: client,
 		imgMap: &ImageMap{},
 	}
 	go cleanupImageTagLocks(cli.imgMap)
@@ -47,7 +50,7 @@ func (c *DkClient) BuildImageFromDockerfile(dockerfilePath string, tagName strin
 		return fmt.Errorf("failed to tar file %s", dockerfilePath)
 	}
 	// Build the Docker image
-	resp, err := c.Client.ImageBuild(
+	resp, err := c.client.ImageBuild(
 		context.Background(),
 		dockerfileTar,
 		types.ImageBuildOptions{
@@ -83,7 +86,7 @@ func (c *DkClient) BuildImageFromDockerfile(dockerfilePath string, tagName strin
 
 // ListImages lists all images on the docker web_gen
 func (c *DkClient) ListImages() ([]*dktypes.ImageMetaData, error) {
-	imageInfos, err := c.Client.ImageList(context.Background(), image.ListOptions{All: true})
+	imageInfos, err := c.client.ImageList(context.Background(), image.ListOptions{All: true})
 	if err != nil {
 		log.Error().Err(err).Msgf("failed to list Docker images")
 		return nil, err
@@ -103,9 +106,13 @@ func (c *DkClient) ListImages() ([]*dktypes.ImageMetaData, error) {
 	return imageInfoList, nil
 }
 
+func (c *DkClient) WaitForContainerStatusChange(contId string) (<-chan dk.WaitResponse, <-chan error) {
+	return c.client.ContainerWait(context.Background(), contId, dk.WaitConditionNotRunning)
+}
+
 // ListContainers lists containers
-func (c *DkClient) ListContainers(machineId string) ([]*dktypes.ContainerMetaData, error) {
-	containerInfos, err := c.Client.ContainerList(context.Background(), container.ListOptions{All: true})
+func (c *DkClient) ListContainers() ([]*dktypes.ContainerMetaData, error) {
+	containerInfos, err := c.client.ContainerList(context.Background(), container.ListOptions{All: true})
 	if err != nil {
 		log.Error().Err(err).Msgf("failed to list Docker images")
 		return nil, err
@@ -118,13 +125,12 @@ func (c *DkClient) ListContainers(machineId string) ([]*dktypes.ContainerMetaDat
 }
 
 // CreateNewContainer creates a new container from given image
-func (c *DkClient) CreateNewContainer(jobUuid, image, jobFolder, entryCmd string, machineLimits container.Resources) (string, error) {
+func (c *DkClient) CreateNewContainer(jobUuid, image, entryCmd string, machineLimits dk.Resources) (string, error) {
+
 	config := &container.Config{
-		Image: image,
-		Labels: map[string]string{
-			"con": jobUuid,
-		},
-		Cmd: []string{"sh", "-c", entryCmd},
+		Image:  image,
+		Labels: map[string]string{JobIdLabel: jobUuid},
+		Cmd:    []string{"sh", "-c", entryCmd},
 	}
 
 	hostConfig := &container.HostConfig{
@@ -138,7 +144,7 @@ func (c *DkClient) CreateNewContainer(jobUuid, image, jobFolder, entryCmd string
 
 	var platform *v1.Platform = nil
 
-	cont, err := c.Client.ContainerCreate(
+	cont, err := c.client.ContainerCreate(
 		context.Background(),
 		config,
 		hostConfig,
@@ -160,7 +166,7 @@ func (c *DkClient) CreateNewContainer(jobUuid, image, jobFolder, entryCmd string
 
 // StartContainer starts the container of a given ID
 func (c *DkClient) StartContainer(containerID string) error {
-	err := c.Client.ContainerStart(context.Background(), containerID, container.StartOptions{})
+	err := c.client.ContainerStart(context.Background(), containerID, container.StartOptions{})
 	if err != nil {
 		log.Error().Err(err).Msgf("failed to start Docker container")
 		return err
@@ -170,7 +176,7 @@ func (c *DkClient) StartContainer(containerID string) error {
 
 // StopContainer stops the container of a given ID
 func (c *DkClient) StopContainer(containerID string) error {
-	err := c.Client.ContainerStop(context.Background(), containerID, container.StopOptions{})
+	err := c.client.ContainerStop(context.Background(), containerID, container.StopOptions{})
 	if err != nil {
 		log.Error().Err(err).Msgf("failed to stop Docker container")
 		return err
@@ -180,7 +186,7 @@ func (c *DkClient) StopContainer(containerID string) error {
 
 // RemoveContainer deletes the container of a given ID
 func (c *DkClient) RemoveContainer(containerID string, force bool, removeVolumes bool) error {
-	err := c.Client.ContainerRemove(
+	err := c.client.ContainerRemove(
 		context.Background(),
 		containerID, container.RemoveOptions{
 			Force: force, RemoveVolumes: removeVolumes,
@@ -206,7 +212,7 @@ func (c *DkClient) CopyToContainer(containerID string, submissionDirPath string)
 	// create the directory under its parent
 	parent := filepath.Dir("/home/")
 
-	err = c.Client.CopyToContainer(context.Background(), containerID, parent, jobBytes, container.CopyToContainerOptions{})
+	err = c.client.CopyToContainer(context.Background(), containerID, parent, jobBytes, container.CopyToContainerOptions{})
 	if err != nil {
 		log.Error().Err(err).Msgf("failed to copy to container")
 		return fmt.Errorf("failed to copy submission to container")
@@ -216,7 +222,7 @@ func (c *DkClient) CopyToContainer(containerID string, submissionDirPath string)
 }
 
 func (c *DkClient) TailContainerLogs(ctx context.Context, containerID string) (io.ReadCloser, error) {
-	reader, err := c.Client.ContainerLogs(ctx, containerID, container.LogsOptions{
+	reader, err := c.client.ContainerLogs(ctx, containerID, container.LogsOptions{
 		ShowStdout: true,
 		ShowStderr: true,
 		Follow:     true,
@@ -234,7 +240,7 @@ func (c *DkClient) TailContainerLogs(ctx context.Context, containerID string) (i
 
 // PruneContainers clears all containers that are not running
 func (c *DkClient) PruneContainers() error {
-	report, err := c.Client.ContainersPrune(context.Background(), filters.Args{})
+	report, err := c.client.ContainersPrune(context.Background(), filters.Args{})
 	if err != nil {
 		log.Error().Err(err).Msgf("failed to prune Docker container")
 		return err
@@ -245,7 +251,7 @@ func (c *DkClient) PruneContainers() error {
 }
 
 func (c *DkClient) GetContainerStatus(ctx context.Context, contId string) (*container.InspectResponse, error) {
-	inspect, err := c.Client.ContainerInspect(ctx, contId)
+	inspect, err := c.client.ContainerInspect(ctx, contId)
 	if err != nil {
 		return nil, err
 	}

@@ -1,7 +1,6 @@
 package models
 
 import (
-	"context"
 	"fmt"
 	v1 "github.com/makeopensource/leviathan/generated/jobs/v1"
 	"github.com/rs/zerolog/log"
@@ -61,7 +60,6 @@ type Job struct {
 	OutputLogFilePath string
 	// TmpJobFolderPath holds the path to the tmp dir all files related to the job except the final output
 	TmpJobFolderPath string
-	JobCtx           context.Context `gorm:"-"`
 }
 
 func (j *Job) ToProto() *v1.JobStatus {
@@ -88,9 +86,6 @@ func (j *Job) ValidateForQueue() error {
 	}
 	if j.LabData.JobTimeout == 0 {
 		return fmt.Errorf("job timeout is 0")
-	}
-	if j.JobCtx == nil {
-		return fmt.Errorf("job context is nil")
 	}
 	if j.OutputLogFilePath == "" {
 		return fmt.Errorf("output log file is empty")

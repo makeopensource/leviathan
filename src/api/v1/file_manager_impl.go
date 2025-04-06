@@ -62,7 +62,7 @@ func (f *FileManagerHandler) UploadLabData(w http.ResponseWriter, r *http.Reques
 		)
 		return
 	}
-	defer com.CloseFile(dockerFile)
+	defer com.CloseReader(dockerFile)
 
 	jobFiles, ok := r.MultipartForm.File[LabFilesKey]
 	if !ok || len(jobFiles) == 0 {
@@ -77,7 +77,7 @@ func (f *FileManagerHandler) UploadLabData(w http.ResponseWriter, r *http.Reques
 	}
 	defer func(files []*fm.FileInfo) {
 		for _, file := range files {
-			com.CloseFile(file.Reader)
+			com.CloseReader(file.Reader)
 		}
 	}(fileInfos)
 
@@ -110,7 +110,7 @@ func (f *FileManagerHandler) UploadSubmissionData(w http.ResponseWriter, r *http
 	}
 	defer func(files []*fm.FileInfo) {
 		for _, file := range files {
-			com.CloseFile(file.Reader)
+			com.CloseReader(file.Reader)
 		}
 	}(fileInfos)
 

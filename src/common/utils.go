@@ -1,6 +1,8 @@
 package common
 
 import (
+	"bytes"
+	"encoding/gob"
 	"fmt"
 	"github.com/rs/zerolog/log"
 	"io"
@@ -14,10 +16,33 @@ func FileExists(filename string) bool {
 	return !os.IsNotExist(err)
 }
 
-func CloseReader(file io.ReadCloser) {
-	err := file.Close()
+// gobEncode serializes the data using GOB encoding
+func gobEncode(data any) ([]byte, error) {
+	var buf bytes.Buffer
+	encoder := gob.NewEncoder(&buf)
+
+	err := encoder.Encode(data)
 	if err != nil {
-		log.Warn().Err(err).Msg("Error occurred while closing file")
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
+}
+
+// gobDecode deserializes the GOB encoded data
+func gobDecode[T interface{}](data []byte, result T) (T, error) {
+	buf := bytes.NewBuffer(data)
+	decoder := gob.NewDecoder(buf)
+
+	return result, decoder.Decode(result)
+}
+
+// CloseWithLog closes an io.closer
+// prints a warning log if an error occurs
+func CloseWithLog(closer io.Closer) {
+	err := closer.Close()
+	if err != nil {
+		log.Warn().Err(err).Msg("Error occurred while closing interface")
 	}
 }
 

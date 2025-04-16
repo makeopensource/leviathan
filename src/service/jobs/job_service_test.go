@@ -7,7 +7,6 @@ import (
 	"github.com/makeopensource/leviathan/service/docker"
 	. "github.com/makeopensource/leviathan/service/file_manager"
 	"github.com/makeopensource/leviathan/service/labs"
-	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/stretchr/testify/assert"
 	"os"
@@ -112,7 +111,6 @@ func TestIncorrect(t *testing.T) {
 	testJobProcessor(t, incorrect.studentFile, incorrect.expectedOutput, defaultTimeout, incorrect.correctStatus)
 }
 
-// TODO
 func TestForkBomb(t *testing.T) {
 	setupTest()
 	forkBomb := testCases["forkb"]
@@ -245,19 +243,28 @@ func setupLab(t *testing.T, labData *models.Lab, dockerfilePath string, files ..
 }
 
 func testJob(t *testing.T, jobId string, correctOutput string, correctStatus models.JobStatus) {
-	jobInfo, logs, err := jobTestService.WaitForJobAndLogs(jobId)
+	jobInfo, returnedLogs, err := jobTestService.WaitForJobAndLogs(jobId)
 	if err != nil {
 		t.Fatalf("Error waiting for job: %v", err)
 		return
 	}
 
-	t.Log("Job ID: ", jobId, " Logs:\n", logs)
+	t.Log("Job ID: ", jobId, " Logs:\n", returnedLogs)
 
 	returned := strings.TrimSpace(jobInfo.StatusMessage)
 	expected := strings.TrimSpace(correctOutput)
 
 	assert.Equal(t, expected, returned)
 	assert.Equal(t, correctStatus, jobInfo.Status)
+
+	db, err := jobTestService.getJobFromDB(jobId)
+	if err != nil {
+		t.Fatal("Error getting job", err)
+		return
+	}
+
+	expectedLogs := ReadLogFile(db.OutputLogFilePath)
+	assert.Equal(t, expectedLogs, returnedLogs)
 }
 
 func setupTest() {
@@ -276,5 +283,7 @@ func initServices() {
 	jobTestService = NewJobService(db, bc, dkTestService, labTestService, fileManTestService)
 
 	// no logs on tests
-	log.Logger = log.Logger.Level(zerolog.Disabled)
+	log.Logger = log.Logger.With().Logger()
+
+	//log.Logger = log.Logger.Level(zerolog.Disabled)
 }

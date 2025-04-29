@@ -23,6 +23,9 @@ func StartServerWithAddr() {
 	StartServer(srvAddr)
 }
 
+// StartServer starts the grpc server at "addr:port"
+//
+// e.g. StartServer(":8080") or StartServer("127.0.0.1:8080")
 func StartServer(srvAddr string) {
 	mux := setupEndpoints()
 
@@ -40,7 +43,7 @@ func StartServer(srvAddr string) {
 }
 
 func setupEndpoints() *http.ServeMux {
-	dk, job, lab := initServices()
+	dk, job, lab := InitServices()
 
 	interceptor := connect.WithInterceptors()
 	if config.ApiKey.GetStr() != "" {

@@ -4,7 +4,7 @@ import (
 	"github.com/makeopensource/leviathan/internal/config"
 	"github.com/makeopensource/leviathan/internal/database"
 	"github.com/makeopensource/leviathan/internal/docker"
-	"github.com/makeopensource/leviathan/internal/file_manager"
+	fu "github.com/makeopensource/leviathan/internal/file_manager"
 	"github.com/makeopensource/leviathan/internal/jobs"
 	"github.com/makeopensource/leviathan/internal/labs"
 	"github.com/makeopensource/leviathan/pkg/logger"
@@ -13,17 +13,17 @@ import (
 
 func Setup() {
 	log.Logger = logger.ConsoleLogger() // logs here are not saved to the log file
-	config.InitConfig()
+	config.LoadConfig()
 	// once the log dir and level is set by config,
 	// we start a file logger along with the console logger
 	log.Logger = logger.FileConsoleLogger(config.LogDir.GetStr(), config.LogLevel.GetStr())
 }
 
-func initServices() (*docker.DkService, *jobs.JobService, *labs.LabService) {
-	db, bc := database.InitDB()
+func InitServices() (*docker.DkService, *jobs.JobService, *labs.LabService) {
+	db, bc := database.NewDatabaseWithGorm()
 
 	dkService := docker.NewDockerServiceWithClients()
-	fileManService := file_manager.NewFileManagerService()
+	fileManService := fu.NewFileManagerService()
 	labService := labs.NewLabService(db, dkService, fileManService)
 	jobService := jobs.NewJobService(db, bc, dkService, labService, fileManService)
 

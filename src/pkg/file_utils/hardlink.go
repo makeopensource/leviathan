@@ -46,7 +46,7 @@ func HardLinkFolder(sourceDir, targetDir string) error {
 		return fmt.Errorf("source directory error: %w", err)
 	}
 
-	// Create target directory if it doesn't exist
+	// CreateJob target directory if it doesn't exist
 	err = os.MkdirAll(targetDir, os.FileMode(DefaultFilePerm))
 	if err != nil {
 		return fmt.Errorf("failed to create target directory: %w", err)
@@ -58,7 +58,7 @@ func HardLinkFolder(sourceDir, targetDir string) error {
 		sourceFile := filepath.Base(sourceDir)
 		targetDir = fmt.Sprintf("%s/%s", targetDir, sourceFile)
 
-		// Create hard link for the file
+		// CreateJob hard link for the file
 		if err := createHardLink(sourceDir, targetDir, sourceStat.Mode()); err != nil {
 			return fmt.Errorf("failed to create hard link from %s to %s: %w", sourceDir, targetDir, err)
 		}
@@ -96,7 +96,7 @@ func HardLinkFolder(sourceDir, targetDir string) error {
 			return nil
 		}
 
-		// Create hard link for files
+		// CreateJob hard link for files
 		err = createHardLink(path, targetPath, info.Mode())
 		if err != nil {
 			return fmt.Errorf("failed to create hard link from %s to %s: %w", path, targetPath, err)
@@ -163,7 +163,7 @@ func createHardLink(oldPath, newPath string, mode fs.FileMode) error {
 		return err
 	}
 
-	// Create the hard link
+	// CreateJob the hard link
 	if err := os.Link(oldPath, newPath); err != nil {
 		return err
 	}

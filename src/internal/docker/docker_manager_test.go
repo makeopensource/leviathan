@@ -98,7 +98,7 @@ func TestRemoteClientManager_GetLeastJobCountMachineId(t *testing.T) {
 }
 
 func TestNewSSHClientWithPasswordAuth(t *testing.T) {
-	config.InitConfig()
+	config.LoadConfig()
 	initKeyPairFile()
 
 	// when running this test update the config.yaml with the test machine info
@@ -128,7 +128,7 @@ func TestNewSSHClientWithPasswordAuth(t *testing.T) {
 }
 
 func TestNewSSHClientWithPublicKeyAuth(t *testing.T) {
-	config.InitConfig()
+	config.LoadConfig()
 	initKeyPairFile()
 
 	// when running this test update the config.yaml with the test machine info

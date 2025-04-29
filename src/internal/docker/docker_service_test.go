@@ -53,7 +53,7 @@ func TestCopyToContainer(t *testing.T) {
 
 func setupTest() {
 	setup.Do(func() {
-		config.InitConfig()
+		config.LoadConfig()
 		initServices()
 	})
 }

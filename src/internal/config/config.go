@@ -13,7 +13,7 @@ import (
 
 const DefaultFilePerm = 0o775
 
-func InitConfig() {
+func LoadConfig() {
 	_, ok := os.LookupEnv("LEVIATHAN_IS_DOCKER")
 	if !ok {
 		err := godotenv.Load() // load .env file for non docker env

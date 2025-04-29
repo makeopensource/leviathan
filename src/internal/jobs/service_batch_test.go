@@ -1,4 +1,4 @@
-package jobs
+package jobs_test
 
 import (
 	"fmt"

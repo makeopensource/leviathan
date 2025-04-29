@@ -1,9 +1,7 @@
 package labs
 
 import (
-	"github.com/makeopensource/leviathan/internal/config"
-	"github.com/makeopensource/leviathan/internal/database"
-	"github.com/makeopensource/leviathan/internal/docker"
+	"github.com/makeopensource/leviathan/cmd"
 	fm "github.com/makeopensource/leviathan/internal/file_manager"
 	"github.com/makeopensource/leviathan/pkg/file_utils"
 	"github.com/rs/zerolog"
@@ -16,7 +14,6 @@ import (
 )
 
 var (
-	dkTestService  *docker.DkService
 	fileMan        *fm.FileManagerService
 	labTestService *LabService
 	setupOnce      sync.Once
@@ -97,12 +94,9 @@ func TestLabService_CreateLab(t *testing.T) {
 
 func initDeps() {
 	setupOnce.Do(func() {
-		config.InitConfig()
-		db, _ := database.InitDB()
-
-		dkTestService = docker.NewDockerServiceWithClients()
+		cmd.Setup()
+		_, _, labTestService = cmd.InitServices()
 		fileMan = fm.NewFileManagerService()
-		labTestService = NewLabService(db, dkTestService, fileMan)
 
 		// no logs on tests
 		log.Logger = log.Logger.Level(zerolog.Disabled)

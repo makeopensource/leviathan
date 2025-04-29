@@ -1,7 +1,8 @@
-package jobs
+package jobs_test
 
 import (
 	"github.com/makeopensource/leviathan/internal/file_manager"
+	"github.com/makeopensource/leviathan/internal/jobs"
 	"github.com/makeopensource/leviathan/internal/labs"
 	"os"
 	"path/filepath"
@@ -28,73 +29,73 @@ var (
 			"correct": {
 				studentFile:    autolab0 + "/handin.py",
 				expectedOutput: `{"scores": {"q1": 10, "q2": 10, "q3": 10}}`,
-				correctStatus:  Complete,
+				correctStatus:  jobs.Complete,
 			},
 			"cheating1": testCase{
 				studentFile:    autolab0 + "/handin_cheating1.py",
 				expectedOutput: `{"scores": {"q1": 0, "q2": 0, "q3": 0}}`,
-				correctStatus:  Complete,
+				correctStatus:  jobs.Complete,
 			},
 			"cheating2": testCase{
 				studentFile:    autolab0 + "/handin_cheating2.py",
 				expectedOutput: `Maximum timeout reached for job, job ran for 10s`,
-				correctStatus:  Failed,
+				correctStatus:  jobs.Failed,
 			},
 			"incorrect1": testCase{
 				studentFile:    autolab0 + "/handin_incorrect1.py",
 				expectedOutput: `{"scores": {"q1": 0, "q2": 0, "q3": 0}}`,
-				correctStatus:  Complete,
+				correctStatus:  jobs.Complete,
 			},
 			"incorrect2": testCase{
 				studentFile:    autolab0 + "/handin_incorrect2.py",
 				expectedOutput: `unable to parse log output`,
-				correctStatus:  Failed,
+				correctStatus:  jobs.Failed,
 			},
 		},
 		"tango1": {
 			"correct": {
 				studentFile:    autolab1 + "/handin.py",
 				expectedOutput: `{"scores": {"q1": 10, "q2": 10, "q3": 10}}`,
-				correctStatus:  Complete,
+				correctStatus:  jobs.Complete,
 			},
 			"incorrect1": testCase{
 				studentFile:    autolab1 + "/handin_incorrect1.py",
 				expectedOutput: `{"scores": {"q1": 10, "q2": 0, "q3": 0}}`,
-				correctStatus:  Complete,
+				correctStatus:  jobs.Complete,
 			},
 			"incorrect2": testCase{
 				studentFile:    autolab1 + "/handin_incorrect2.py",
 				expectedOutput: `{"scores": {"q1": 9, "q2": 3, "q3": 3}}`,
-				correctStatus:  Complete,
+				correctStatus:  jobs.Complete,
 			},
 			"incorrect3": testCase{
 				studentFile:    autolab1 + "/handin_incorrect3.py",
 				expectedOutput: `{"scores": {"q1": 1, "q2": 0, "q3": 0}}`,
-				correctStatus:  Complete,
+				correctStatus:  jobs.Complete,
 			},
 			"incorrect4": testCase{
 				studentFile:    autolab1 + "/handin_incorrect4.py",
 				expectedOutput: `{"scores": {"q1": 0, "q2": 0, "q3": 0}}`,
-				correctStatus:  Complete,
+				correctStatus:  jobs.Complete,
 			},
 		},
 		"tango3": {
 			"correct": {
 				studentFile:    autolab3 + "/handin.json",
 				expectedOutput: `{"scores": {"q1": 10, "q2": 10, "q3": 99}}`,
-				correctStatus:  Complete,
+				correctStatus:  jobs.Complete,
 			},
 		},
 		"tango4": {
 			"correct": {
 				studentFile:    autolab4 + "/handin.py",
 				expectedOutput: `{"scores": {"q1": 10}}`,
-				correctStatus:  Complete,
+				correctStatus:  jobs.Complete,
 			},
 			"incorrect": {
 				studentFile:    autolab4 + "/handin_incorrect.py",
 				expectedOutput: `{"scores": {"q1": 0}}`,
-				correctStatus:  Complete,
+				correctStatus:  jobs.Complete,
 			},
 		},
 	}
@@ -195,7 +196,7 @@ func newLab(t *testing.T, folderName string) uint {
 }
 
 func setupJobProcessTango(t *testing.T, labId uint, studentCodePath string) string {
-	newJob := &Job{LabID: labId}
+	newJob := &jobs.Job{LabID: labId}
 
 	studentFileName := filepath.Base(studentCodePath)
 	if filepath.Ext(studentFileName) == ".json" {

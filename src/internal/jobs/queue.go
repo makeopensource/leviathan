@@ -10,7 +10,6 @@ import (
 	"github.com/makeopensource/leviathan/pkg/logger"
 	su "github.com/makeopensource/leviathan/pkg/sync_utils"
 	"github.com/rs/zerolog/log"
-	"gorm.io/gorm"
 	"os"
 	"path/filepath"
 	"time"
@@ -18,13 +17,13 @@ import (
 
 type JobQueue struct {
 	jobSemaphore *su.WorkerSemaphore
-	db           *gorm.DB
+	db           JobStore
 	dkSrv        *docker.DkService
 	contextMap   *su.Map[string, func()]
 	labSrv       *labs.LabService
 }
 
-func NewJobQueue(totalJobs uint, db *gorm.DB, dk *docker.DkService, lab *labs.LabService) *JobQueue {
+func NewJobQueue(totalJobs uint, db JobStore, dk *docker.DkService, lab *labs.LabService) *JobQueue {
 	queue := &JobQueue{
 		contextMap:   &su.Map[string, func()]{},
 		db:           db,
@@ -182,8 +181,7 @@ func (q *JobQueue) setupJob(msg *Job) (*docker.DkClient, string, JobError) {
 	}
 
 	msg.ContainerId = contId
-	res := q.db.Save(msg)
-	if res.Error != nil {
+	if err = q.db.UpdateJob(msg); err != nil {
 		return nil, "", JError("unable to update job in db", err)
 	}
 
@@ -257,9 +255,8 @@ func (q *JobQueue) setJobInSetup(msg *Job) {
 
 // updateJobVeryNice Database updated, fresh like new wife!
 func (q *JobQueue) updateJobVeryNice(msg *Job) {
-	res := q.db.Save(msg)
-	if res.Error != nil {
-		jog(msg.JobCtx).Error().Err(res.Error).Msg("error occurred while saving job to db")
+	if err := q.db.UpdateJob(msg); err != nil {
+		jog(msg.JobCtx).Error().Err(err).Msg("error occurred while saving job to db")
 	}
 }
 

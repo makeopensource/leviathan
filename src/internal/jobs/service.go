@@ -12,33 +12,39 @@ import (
 	"github.com/makeopensource/leviathan/pkg/logger"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	"gorm.io/gorm"
 	"os"
 	"path/filepath"
 	"time"
 )
 
 type JobService struct {
-	db          *gorm.DB
 	dockerSrv   *docker.DkService
 	queue       *JobQueue
 	broadcastCh *BroadcastChannel
 	labSrv      *labs.LabService
 	fileManSrv  *fm.FileManagerService
+	db          JobStore
 }
 
 func NewJobService(
-	db *gorm.DB,
+	db JobStore,
 	bc *BroadcastChannel,
 	dockerService *docker.DkService,
 	labService *labs.LabService,
 	tmpFileService *fm.FileManagerService,
 ) *JobService {
+	queue := NewJobQueue(
+		uint(config.ConcurrentJobs.GetUint64()),
+		db,
+		dockerService,
+		labService,
+	)
+
 	srv := &JobService{
 		db:          db,
 		broadcastCh: bc,
 		dockerSrv:   dockerService,
-		queue:       NewJobQueue(uint(config.ConcurrentJobs.GetUint64()), db, dockerService, labService),
+		queue:       queue,
 		labSrv:      labService,
 		fileManSrv:  tmpFileService,
 	}
@@ -102,9 +108,9 @@ func (job *JobService) NewJob(newJob *Job, submissionFolderId string) (string, e
 	newJob.LabData.VerifyJobLimits()
 	jog(newJob.JobCtx).Debug().Any("limits", newJob.LabData.JobLimits).Msg("job limits")
 
-	res := job.db.Create(newJob)
-	if res.Error != nil {
-		return "", logger.ErrLog("failed to save job to db", res.Error, jog(ctx).Error())
+	err = job.db.CreateJob(newJob)
+	if err != nil {
+		return "", logger.ErrLog("failed to save job to db", err, jog(ctx).Error())
 	}
 
 	err = job.queue.AddJob(newJob)
@@ -249,7 +255,7 @@ func (job *JobService) UnsubToJob(jobUuid string) {
 }
 
 func (job *JobService) checkJob(jobUuid string) (*Job, bool, string, error) {
-	jobInf, err := job.getJobFromDB(jobUuid)
+	jobInf, err := job.GetJobFromDB(jobUuid)
 	if err != nil {
 		return nil, false, "", fmt.Errorf("failed to get job info")
 	}
@@ -264,11 +270,10 @@ func (job *JobService) checkJob(jobUuid string) (*Job, bool, string, error) {
 	}
 }
 
-func (job *JobService) getJobFromDB(jobUuid string) (*Job, error) {
-	var jobInfo *Job
-	res := job.db.First(&jobInfo, "job_id = ?", jobUuid)
-	if res.Error != nil {
-		return nil, fmt.Errorf("failed to get job info from db")
+func (job *JobService) GetJobFromDB(jobUuid string) (*Job, error) {
+	jobInfo, err := job.db.GetJobByUuid(jobUuid)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get job info from db: %v", err)
 	}
 	return jobInfo, nil
 }
@@ -278,14 +283,10 @@ func (job *JobService) getJobFromDB(jobUuid string) (*Job, error) {
 //
 // for example machine running leviathan shutdown unexpectedly or leviathan had an unrecoverable error
 func (job *JobService) cleanupOrphanJobs() {
-	var orphanJobs []*Job
-	res := job.db.Preload("LabData").
-		Where("status = ?", string(Queued)).
-		Or("status = ?", string(Running)).
-		Or("status = ?", string(Preparing)).
-		Find(&orphanJobs)
-	if res.Error != nil {
-		log.Warn().Err(res.Error).Msgf("Failed to query database for orphan jobs")
+	var orphanJobs []Job
+	err := job.db.FetchInProgressJobs(&orphanJobs)
+	if err != nil {
+		log.Warn().Err(err).Msgf("Failed to query database for orphan jobs")
 		return
 	}
 
@@ -321,9 +322,9 @@ func (job *JobService) cleanupOrphanJobs() {
 
 		orphan.Status = Failed
 		orphan.StatusMessage = "job was unable to be processed due to an internal server error"
-		res = job.db.Save(orphan)
-		if res.Error != nil {
-			log.Warn().Err(res.Error).Msg("unable to update orphan job status")
+		err = job.db.UpdateJob(&orphan)
+		if err != nil {
+			log.Warn().Err(err).Msg("unable to update orphan job status")
 		}
 	}
 

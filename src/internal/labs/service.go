@@ -8,19 +8,18 @@ import (
 	"github.com/makeopensource/leviathan/pkg/file_utils"
 	"github.com/makeopensource/leviathan/pkg/logger"
 	"github.com/rs/zerolog/log"
-	"gorm.io/gorm"
 	"os"
 	"path/filepath"
 	"strings"
 )
 
 type LabService struct {
-	db      *gorm.DB
+	db      LabStore
 	dk      *docker.DkService
 	fileMan *fm.FileManagerService
 }
 
-func NewLabService(db *gorm.DB, dk *docker.DkService, service *fm.FileManagerService) *LabService {
+func NewLabService(db LabStore, dk *docker.DkService, service *fm.FileManagerService) *LabService {
 	return &LabService{
 		db:      db,
 		dk:      dk,
@@ -64,16 +63,15 @@ func (service *LabService) CreateLab(lab *Lab, jobDirId string) (uint, error) {
 	}
 
 	// final save to update paths
-	db, err := service.SaveLabToDB(lab)
-	if err != nil {
+	if err = service.db.CreateLab(lab); err != nil {
 		return 0, err
 	}
 
-	return db.ID, nil
+	return lab.ID, nil
 }
 
 func (service *LabService) EditLab(id uint, lab *Lab, jobFiles string) (uint, error) {
-	labData, err := service.GetLabFromDB(id)
+	labData, err := service.db.GetLab(id)
 	if err != nil {
 		return 0, err
 	}
@@ -92,7 +90,7 @@ func (service *LabService) EditLab(id uint, lab *Lab, jobFiles string) (uint, er
 }
 
 func (service *LabService) DeleteLab(id uint) error {
-	labData, err := service.GetLabFromDB(id)
+	labData, err := service.db.GetLab(id)
 	if err != nil {
 		return err
 	}
@@ -102,8 +100,8 @@ func (service *LabService) DeleteLab(id uint) error {
 		return err
 	}
 
-	if res := service.db.Delete(&Lab{}, id); res.Error != nil {
-		return res.Error
+	if err = service.db.DeleteLab(id); err != nil {
+		return err
 	}
 
 	return nil
@@ -122,18 +120,5 @@ func (service *LabService) deleteLabFiles(labData *Lab) error {
 }
 
 func (service *LabService) GetLabFromDB(id uint) (*Lab, error) {
-	var lab Lab
-	if res := service.db.Where("ID = ?", id).First(&lab); res.Error != nil {
-		return nil, res.Error
-	}
-	return &lab, nil
-}
-
-func (service *LabService) SaveLabToDB(lab *Lab) (*Lab, error) {
-	res := service.db.Save(lab)
-	if res.Error != nil {
-		return nil, res.Error
-	}
-
-	return lab, nil
+	return service.db.GetLab(id)
 }

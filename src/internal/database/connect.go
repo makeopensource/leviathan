@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-func InitDB() (*gorm.DB, *jobs.BroadcastChannel) {
+func initDB() (*gorm.DB, *jobs.BroadcastChannel) {
 	var connection gorm.Dialector
 	var dbConfig *gorm.Config
 
